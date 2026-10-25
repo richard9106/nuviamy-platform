@@ -1,9 +1,11 @@
 from datetime import datetime, time, timedelta
+from uuid import UUID
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.db import IntegrityError, transaction
 from django.db.models import CharField, Count, Q, Sum, Value
 from django.db.models.functions import Concat
@@ -135,9 +137,18 @@ class ClientPortalDashboardView(ClientPortalAccessMixin, TemplateView):
         upcoming_appointments = list(Appointment.objects.filter(
             practice=access.practice,
             client=access.client,
-            starts_at__gte=now,
+            ends_at__gt=now,
+            status=Appointment.Status.SCHEDULED,
         ).select_related('therapist__user')[:6])
         for appointment in upcoming_appointments:
+            appointment.portal_meeting_url = ''
+            if appointment.appointment_type == Appointment.AppointmentType.VIDEO and appointment.meeting_url:
+                try:
+                    URLValidator(schemes=['http', 'https'])(appointment.meeting_url)
+                except ValidationError:
+                    pass
+                else:
+                    appointment.portal_meeting_url = appointment.meeting_url
             appointment.change_request_form = AppointmentChangeRequestForm(
                 portal_access=access, appointment=appointment,
             )
@@ -171,6 +182,18 @@ class ClientPortalDashboardView(ClientPortalAccessMixin, TemplateView):
             read_at__isnull=True,
         ).count()
         context.update({
+            'portal_timezone': timezone.get_current_timezone_name(),
+            'appointment_history': Appointment.objects.filter(
+                practice=access.practice, client=access.client,
+            ).filter(Q(ends_at__lte=now) | ~Q(status=Appointment.Status.SCHEDULED))
+            .select_related('therapist__user').order_by('-starts_at')[:10],
+            'completed_intakes': ClientIntakeAssignment.objects.filter(
+                practice=access.practice, client=access.client,
+                status__in=[ClientIntakeAssignment.Status.SUBMITTED, ClientIntakeAssignment.Status.REVIEWED],
+            ).select_related('template').order_by('-submitted_at')[:10],
+            'paid_invoices': Invoice.objects.filter(
+                practice=access.practice, client=access.client, status=Invoice.Status.PAID,
+            ).order_by('-paid_at')[:10],
             'upcoming_appointments': upcoming_appointments,
             'next_appointment': upcoming_appointments[0] if upcoming_appointments else None,
             'visible_documents': visible_documents[:8],
@@ -242,55 +265,12 @@ class ClientInvoicePaymentView(ClientPortalAccessMixin, View):
 
 
 class ClientPortalRequestCreateView(ClientPortalAccessMixin, View):
-    def get_portal_context(self, access, form):
-        now = timezone.now()
-        upcoming_appointments = Appointment.objects.filter(
-            practice=access.practice,
-            client=access.client,
-            starts_at__gte=now,
-        ).select_related('therapist__user')
-        open_invoices = Invoice.objects.filter(
-            practice=access.practice,
-            client=access.client,
-            status__in=[Invoice.Status.SENT, Invoice.Status.OVERDUE],
-        ).prefetch_related('payments')
-        visible_documents = ClientDocument.objects.filter(
-            practice=access.practice,
-            client=access.client,
-            visible_to_client=True,
-        )
-        service_packages = ServicePackage.objects.filter(
-            practice=access.practice,
-            client=access.client,
-        )
-        portal_requests = ClientPortalRequest.objects.filter(
-            practice=access.practice,
-            client=access.client,
-        )
-        pending_intakes = ClientIntakeAssignment.objects.filter(
-            practice=access.practice,
-            client=access.client,
-            status=ClientIntakeAssignment.Status.ASSIGNED,
-        ).select_related('template')
-        return {
-            'portal_access': access,
-            'portal_client': access.client,
-            'portal_practice': access.practice,
-            'upcoming_appointments': upcoming_appointments[:6],
-            'next_appointment': upcoming_appointments.first(),
-            'visible_documents': visible_documents[:8],
-            'open_invoices': open_invoices[:8],
-            'open_invoice_total': sum(invoice.client_balance_due for invoice in open_invoices),
-            'service_packages': service_packages[:6],
-            'remaining_sessions': sum(package.sessions_remaining for package in service_packages),
-            'shared_document_count': visible_documents.count(),
-            'portal_request_form': form,
-            'portal_requests': portal_requests[:5],
-            'open_request_count': portal_requests.exclude(status=ClientPortalRequest.Status.RESOLVED).count(),
-            'pending_intakes': pending_intakes,
-            'pending_intake_count': pending_intakes.count(),
-            'client_payments_ready': bool(settings.STRIPE_SECRET_KEY and access.practice.can_receive_client_payments),
-        }
+    def get_portal_context(self, form):
+        dashboard_view = ClientPortalDashboardView()
+        dashboard_view.setup(self.request)
+        context = dashboard_view.get_context_data()
+        context['portal_request_form'] = form
+        return context
 
     def post(self, request):
         access = self.get_portal_access()
@@ -309,9 +289,10 @@ class ClientPortalRequestCreateView(ClientPortalAccessMixin, View):
                     'status': portal_request.status,
                 },
             )
+            messages.success(request, 'Your request was sent to the practice.')
             return redirect('portal:dashboard')
 
-        context = self.get_portal_context(access, form)
+        context = self.get_portal_context(form)
         context['open_request_modal'] = True
         return TemplateResponse(request, 'portal/dashboard.html', context, status=400)
 
@@ -319,18 +300,23 @@ class ClientPortalRequestCreateView(ClientPortalAccessMixin, View):
 class ClientConversationListView(ClientPortalAccessMixin, TemplateView):
     template_name = 'portal/conversations.html'
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('open'):
+            try:
+                public_id = UUID(request.GET['open'])
+            except (ValueError, TypeError):
+                return super().get(request, *args, **kwargs)
+            access = self.get_portal_access()
+            conversation = get_object_or_404(
+                PortalConversation, public_id=public_id,
+                practice=access.practice, client=access.client,
+            )
+            return redirect('portal:conversation_detail', public_id=conversation.public_id)
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         access = self.get_portal_access()
-        open_conversation = self.request.GET.get('open', '')
-        if open_conversation:
-            PortalMessage.objects.filter(
-                conversation__public_id=open_conversation,
-                conversation__practice=access.practice,
-                conversation__client=access.client,
-                author_kind=PortalMessage.AuthorKind.STAFF,
-                read_at__isnull=True,
-            ).update(read_at=timezone.now())
         context.update({
             'portal_client': access.client,
             'portal_practice': access.practice,
@@ -338,7 +324,6 @@ class ClientConversationListView(ClientPortalAccessMixin, TemplateView):
                 practice=access.practice, client=access.client,
             ).prefetch_related('messages')[:30],
             'conversation_form': kwargs.get('conversation_form') or PortalConversationForm(portal_access=access),
-            'open_conversation': open_conversation,
         })
         return context
 
@@ -910,7 +895,7 @@ class ClientIntakeResponsesView(PracticePermissionMixin, PracticeContextMixin, T
         context = super().get_context_data(**kwargs)
         assignment = get_object_or_404(ClientIntakeAssignment.objects.select_related('client', 'template', 'reviewed_by'),
                                        pk=self.kwargs['pk'], practice=self.get_practice())
-        items = assignment.response_items
+        items = [] if assignment.status == ClientIntakeAssignment.Status.ASSIGNED else assignment.response_items
         can_edit = has_practice_permission(self.request.user, 'intake', 'edit')
         context.update(assignment=assignment, response_items=items, can_edit_intake=can_edit,
                        can_review=can_edit and assignment.status == ClientIntakeAssignment.Status.SUBMITTED)
@@ -957,6 +942,7 @@ class ClientIntakeCompleteView(ClientPortalAccessMixin, FormView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['assignment'] = self.get_assignment()
+        kwargs['draft'] = self.request.method == 'POST' and self.request.POST.get('action') == 'save_draft'
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -965,7 +951,17 @@ class ClientIntakeCompleteView(ClientPortalAccessMixin, FormView):
         return context
 
     def form_valid(self, form):
-        assignment = form.save()
+        # A stale browser tab must never turn submitted responses back into a draft.
+        with transaction.atomic():
+            access = self.get_portal_access()
+            form.assignment = get_object_or_404(
+                ClientIntakeAssignment.objects.select_for_update(),
+                pk=self.kwargs['pk'], practice=access.practice, client=access.client,
+                status=ClientIntakeAssignment.Status.ASSIGNED,
+            )
+            assignment = form.save()
+        messages.success(self.request, 'Draft saved. You can continue this form from your portal.'
+                         if form.draft else 'Form submitted. Your care team can now review your responses.')
         log_audit_event(
             self.request,
             AuditLog.Action.UPDATE,
@@ -975,3 +971,17 @@ class ClientIntakeCompleteView(ClientPortalAccessMixin, FormView):
             metadata={'client_id': assignment.client_id, 'status': assignment.status},
         )
         return super().form_valid(form)
+
+
+class PortalIntakeResponsesView(ClientPortalAccessMixin, TemplateView):
+    template_name = 'portal/intake_responses.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        access = self.get_portal_access()
+        context['assignment'] = get_object_or_404(
+            ClientIntakeAssignment.objects.select_related('template'),
+            pk=self.kwargs['pk'], practice=access.practice, client=access.client,
+            status__in=[ClientIntakeAssignment.Status.SUBMITTED, ClientIntakeAssignment.Status.REVIEWED],
+        )
+        return context

@@ -8,16 +8,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'dashboard.css' %}">
-</head>
+<link rel="stylesheet" href="{% static 'portal.css' %}"></head>
 <body class="app-page portal-page">
   <main class="portal-shell">
-    <section class="action-bar"><a class="brand" href="{% url 'portal:dashboard' %}"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 16.5c3-1.8 3.4-7 7-8.2 2.1-.7 4 .3 7 2.4" stroke="white" stroke-width="2.1" stroke-linecap="round"/><path d="M5 8.3c2.8 1.7 4.2 6.3 7 7.3 2.3.9 4.2-.1 7-1.9" stroke="white" stroke-width="2.1" stroke-linecap="round"/></svg></span><span>NuviaMy Portal</span></a></section>
+    {% include 'portal/_header.html' %}<div id="portal-content" tabindex="-1"></div>
     <section class="panel form-panel">
       <div class="panel-head"><div><p class="eyebrow">Client forms</p><h1>{{ assignment.packet_name }}</h1><p>{{ assignment.packet_description|default:'Please complete the questions below for your practice.' }}</p></div></div>
       <form class="appointment-form" method="post" data-intake-pages>
         {% csrf_token %}
         {% if form.errors %}<div class="form-error" role="alert"><strong>Please answer the highlighted questions before submitting.</strong>{{ form.non_field_errors }}</div>{% endif %}<p>Questions marked * are required. Your responses will be shared with your care team.</p>
-        <p class="intake-page-progress" data-page-progress role="status" aria-live="polite"></p>
+        <p class="portal-draft-note">{% if assignment.answers %}Draft saved {{ assignment.updated_at|date:"M j, g:i A" }}. {% endif %}Use “Save and continue later” before leaving this form.</p><p class="intake-page-progress" data-page-progress role="status" aria-live="polite"></p>
         {% for page in form.pages %}
         <section class="intake-answer-page" data-intake-page>
           <h2 tabindex="-1">{{ page.title }}</h2>{% if page.description %}<p>{{ page.description }}</p>{% endif %}
@@ -28,7 +28,7 @@
           </div>{% endfor %}
         </section>{% endfor %}
         <div class="intake-page-controls" data-page-controls hidden><button class="btn btn-secondary" type="button" data-page-previous>Previous</button><button class="btn btn-primary" type="button" data-page-next>Next</button></div>
-        <div class="form-actions"><a class="btn btn-secondary" href="{% url 'portal:dashboard' %}">Back to portal</a><button class="btn btn-primary" type="submit" data-page-submit>Submit form</button></div>
+        <div class="form-actions"><a class="btn btn-secondary" href="{% url 'portal:dashboard' %}">Back to portal</a><button class="btn btn-secondary" type="submit" name="action" value="save_draft" formnovalidate>Save and continue later</button><button class="btn btn-primary" type="submit" data-page-submit>Submit form</button></div>
       </form>
     </section>
   </main>

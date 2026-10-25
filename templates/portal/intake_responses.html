@@ -1,0 +1,26 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submitted form | NuviaMy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'portal.css' %}">
+</head>
+<body class="app-page portal-page">
+<main class="portal-shell">{% include 'portal/_header.html' %}<section class="panel" id="portal-content" tabindex="-1">
+<p class="eyebrow">Submitted form</p>
+<h1>{{ assignment.packet_name }}</h1>
+<p>Submitted {{ assignment.submitted_at|date:"M j, Y g:i A" }} · {{ assignment.get_status_display }}</p>
+<p>Your responses have been shared with your care team. Contact your practice if anything needs to be corrected.</p>
+<dl class="portal-responses">{% for item in assignment.response_items %}<div>
+<dt>{{ item.question }}</dt>
+<dd>{{ item.answer|default:'No answer provided'|linebreaksbr }}</dd>
+</div>{% endfor %}</dl>
+<a class="btn btn-secondary" href="{% url 'portal:dashboard' %}#forms">Back to forms</a>
+</section>
+</main>{% include 'partials/security_session.html' %}</body>
+</html>

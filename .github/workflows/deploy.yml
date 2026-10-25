@@ -88,7 +88,11 @@ jobs:
       - name: Verify Compose credential isolation
         run: python -m ops.check_compose_roles
       - name: Build deployment image
-        run: docker build --tag nuviamy-ci .
+        run: docker build --pull --tag nuviamy-ci .
+      - name: Report packaged runtime versions
+        run: >-
+          docker run --rm nuviamy-ci python -c
+          "import platform, django; print('Python', platform.python_version()); print('Django', django.get_version())"
       - name: Verify packaged static assets
         run: >-
           docker run --rm

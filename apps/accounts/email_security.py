@@ -1,4 +1,5 @@
 """Single-use, session-bound email verification; plaintext codes are never persisted."""
+from .review_access import requires_email_verification
 import secrets
 import time
 from datetime import timedelta
@@ -51,7 +52,7 @@ class EmailChallengeView(LoginRequiredMixin, PostRateLimitMixin, FormView):
     notice = ''
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated and (not settings.EMAIL_TWO_STEP_REQUIRED or email_verified(request)):
+        if request.user.is_authenticated and (not requires_email_verification(request.user) or email_verified(request)):
             return redirect(safe_next(request))
         return super().dispatch(request, *args, **kwargs)
 

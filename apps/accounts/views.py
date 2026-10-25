@@ -1,3 +1,4 @@
+from .review_access import requires_email_verification
 from datetime import datetime, timezone as dt_timezone
 
 import stripe
@@ -59,7 +60,7 @@ class RoleAwareLoginView(PostRateLimitMixin, LoginView):
     rate_limit_seconds = 900
 
     def get_success_url(self):
-        if settings.EMAIL_TWO_STEP_REQUIRED:
+        if requires_email_verification(self.request.user):
             self.request.session['security_next'] = (
                 str(reverse_lazy('portal:dashboard')) if is_client_user(self.request.user)
                 else super().get_success_url())

@@ -1,3 +1,4 @@
+from .review_access import requires_email_verification, is_review_identity, review_access_valid
 import time
 from urllib.parse import urlencode
 
@@ -29,6 +30,9 @@ class SecuritySessionMiddleware(MiddlewareMixin):
                 return response
         if not request.user.is_authenticated:
             return None
+        if is_review_identity(request.user) and not review_access_valid(request.user):
+            logout(request)
+            return HttpResponse('Review access is unavailable or has expired.', status=403)
         request._security_authenticated = True
         now = time.time()
         session = request.session
@@ -54,7 +58,7 @@ class SecuritySessionMiddleware(MiddlewareMixin):
             logout(request)
             return redirect(reverse('login') + '?session_expired=1')
         from .email_security import email_verified
-        if settings.EMAIL_TWO_STEP_REQUIRED and not email_verified(request):
+        if requires_email_verification(request.user) and not email_verified(request):
             if now - session.get('security_password_at', 0) >= settings.SECURITY_CHALLENGE_TIMEOUT:
                 logout(request)
                 return redirect(reverse('login') + '?session_expired=1')

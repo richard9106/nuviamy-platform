@@ -229,5 +229,10 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Email verification gates all authenticated routes, including admin and portal.
 EMAIL_TWO_STEP_REQUIRED = os.getenv('DJANGO_EMAIL_TWO_STEP_REQUIRED', 'false').strip().lower() == 'true'
+# Disabled unless all three values identify the isolated reviewer tenant.
+GOOGLE_REVIEW_USER_ID = os.getenv('GOOGLE_REVIEW_USER_ID', '')
+GOOGLE_REVIEW_PRACTICE_ID = os.getenv('GOOGLE_REVIEW_PRACTICE_ID', '')
+GOOGLE_REVIEW_ACCESS_EXPIRES_AT = os.getenv('GOOGLE_REVIEW_ACCESS_EXPIRES_AT', '')
+
 
 EMAIL_TIMEOUT = 15

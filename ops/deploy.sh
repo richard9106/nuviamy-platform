@@ -12,7 +12,8 @@ if [[ "$mode" == Deploy ]]; then
     test -f /home/deploy/.config/nuviamy-production/enable-deployment
 fi
 docker compose config --quiet
-docker compose build web
+# Refresh the official base image so builds do not retain a cached security patch level.
+docker compose build --pull web
 docker compose run --rm --no-deps web python manage.py check --deploy --fail-level WARNING
 if [[ "$mode" == Validate ]]; then
     echo 'Candidate validated; database, running services and timers unchanged.'

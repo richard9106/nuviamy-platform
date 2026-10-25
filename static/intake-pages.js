@@ -16,6 +16,7 @@
     // field explicitly and reveal the right page before reporting an error.
     form.noValidate=true;
     form.addEventListener('submit',event=>{
+      if(event.submitter?.value==='save_draft')return;
       if(index<pages.length-1){event.preventDefault();next.click();return;}
       for(let i=0;i<pages.length;i++)for(const field of pages[i].querySelectorAll('input,textarea,select'))if(!field.checkValidity()){event.preventDefault();index=i;show();field.reportValidity();return;}
     });

@@ -408,9 +408,10 @@ class ClientIntakeAssignmentForm(forms.ModelForm):
 
 
 class ClientIntakeResponseForm(forms.Form):
-    def __init__(self, *args, assignment=None, **kwargs):
+    def __init__(self, *args, assignment=None, draft=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.assignment = assignment
+        self.draft = draft
         existing = assignment.answers if assignment else {}
         for index, question in enumerate(assignment.packet_questions):
             key = f'question_{index}'
@@ -420,7 +421,7 @@ class ClientIntakeResponseForm(forms.Form):
             kind = question.get('type', 'long_text') if authored else 'long_text'
             kwargs = {'label': intake_question_label(question),
                       'initial': stored.get('answer', '') if isinstance(stored, dict) else stored,
-                      'required': question.get('required', True) if authored else True,
+                      'required': False if draft else (question.get('required', True) if authored else True),
                       'help_text': question.get('help_text', '') if authored else ''}
             if kind in {'single_choice', 'multiple_choice', 'dropdown', 'yes_no'}:
                 options = ['Yes', 'No'] if kind == 'yes_no' else question.get('options', [])
@@ -447,7 +448,8 @@ class ClientIntakeResponseForm(forms.Form):
             key = f'question_{index}'
             answers[key] = {'question': intake_question_label(question), 'answer': self.cleaned_data[key]}
         self.assignment.answers = answers
-        self.assignment.status = ClientIntakeAssignment.Status.SUBMITTED
-        self.assignment.submitted_at = timezone.now()
+        if not self.draft:
+            self.assignment.status = ClientIntakeAssignment.Status.SUBMITTED
+            self.assignment.submitted_at = timezone.now()
         self.assignment.save(update_fields=['answers', 'status', 'submitted_at', 'updated_at'])
         return self.assignment

@@ -1,0 +1,8 @@
+<nav class="portal-navigation" aria-label="Client portal">
+  <a href="{% url 'portal:dashboard' %}"{% if request.resolver_match.url_name == 'dashboard' %} aria-current="page"{% endif %}>Overview</a>
+  <a href="{% url 'portal:dashboard' %}#appointments">Appointments</a>
+  <a href="{% url 'portal:dashboard' %}#forms">Forms</a>
+  <a href="{% url 'portal:conversations' %}"{% if request.resolver_match.url_name == 'conversations' or request.resolver_match.url_name == 'conversation_detail' %} aria-current="page"{% endif %}>Messages{% if unread_message_count %} <span class="badge brand">{{ unread_message_count }} unread</span>{% endif %}</a>
+  <a href="{% url 'portal:dashboard' %}#documents">Documents</a>
+  <a href="{% url 'portal:dashboard' %}#payments">Payments</a>
+</nav>

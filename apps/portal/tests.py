@@ -358,8 +358,9 @@ class ClientPortalViewTests(TestCase):
         self.client.force_login(user)
 
         response = self.client.get(reverse("portal:dashboard"))
-        self.assertContains(response, "1 unread messages")
-        self.assertContains(response, ">1</strong>")
+        self.assertEqual(response.context["unread_message_count"], 1)
+        self.assertContains(response, "1 unread")
+        self.assertContains(response, reverse("portal:conversations"))
         self.client.get(reverse("portal:conversation_detail", args=[conversation.public_id]))
 
         message.refresh_from_db()

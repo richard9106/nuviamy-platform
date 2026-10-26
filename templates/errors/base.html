@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,follow">
+  <title>{% block title %}Page not found{% endblock %} | NuviaMy</title>
+  {# Keep error pages independent of static storage, scripts, and request context processors. #}
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; color: #242033; background: radial-gradient(ellipse at 10% 20%, #dff8f4, transparent 50%), #faf9fd; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: #6143bd; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    a:focus-visible { outline: 3px solid #6143bd; outline-offset: 5px; border-radius: 4px; }
+    .skip { position: absolute; left: 20px; top: -100px; padding: 12px; background: white; z-index: 1; }
+    .skip:focus { top: 8px; }
+    header, footer { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 28px 0; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; color: #242033; font-size: 22px; font-weight: 750; letter-spacing: -.04em; text-decoration: none; }
+    .logo { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #7052d9, #00a6a0); }
+    .logo svg { width: 26px; height: 26px; }
+    .help { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 650; }
+    main { flex: 1; width: min(960px, calc(100% - 40px)); margin: 48px auto 72px; display: grid; grid-template-columns: 1fr 1.2fr; align-items: center; gap: 64px; }
+    .illustration { display: grid; place-items: center; aspect-ratio: 1; border: 1px solid #e3dcf4; border-radius: 50%; background: linear-gradient(145deg, #fff, #eee7fc); box-shadow: 0 20px 65px #55438a0d; }
+    .code { font-size: clamp(80px, 12vw, 136px); font-weight: 750; color: #7052d9; letter-spacing: -.08em; padding-right: .08em; }
+    .eyebrow { color: #6143bd; font-size: 12px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { font-size: clamp(30px, 4vw, 44px); line-height: 1.15; letter-spacing: -.04em; margin: 14px 0 20px; }
+    .description { color: #625d73; font-size: 17px; line-height: 1.75; margin: 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 20px; }
+    .button { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #ddd5ee; border-radius: 11px; padding: 12px 20px; background: white; font-size: 14px; font-weight: 700; text-decoration: none; }
+    .primary { background: #7052d9; border-color: #7052d9; color: white; }
+    .button:hover { border-color: #6143bd; }
+    .primary:hover { background: #6143bd; }
+    .note { color: #625d73; font-size: 14px; line-height: 1.7; }
+    footer { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 12px; border-top: 1px solid #e5e0ee; padding: 20px 0; color: #625d73; font-size: 13px; }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+    footer a { display: inline-flex; align-items: center; min-height: 44px; }
+    @media (max-width: 680px) {
+      header { padding: 16px 0; }
+      main { grid-template-columns: 1fr; gap: 28px; margin: 24px auto 40px; text-align: center; }
+      .illustration { width: 180px; justify-self: center; }
+      .code { font-size: 80px; }
+      .actions { justify-content: center; }
+      .actions .button { flex: 1 1 160px; }
+      .description { font-size: 16px; }
+      footer { justify-content: center; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header>
+    <a class="brand" href="/" aria-label="NuviaMy home"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 16.5c3-1.8 3.4-7 7-8.2 2.1-.7 4 .3 7 2.4M5 8.3c2.8 1.7 4.2 6.3 7 7.3 2.3.9 4.2-.1 7-1.9" stroke="white" stroke-width="2.1" stroke-linecap="round"/></svg></span>NuviaMy</a>
+    <a class="help" href="/help/">Help center</a>
+  </header>
+  <main id="content" tabindex="-1">
+    <div class="illustration" aria-hidden="true"><span class="code">{% block code %}404{% endblock %}</span></div>
+    <div>
+      <p class="eyebrow">{% block eyebrow %}Page not found{% endblock %}</p>
+      <h1>{% block heading %}Let's get you back on track.{% endblock %}</h1>
+      <p class="description">{% block description %}We couldn't find this page. The link may be out of date, or the address may have been typed incorrectly.{% endblock %}</p>
+      <div class="actions"><a class="button primary" href="/">Back to home</a><a class="button" href="/help/contact/">Contact support</a></div>
+      <p class="note">{% block note %}Looking for your workspace? <a href="/login/">Sign in to NuviaMy</a>.{% endblock %}</p>
+    </div>
+  </main>
+  <footer><span>Practice management with care.</span><nav aria-label="Useful links"><a href="/features/">Features</a><a href="/pricing/">Pricing</a><a href="/privacy/">Privacy</a></nav></footer>
+</body>
+</html>

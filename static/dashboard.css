@@ -1741,3 +1741,17 @@ body.cookie-notice-open { padding-bottom:var(--cookie-notice-space,300px); }
 .payer-catalogue__add { min-width: 82px; min-height: 44px; padding: 9px 13px; white-space: nowrap; }
 .payer-catalogue__empty { padding: 20px 0 8px; margin: 0; color: var(--slate-500); font-size: 14px; line-height: 1.6; }
 @media (max-width: 480px) { .payer-catalogue__row { gap: 10px; } .payer-catalogue__add { min-width: 72px; } }
+
+/* Review the optional Google connection before enabling its checkbox. */
+.google-privacy-notice > p { font-size: 13px; color: var(--slate-600); line-height: 1.65; }
+.google-privacy-details { border: 1px solid var(--slate-200); border-radius: 12px; background: #fff; }
+.google-privacy-details summary { padding: 12px 14px; min-height: 48px; cursor: pointer; color: var(--brand-700); font-size: 13px; font-weight: 800; }
+.google-privacy-details summary span { margin-left: 6px; color: var(--slate-500); font-size: 11px; font-weight: 500; }
+.google-privacy-details summary:focus-visible { outline: 3px solid var(--brand-700); outline-offset: 3px; border-radius: 10px; }
+.google-privacy-details-body { padding: 0 14px 12px; color: var(--slate-600); font-size: 13px; line-height: 1.65; }
+.google-privacy-details-body p { margin: 10px 0; }
+.google-privacy-hint { font-size: 12px; color: var(--slate-600); margin: 10px 0; }
+.google-calendar-selection { border: 0; padding: 0; margin: 0; min-width: 0; }
+.google-calendar-selection:disabled { opacity: .55; }
+.google-calendar-selection .checkbox-field label { min-height: 44px; }
+.integrations-page [data-google-connect]:disabled { background: var(--slate-100); border-color: var(--slate-200); color: var(--slate-500); cursor: not-allowed; }

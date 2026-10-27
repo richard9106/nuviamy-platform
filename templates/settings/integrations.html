@@ -1,4 +1,4 @@
-<!doctype html>
+{% load static %}<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/dashboard.css">
+  <link rel="stylesheet" href="{% static 'dashboard.css' %}">
 </head>
 <body class="app-page integrations-page">
   <div class="app-shell">
@@ -22,15 +22,18 @@
           <div class="panel-head"><div><h2>Google</h2><p>Synchronize appointment availability with your primary Google Calendar.</p></div><div class="inline-actions"><span class="badge {% if google_integration.status == 'connected' %}success{% else %}brand{% endif %}">{% if google_integration %}{{ google_integration.get_status_display }}{% else %}Disconnected{% endif %}</span>{% if google_integration %}<button class="invoice-actions-trigger" type="button" aria-label="Google integration actions" aria-expanded="false" aria-controls="google-integration-actions" data-row-actions-trigger><span aria-hidden="true">⋮</span></button><div class="invoice-actions-menu" id="google-integration-actions" role="menu" hidden data-row-actions-menu><a role="menuitem" class="inline-link" href="{% url 'practice_settings:google_workspace' %}">Open Google workspace</a><form method="post" action="{% url 'practice_settings:google_disconnect' %}" data-confirm-message="Disconnect Google Calendar? Calendar syncing will stop.">{% csrf_token %}<button role="menuitem" class="inline-button" type="submit" data-destructive-action>Disconnect Google</button></form></div>{% endif %}</div></div>
           {% if google_integration.account_email %}<p><strong>Connected account:</strong> {{ google_integration.account_email }}</p>{% endif %}
           {% if google_integration.status == 'needs_reauth' %}<p class="form-error" role="status">Reconnect Google Calendar to authorize the current Calendar permission.</p>{% endif %}
-          <form class="appointment-form" method="post" action="{% url 'practice_settings:google_connect' %}">
+          <form class="appointment-form" method="post" action="{% url 'practice_settings:google_connect' %}" data-google-connection data-oauth-configured="{{ google_oauth_configured|yesno:'true,false' }}">
             {% csrf_token %}
             {{ google_form.non_field_errors }}
-              <div class="field-grid integration-capabilities">
-                <div class="field checkbox-field"><label>{{ google_form.calendar_enabled }} Google Calendar sync</label></div>
-              </div>
-              <details class="integration-advanced"><summary>Connection notes</summary><div class="field"><label for="{{ google_form.notes.id_for_label }}">Notes</label>{{ google_form.notes }}</div></details>
               {% include "settings/partials_google_privacy_notice.html" %}
-              <div class="form-actions"><button class="btn btn-primary" type="submit" aria-describedby="google-privacy-heading" {% if not google_oauth_configured %}disabled{% endif %}>Connect Google</button></div>
+              <p class="google-privacy-hint" id="google-privacy-hint" role="status" aria-live="polite">Open “Before you connect Google” to enable Calendar sync.</p>
+              <fieldset class="google-calendar-selection" disabled data-google-calendar-selection aria-describedby="google-privacy-hint">
+                <legend class="sr-only">Google Calendar connection</legend>
+                <div class="field checkbox-field"><label>{{ google_form.calendar_enabled }} Google Calendar sync</label></div>
+              </fieldset>
+              <details class="integration-advanced"><summary>Connection notes</summary><div class="field"><label for="{{ google_form.notes.id_for_label }}">Notes</label>{{ google_form.notes }}</div></details>
+              <noscript><p class="empty-state">Enable JavaScript to review permissions and connect Google Calendar.</p></noscript>
+              <div class="form-actions"><button class="btn btn-primary" type="submit" data-google-connect aria-describedby="google-privacy-summary google-privacy-hint" disabled>Connect Google</button></div>
           </form>
           {% if not google_oauth_configured %}<p class="empty-state">Google OAuth env vars are not configured yet.</p>{% endif %}
         </article>
@@ -50,5 +53,6 @@
       </section>
     </main>
   </div>
+<script src="{% static 'google-connection.js' %}" defer></script>
 </body>
 </html>

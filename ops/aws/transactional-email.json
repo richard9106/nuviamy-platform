@@ -1,0 +1,41 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "NuviaMy transactional SES configuration with required delivery TLS and scoped existing-host role permission. Verify domain and production access separately.",
+  "Parameters": {
+    "HostRoleName": {"Type": "String", "AllowedPattern": "[A-Za-z0-9+=,.@_-]{1,64}"},
+    "SenderDomain": {"Type": "String", "Default": "nuviamy.com", "AllowedPattern": "[a-z0-9.-]+"},
+    "SenderAddress": {"Type": "String", "Default": "noreply@nuviamy.com", "AllowedPattern": "[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+"}
+  },
+  "Resources": {
+    "TransactionalConfiguration": {
+      "Type": "AWS::SES::ConfigurationSet",
+      "Properties": {
+        "Name": "nuviamy-transactional",
+        "DeliveryOptions": {"TlsPolicy": "REQUIRE"},
+        "SuppressionOptions": {"SuppressedReasons": ["BOUNCE", "COMPLAINT"]},
+        "ReputationOptions": {"ReputationMetricsEnabled": true},
+        "SendingOptions": {"SendingEnabled": true},
+        "VdmOptions": {"DashboardOptions": {"EngagementMetrics": "DISABLED"}, "GuardianOptions": {"OptimizedSharedDelivery": "DISABLED"}}
+      }
+    },
+    "HostSendPermission": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "nuviamy-transactional-email",
+        "Roles": [{"Ref": "HostRoleName"}],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow", "Action": "ses:SendEmail",
+            "Resource": [
+              {"Fn::Sub": "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/${SenderDomain}"},
+              {"Fn::Sub": "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:configuration-set/${TransactionalConfiguration}"}
+            ],
+            "Condition": {"StringEquals": {"ses:FromAddress": {"Ref": "SenderAddress"}, "aws:RequestedRegion": {"Ref": "AWS::Region"}}}
+          }]
+        }
+      }
+    }
+  },
+  "Outputs": {"ConfigurationSet": {"Value": {"Ref": "TransactionalConfiguration"}}}
+}

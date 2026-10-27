@@ -27,8 +27,11 @@ def security_readiness_report():
             'GOOGLE_REVIEW_USER_ID', 'GOOGLE_REVIEW_PRACTICE_ID', 'GOOGLE_REVIEW_ACCESS_EXPIRES_AT')),
             'Temporary reviewer bypass settings are absent.')
     smtp = settings.EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
-    require('mail_transport', smtp and (settings.EMAIL_USE_TLS != settings.EMAIL_USE_SSL),
-            'Production account email uses SMTP with exactly one encrypted transport mode.')
+    ses = (settings.EMAIL_BACKEND == 'apps.accounts.ses_backend.EmailBackend'
+           and settings.AWS_SES_REGION not in ('', 'auto') and bool(settings.AWS_SES_CONFIGURATION_SET))
+    require('mail_transport', ses or (smtp and (settings.EMAIL_USE_TLS != settings.EMAIL_USE_SSL)),
+            'Account mail uses encrypted SMTP or native SES HTTPS with a required configuration set; '
+            'verify provider contract and SES delivery TLS policy separately.')
     require('native_s3', settings.DJANGO_STORAGE_BACKEND == 's3'
             and not getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
             and getattr(settings, 'AWS_S3_REGION_NAME', '') not in ('', 'auto'),

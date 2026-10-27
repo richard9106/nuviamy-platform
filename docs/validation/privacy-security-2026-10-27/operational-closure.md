@@ -26,8 +26,17 @@ privado del operador. No se publican logs, secretos, datos clínicos ni contrato
   Correos deduplicados por fallo con repetición diaria. La prueba acredita canal,
   no una caída real inducida. No se paró la aplicación ni se provocó un backup fallido.
 - Correo SES: creada identidad del dominio, Easy DKIM RSA-2048. No se activó VDM,
-  IP dedicada, plan premium ni cambio del proveedor SMTP en producción. DNS,
-  salida del sandbox, IAM mínimo y entrega siguen condicionando el corte.
+  IP dedicada, plan premium ni cambio del proveedor SMTP en producción. Tres CNAME
+  DNS-only publicados y resueltos; pila independiente TLS/IAM mínima CREATE_COMPLETE
+  tras autorización expresa. Solicitud de producción enviada con aceptación autorizada
+  de términos; AWS muestra en revisión. Aprobación AWS/feedback y entrega condicionan el corte.
+- Nueva copia cifrada de configuración del origen AWS, incluyendo claves de aplicación,
+  Compose, TLS, Nginx y unidades operativas: descifrado autenticado a memoria y rechazo
+  de alteración comprobados. Clave privada permaneció local, sin extraer texto a disco.
+  No constituye una segunda custodia independiente de esa clave.
+- Richard respondió correctamente tres escenarios sobre soporte con PHI, credencial
+  expuesta y conservación/holds. Registrado como ejercicio breve de concienciación y
+  decisiones de escritorio; no simulacro técnico cronometrado ni formación integral.
 
 ## Cambios de aplicación preparados
 

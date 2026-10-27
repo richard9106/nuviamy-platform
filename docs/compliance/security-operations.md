@@ -66,8 +66,10 @@ procedimientos adoptados, no pruebas de que ya se hayan ejecutado todas las revi
   sin PHI/secretos, al cambiar el fallo o cada 24 h si persiste. Fallar el envío conserva
   el fallo local. Revisar el estado aun cuando no haya correos.
 - El monitor está en el mismo host y usa el mismo correo: no detecta ni avisa de su
-  propia pérdida total. Una alerta externa independiente y una custodia alternativa
-  siguen siendo necesarias para cerrar el escenario de pérdida del host/cuenta.
+  propia pérdida total. El workflow `Public availability check` consulta HTTPS desde
+  GitHub cada 30 minutos una vez en main; no usa credenciales AWS ni PHI. Sus avisos
+  dependen de las notificaciones de Actions del operador y pueden retrasarse: probar
+  ese canal y la custodia alternativa antes de cerrar pérdida del host/cuenta.
 - Ensayar restauración aislada mensualmente y tras cambios de claves/esquema/storage.
   `ops/verify_s3_recovery.py` restaura la copia S3 autenticada en PG sin red exterior,
   comprueba guards, lectura de campos cifrados y firmas, y destruye solo su contenedor

@@ -13,12 +13,12 @@ evaluación exhaustiva ni la validación clínica/de seguridad pendiente.
 | R02 Invitaciones | Enlaces de un uso implementados; revisión de cuentas antiguas y cobertura del correo pendiente (P02/P04) |
 | R03 Ámbito de acceso | Permisos y pruebas existentes, rol DB restringido y 17 triggers activos; matriz integral/revisión pendientes (P08) |
 | R04 Salidas | Calendar minimizado, Gmail/Drive bloqueados, Sentry estructural; dos mensajes de error externo se corrigen en código. Retención histórica y contratos no cerrados (P04) |
-| R05 Proveedores | Migración AWS completada; BAA confirmado por titular. Artifact y restantes flujos/cuentas/copias requieren evidencia (P01/P04) |
-| R06 Infraestructura | Evidencia de volumen EBS cifrado y S3 privado/versionado del 20/10. Reverificación AWS pendiente al caducar SSO (P01) |
-| R07 Continuidad | Restauración efectiva AWS del 20/10; backup reciente con salida 0. Objetivos, alarmas y custodia independiente pendientes (P06) |
+| R05 Proveedores | BAA activo acreditado en Artifact; auditoría AWS activa. SES TLS/IAM preparado y solicitud productiva enviada, SMTP aún sin cambiar. Restantes flujos/contratos/copias pendientes (P01/P04) |
+| R06 Infraestructura | Volumen/snapshots cifrados y S3 privado/versionado reverificados por consola; CloudTrail activo y logging S3 habilitado, con límites de entrega/integridad documentados (P01) |
+| R07 Continuidad | Restauración S3 reciente real en PG aislado; nueva copia cifrada de configuración AWS autenticada; monitor/alerta probados. Custodia independiente y pérdida de host/objetivos aún pendientes (P06) |
 | R08 Archivos | Validación y descargas con permisos existentes; revisión de contenido activo/escaneo y superficies pendiente (P08) |
 | R09 Integridad y conservación | Firmas, adendas, auditoría y acuerdos protegidos; matriz clínica/legal holds/disposición integral pendientes (P05/P08) |
-| R10 Incidentes | Procedimiento disponible, responsable confirmado; formación y ejercicio reales pendientes (P07) |
+| R10 Incidentes | Procedimiento adoptado y tres escenarios respondidos por Richard; pendiente ejercicio técnico cronometrado/cobertura integral y alternativa operativa (P07) |
 | R11 Equipo | Protección del equipo y custodia de claves revisadas en expediente restringido; completar evidencia (P03) |
 
 Probabilidad e impacto cualitativos originales no se recalculan automáticamente: la

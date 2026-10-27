@@ -11,7 +11,7 @@
 </head>
 <body class="app-page">
   <div class="app-shell">
-    {% include 'partials/sidebar.html' with card_title='Google workspace' card_text='Read Gmail, send email, and view Calendar events from your connected Google account.' %}
+    {% include 'partials/sidebar.html' with card_title='Google workspace' card_text='View events from your connected primary Google Calendar.' %}
     <main class="app-main">
       {% include 'partials/workspace_status.html' with hide_free_trial=True %}
       <section class="action-bar"><div class="quick-actions"><a class="btn btn-secondary" href="{% url 'practice_settings:integrations' %}">Back to integrations</a></div>{% include 'partials/trial_toolbar_notice.html' %}<details class="profile-menu"><summary>{{ request.user.first_name|default:request.user.username }}</summary><div class="profile-menu-panel"><a href="{% url 'profile_settings' %}">Profile settings</a>{% if request.user.is_staff %}<a href="/admin/">Admin</a>{% endif %}<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div></details></section>
@@ -20,18 +20,11 @@
       <p><a class="inline-link" href="{% url 'privacy_policy' %}#google-user-data">Google data use &amp; privacy</a> · <a class="inline-link" href="{% url 'practice_settings:integrations' %}">Manage or disconnect Google</a></p>
       <section class="billing-grid">
         <article class="panel">
-          <div class="panel-head"><div><h2>Send email</h2><p>Send a simple Gmail message from the connected Google account.</p></div></div>
-          {% if google_integration.send_email_enabled %}<form class="appointment-form" method="post" action="{% url 'practice_settings:gmail_send' %}">{% csrf_token %}<div class="field-grid"><div class="field"><label>To</label>{{ send_form.to_email }}{{ send_form.to_email.errors }}</div><div class="field"><label>Subject</label>{{ send_form.subject }}{{ send_form.subject.errors }}</div><div class="field full"><label>Body</label>{{ send_form.body }}{{ send_form.body.errors }}</div></div><div class="form-actions"><button class="btn btn-primary" type="submit">Send email</button></div></form>{% else %}<p class="empty-state">Gmail sending is not enabled for this Google connection.</p>{% endif %}
-        </article>
-        <article class="panel">
           <div class="panel-head"><div><h2>Upcoming calendar events</h2><p>Primary Google Calendar events.</p></div></div>
           <div class="package-list">{% for event in calendar_events %}<div class="package-card"><strong>{{ event.summary }}</strong><p>{{ event.start }}{% if event.end %} to {{ event.end }}{% endif %}</p></div>{% empty %}<p class="empty-state">No events available or Calendar sync is not enabled.</p>{% endfor %}</div>
         </article>
       </section>
-      <section class="panel">
-        <div class="panel-head"><div><h2>Recent Gmail</h2><p>Recent messages from the connected inbox.</p></div></div>
-        <div class="request-list">{% for message in gmail_messages %}<article class="request-card"><div class="client-card-head"><div><h3>{{ message.subject }}</h3><p>{{ message.from }} · {{ message.date }}</p></div></div><p>{{ message.snippet }}</p></article>{% empty %}<p class="empty-state">No messages available or Gmail reading is not enabled.</p>{% endfor %}</div>
-      </section>
+
     </main>
   </div>
 </body>

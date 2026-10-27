@@ -55,7 +55,7 @@
   {% if not practice_setup_complete and request.resolver_match.url_name != 'profile_settings' %}
     <div class="setup-reminder" role="status">
       <strong>Optional connections</strong>
-      <p>{% if google_workspace_connected %}Google is connected. Add online client payments whenever you need them.{% elif practice_setup_stripe %}Online payments are ready. Connect Google if you need email or calendar features.{% else %}Add Google or online client payments whenever you need them.{% endif %}</p>
+      <p>{% if google_workspace_connected %}Google is connected. Add online client payments whenever you need them.{% elif practice_setup_stripe %}Online payments are ready. Connect Google if you need calendar synchronization.{% else %}Add Google or online client payments whenever you need them.{% endif %}</p>
       <a href="{% url 'profile_settings' %}">Manage connections</a>
     </div>
   {% endif %}

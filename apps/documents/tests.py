@@ -116,7 +116,7 @@ class ClientDocumentViewTests(TestCase):
         self.assertContains(response, 'role="menu"')
         self.assertContains(response, 'aria-controls="document-actions-')
         self.assertContains(response, "Download")
-        self.assertContains(response, "Export to Google Drive")
+        self.assertNotContains(response, "Export to Google Drive")
         self.assertContains(response, "Google Drive")
         self.assertContains(response, "Not Synced")
         self.assertContains(response, 'data-confirm-message="Delete this document? The file will be removed from the client record."')
@@ -255,7 +255,7 @@ class ClientDocumentViewTests(TestCase):
         event = AuditLog.objects.get(action=AuditLog.Action.DELETE, object_type='documents.ClientDocument')
         self.assertEqual(event.metadata, {'client_id': client.pk})
 
-    def test_google_drive_export_uploads_document_and_saves_metadata(self):
+    def test_google_drive_export_refuses_legacy_enabled_capability_without_network(self):
         user, practice, _therapist, client = self.create_practice_user()
         ExternalIntegration.objects.create(
             practice=practice,
@@ -284,16 +284,12 @@ class ClientDocumentViewTests(TestCase):
             drive_request.return_value = {"id": "drive-file-123", "webViewLink": "https://drive.google.com/file/123"}
             response = self.client.post(reverse("documents:google_drive_export", args=[document.pk]))
 
-        self.assertRedirects(response, reverse("documents:list"))
+        self.assertEqual(response.status_code, 403)
+        google_request.assert_not_called()
+        drive_request.assert_not_called()
         document.refresh_from_db()
-        self.assertEqual(document.external_storage_provider, ClientDocument.ExternalStorageProvider.GOOGLE_DRIVE)
-        self.assertEqual(document.external_sync_status, ClientDocument.SyncStatus.SYNCED)
-        self.assertEqual(document.external_file_id, "drive-file-123")
-        self.assertEqual(document.external_file_url, "https://drive.google.com/file/123")
-        self.assertEqual(drive_request.call_args.kwargs["method"], "POST")
-        log = AuditLog.objects.get(action=AuditLog.Action.EXPORT, object_type="documents.ClientDocument")
-        self.assertEqual(log.metadata["provider"], "google_drive")
-        self.assertEqual(log.metadata["status"], ClientDocument.SyncStatus.SYNCED)
+        self.assertEqual(document.external_file_id, '')
+        self.assertFalse(AuditLog.objects.filter(action=AuditLog.Action.EXPORT).exists())
 
     def test_google_drive_export_is_scoped_to_user_practice(self):
         user, _practice, _therapist, _client = self.create_practice_user()
@@ -313,7 +309,7 @@ class ClientDocumentViewTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_google_drive_export_restores_file_deleted_from_drive(self):
+    def test_google_drive_export_refusal_preserves_existing_external_metadata(self):
         user, practice, _therapist, client = self.create_practice_user()
         ExternalIntegration.objects.create(
             practice=practice,
@@ -343,9 +339,8 @@ class ClientDocumentViewTests(TestCase):
             ]
             response = self.client.post(reverse("documents:google_drive_export", args=[document.pk]))
 
-        self.assertRedirects(response, reverse("documents:list"))
+        self.assertEqual(response.status_code, 403)
+        drive_request.assert_not_called()
         document.refresh_from_db()
-        self.assertEqual(document.external_file_id, "replacement-drive-file")
+        self.assertEqual(document.external_file_id, "deleted-drive-file")
         self.assertEqual(document.external_sync_status, ClientDocument.SyncStatus.SYNCED)
-        self.assertEqual(drive_request.call_args_list[0].kwargs["method"], "PATCH")
-        self.assertEqual(drive_request.call_args_list[1].kwargs["method"], "POST")

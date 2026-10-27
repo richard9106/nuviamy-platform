@@ -44,7 +44,7 @@ class IntegrationSettingsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Connect Google")
-        self.assertContains(response, "Gmail: send email")
+        self.assertNotContains(response, "Gmail: send email")
         self.assertContains(response, "Google Calendar sync")
         self.assertContains(response, "Dropbox")
 
@@ -76,7 +76,7 @@ class IntegrationSettingsTests(TestCase):
         self.assertContains(response, 'data-row-actions-menu')
         self.assertContains(response, "Open Google workspace")
         self.assertContains(response, "Disconnect Google")
-        self.assertContains(response, 'data-confirm-message="Disconnect Google Workspace? Calendar and email syncing will stop."')
+        self.assertContains(response, 'data-confirm-message="Disconnect Google Calendar? Calendar syncing will stop."')
 
     @override_settings(STRIPE_SECRET_KEY="stripe-secret-placeholder")
     @patch("apps.practices.views.stripe.AccountLink.create")
@@ -128,33 +128,29 @@ class IntegrationSettingsTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertIn("accounts.google.com", response.url)
-        self.assertIn("gmail.send", response.url)
+        self.assertNotIn("gmail.send", response.url)
         self.assertIn("calendar.events", response.url)
         requested_scopes = parse_qs(urlsplit(response.url).query)["scope"][0].split()
         self.assertEqual(set(requested_scopes), {
-            "openid", "email",
-            "https://www.googleapis.com/auth/gmail.send",
-            "https://www.googleapis.com/auth/calendar.events",
+            "openid", "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/calendar.events.owned",
         })
         integration = ExternalIntegration.objects.get()
         self.assertEqual(integration.practice, practice)
         self.assertEqual(integration.provider, ExternalIntegration.Provider.GOOGLE)
-        self.assertTrue(integration.send_email_enabled)
+        self.assertFalse(integration.send_email_enabled)
         self.assertTrue(integration.calendar_enabled)
-        self.assertIn("https://www.googleapis.com/auth/gmail.send", integration.enabled_scopes)
+        self.assertEqual(integration.enabled_scopes, ["https://www.googleapis.com/auth/calendar.events.owned"])
 
     @override_settings(GOOGLE_OAUTH_CLIENT_ID="client-id", GOOGLE_OAUTH_CLIENT_SECRET="client-secret")
-    def test_owned_scope_is_limited_to_demo_practice(self):
+    def test_owned_scope_is_used_for_every_practice_without_demo_configuration(self):
         user, practice = self.create_practice_user()
         self.client.force_login(user)
-        for allowed, suffix in [({str(practice.pk)}, "calendar.events.owned"), (set(), "calendar.events"), ({"other"}, "calendar.events")]:
-            with self.subTest(allowed=allowed), self.settings(GOOGLE_CALENDAR_OWNED_SCOPE_PRACTICE_IDS=allowed):
-                response = self.client.post(reverse("practice_settings:google_connect"), {"calendar_enabled": "on"})
-                self.assertEqual(response.status_code, 302)
-                scopes = parse_qs(urlsplit(response.url).query)["scope"][0].split()
-                self.assertEqual(set(scopes), {"openid", "email", f"https://www.googleapis.com/auth/{suffix}"})
-                self.assertEqual(parse_qs(urlsplit(response.url).query)["include_granted_scopes"],
-                                 ["false" if suffix.endswith(".owned") else "true"])
+        response = self.client.post(reverse("practice_settings:google_connect"), {"calendar_enabled": "on"})
+        self.assertEqual(response.status_code, 302)
+        query = parse_qs(urlsplit(response.url).query)
+        self.assertEqual(set(query['scope'][0].split()), {'openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/calendar.events.owned'})
+        self.assertEqual(query['include_granted_scopes'], ['false'])
 
     @override_settings(GOOGLE_OAUTH_CLIENT_ID="client-id", GOOGLE_OAUTH_CLIENT_SECRET="client-secret", GOOGLE_OAUTH_REDIRECT_URI="https://example.com/settings/integrations/google/callback/")
     def test_google_callback_stores_tokens_and_account_email(self):
@@ -164,7 +160,7 @@ class IntegrationSettingsTests(TestCase):
             practice=practice,
             provider=ExternalIntegration.Provider.GOOGLE,
             oauth_state="state-123",
-            enabled_scopes=["https://www.googleapis.com/auth/gmail.send"],
+            enabled_scopes=["https://www.googleapis.com/auth/calendar.events.owned"],
         )
         session = self.client.session
         session["google_oauth_state"] = "state-123"
@@ -176,7 +172,7 @@ class IntegrationSettingsTests(TestCase):
                 "access_token": "access-token",
                 "refresh_token": "refresh-token",
                 "expires_in": 3600,
-                "scope": "openid email https://www.googleapis.com/auth/gmail.send",
+                "scope": "openid email https://www.googleapis.com/auth/calendar.events.owned",
             }
             fetch_email.return_value = "clinic@example.com"
             response = self.client.get(reverse("practice_settings:google_callback"), {"state": "state-123", "code": "code-123"})
@@ -195,7 +191,7 @@ class IntegrationSettingsTests(TestCase):
         integration = ExternalIntegration.objects.create(
             practice=practice, provider=ExternalIntegration.Provider.GOOGLE,
             oauth_state="partial-consent", calendar_enabled=True,
-            enabled_scopes=["https://www.googleapis.com/auth/calendar.events"],
+            enabled_scopes=["https://www.googleapis.com/auth/calendar.events.owned"],
         )
         session = self.client.session
         session["google_oauth_state"] = "partial-consent"
@@ -277,7 +273,7 @@ class IntegrationSettingsTests(TestCase):
         self.assertFalse(integration.read_email_enabled)
         self.assertTrue(integration.file_storage_enabled)
 
-    def test_google_workspace_shows_mocked_gmail_and_calendar_data(self):
+    def test_google_workspace_only_fetches_calendar_even_for_legacy_flags(self):
         user, practice = self.create_practice_user()
         ExternalIntegration.objects.create(
             practice=practice,
@@ -290,16 +286,17 @@ class IntegrationSettingsTests(TestCase):
         )
         self.client.force_login(user)
 
-        with patch("apps.practices.views.list_gmail_messages") as gmail, patch("apps.practices.views.list_calendar_events") as calendar:
+        with patch("apps.practices.google_oauth.list_gmail_messages") as gmail, patch("apps.practices.views.list_calendar_events") as calendar:
             gmail.return_value = [{"subject": "Client email", "from": "client@example.com", "date": "Today", "snippet": "Hello"}]
             calendar.return_value = [{"summary": "Therapy session", "start": "2026-09-24T10:00:00", "end": "2026-09-24T10:50:00"}]
             response = self.client.get(reverse("practice_settings:google_workspace"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Client email")
+        self.assertNotContains(response, "Client email")
+        gmail.assert_not_called()
         self.assertContains(response, "Therapy session")
 
-    def test_google_workspace_send_email_uses_connected_account(self):
+    def test_google_workspace_send_email_rejects_legacy_send_capability(self):
         user, practice = self.create_practice_user()
         ExternalIntegration.objects.create(
             practice=practice,
@@ -311,18 +308,15 @@ class IntegrationSettingsTests(TestCase):
         )
         self.client.force_login(user)
 
-        with patch("apps.practices.views.send_gmail_message") as send_email:
+        with patch("apps.practices.google_oauth.send_gmail_message") as send_email:
             response = self.client.post(reverse("practice_settings:gmail_send"), {
                 "to_email": "client@example.com",
                 "subject": "Appointment reminder",
                 "body": "See you tomorrow.",
             })
 
-        self.assertRedirects(response, reverse("practice_settings:google_workspace"))
-        send_email.assert_called_once()
-        args = send_email.call_args.args
-        self.assertEqual(args[1], "client@example.com")
-        self.assertEqual(args[2], "Appointment reminder")
+        self.assertEqual(response.status_code, 403)
+        send_email.assert_not_called()
 
     def test_google_workspace_send_email_requires_send_scope(self):
         user, practice = self.create_practice_user()
@@ -368,3 +362,34 @@ class IntegrationSettingsTests(TestCase):
         integration.refresh_from_db()
         self.assertEqual(integration.access_token, "access-token")
         self.assertEqual(integration.refresh_token, "refresh-token")
+
+    def test_callback_rejects_unapproved_pending_request_before_code_exchange(self):
+        user, practice = self.create_practice_user()
+        self.client.force_login(user)
+        integration = ExternalIntegration.objects.create(practice=practice, provider='google', oauth_state='old-state',
+            enabled_scopes=['https://www.googleapis.com/auth/gmail.send'])
+        session = self.client.session
+        session['google_oauth_state'] = 'old-state'; session['google_oauth_integration_id'] = integration.pk; session.save()
+        with patch('apps.practices.views.exchange_google_code') as exchange:
+            response = self.client.get(reverse('practice_settings:google_callback'), {'state':'old-state','code':'test-code'})
+        self.assertEqual(response.status_code, 403)
+        exchange.assert_not_called()
+
+    def test_callback_does_not_save_broader_grants_or_fetch_account_data(self):
+        user, practice = self.create_practice_user()
+        self.client.force_login(user)
+        integration = ExternalIntegration.objects.create(practice=practice, provider='google', oauth_state='state',
+            calendar_enabled=True, enabled_scopes=['https://www.googleapis.com/auth/calendar.events.owned'])
+        session = self.client.session
+        session['google_oauth_state'] = 'state'; session['google_oauth_integration_id'] = integration.pk; session.save()
+        with patch('apps.practices.views.exchange_google_code', return_value={
+                'access_token':'not-to-store', 'refresh_token':'not-to-store',
+                'scope':'openid email https://www.googleapis.com/auth/calendar.events.owned https://www.googleapis.com/auth/gmail.send'}), \
+                patch('apps.practices.views.fetch_google_account_email') as account:
+            response = self.client.get(reverse('practice_settings:google_callback'), {'state':'state','code':'test-code'})
+        self.assertRedirects(response, reverse('practice_settings:integrations'))
+        account.assert_not_called()
+        integration.refresh_from_db()
+        self.assertEqual(integration.status, 'needs_reauth')
+        self.assertEqual(integration.access_token, '')
+        self.assertEqual(integration.refresh_token, '')

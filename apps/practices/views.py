@@ -16,16 +16,15 @@ from apps.accounts.access import ClientPortalRedirectMixin, get_practice_for_use
 from apps.accounts.models import UserProfile
 from apps.audit.models import AuditLog
 from apps.audit.utils import log_audit_event
-from .forms import DropboxIntegrationForm, GmailSendForm, GoogleOAuthSelectionForm
+from .forms import DropboxIntegrationForm, GoogleOAuthSelectionForm
 from .google_oauth import (
     build_google_authorization_url,
     exchange_google_code,
     fetch_google_account_email,
     list_calendar_events,
-    list_gmail_messages,
-    send_gmail_message,
     token_expiry_from_response,
 )
+from .google_policy import CALENDAR_SCOPE, grants_are_approved, require_approved_capabilities
 from .models import ExternalIntegration
 
 logger = logging.getLogger(__name__)
@@ -175,21 +174,28 @@ class GoogleOAuthCallbackView(PracticeContextMixin, View):
         if integration.oauth_state != state:
             raise PermissionDenied('Invalid Google OAuth state.')
 
+        require_approved_capabilities(integration.enabled_scopes)
         token_response = exchange_google_code(request, code)
-        access_token = token_response.get('access_token', '')
-        integration.access_token = access_token
-        integration.refresh_token = token_response.get('refresh_token', integration.refresh_token)
-        integration.granted_scopes = token_response.get('scope', '').split()
-        integration.token_expires_at = token_expiry_from_response(token_response)
-        integration.account_email = fetch_google_account_email(access_token) if access_token else ''
-        missing_scopes = set(integration.enabled_scopes) - set(integration.granted_scopes)
-        integration.status = (
-            ExternalIntegration.Status.NEEDS_REAUTH if missing_scopes
-            else ExternalIntegration.Status.CONNECTED
-        )
+        grants = token_response.get('scope', '').split()
+        missing_scopes = not grants_are_approved(grants) or not token_response.get('access_token')
         if missing_scopes:
-            messages.warning(request, 'Google did not grant all selected permissions. Reconnect Google and allow the selected services to enable synchronization.')
-        integration.connected_at = timezone.now()
+            integration.disconnect()
+            integration.status = ExternalIntegration.Status.NEEDS_REAUTH
+            integration.calendar_enabled = True
+            integration.enabled_scopes = [CALENDAR_SCOPE]
+            messages.warning(request, 'Google did not grant the approved Calendar permissions. Reconnect Google Calendar to continue.')
+        else:
+            access_token = token_response.get('access_token', '')
+            integration.access_token = access_token
+            integration.refresh_token = token_response.get('refresh_token', integration.refresh_token if grants_are_approved(integration.granted_scopes) else '')
+            integration.granted_scopes = grants
+            integration.token_expires_at = token_expiry_from_response(token_response)
+            integration.account_email = fetch_google_account_email(access_token) if access_token else ''
+            integration.status = ExternalIntegration.Status.CONNECTED
+            integration.connected_at = timezone.now()
+        integration.send_email_enabled = False
+        integration.read_email_enabled = False
+        integration.file_storage_enabled = False
         integration.oauth_state = ''
         integration.full_clean()
         integration.save()
@@ -261,7 +267,6 @@ class GoogleWorkspaceView(PracticeContextMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         integration = self.get_integration()
         context['google_integration'] = integration
-        context['send_form'] = kwargs.get('send_form') or GmailSendForm()
         context['gmail_messages'] = []
         context['calendar_events'] = []
         context['google_error'] = ''
@@ -269,8 +274,6 @@ class GoogleWorkspaceView(PracticeContextMixin, TemplateView):
             context['google_error'] = 'Connect Google first.'
             return context
         try:
-            if integration.read_email_enabled:
-                context['gmail_messages'] = list_gmail_messages(integration)
             if integration.calendar_enabled:
                 context['calendar_events'] = list_calendar_events(integration)
         except Exception as error:
@@ -280,31 +283,4 @@ class GoogleWorkspaceView(PracticeContextMixin, TemplateView):
 
 class GmailSendView(PracticeContextMixin, View):
     def post(self, request):
-        practice = self.get_practice()
-        integration = ExternalIntegration.objects.filter(
-            practice=practice,
-            provider=ExternalIntegration.Provider.GOOGLE,
-            status=ExternalIntegration.Status.CONNECTED,
-            send_email_enabled=True,
-        ).first()
-        if not integration:
-            raise PermissionDenied('Google Gmail send is not connected.')
-        form = GmailSendForm(request.POST)
-        if form.is_valid():
-            send_gmail_message(
-                integration,
-                form.cleaned_data['to_email'],
-                form.cleaned_data['subject'],
-                form.cleaned_data['body'],
-            )
-            log_audit_event(
-                request,
-                AuditLog.Action.CREATE,
-                'google.GmailMessage',
-                practice=practice,
-                metadata={'to_email': form.cleaned_data['to_email'], 'subject': form.cleaned_data['subject']},
-            )
-            return redirect('practice_settings:google_workspace')
-        view = GoogleWorkspaceView()
-        view.request = request
-        return view.render_to_response(view.get_context_data(send_form=form), status=400)
+        raise PermissionDenied('Gmail sending is not available. Connect Google Calendar in integrations.')

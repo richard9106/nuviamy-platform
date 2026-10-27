@@ -22,6 +22,9 @@ PostgreSQL privileges were observed. Scheduled backup and Certbot last observed
 service results were successful, without repeating restoration or alert delivery.
 AWS SSO was expired; the application role cannot inspect bucket policies. Historical
 October 20 infrastructure evidence is preserved, not represented as a fresh check.
+The supplied AWS BAA was reviewed privately for logging, retention and encryption
+obligations. Its text is not committed, and current AWS audit-log configuration is
+not asserted without administrative evidence.
 
 ## Changes
 

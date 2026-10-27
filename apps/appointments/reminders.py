@@ -57,9 +57,10 @@ def send_appointment_reminder(appointment):
         appointment.reminder_error = ''
         appointment.save(update_fields=['reminder_status', 'reminder_sent_at', 'reminder_error', 'updated_at'])
         return True
-    except Exception as error:
+    except Exception:
         appointment.reminder_status = Appointment.ReminderStatus.FAILED
-        appointment.reminder_error = str(error)
+        # Never persist raw provider errors alongside patient records.
+        appointment.reminder_error = 'Reminder delivery failed. Check the connection or contact support.'
         appointment.save(update_fields=['reminder_status', 'reminder_error', 'updated_at'])
         return False
 

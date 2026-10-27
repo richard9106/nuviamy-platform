@@ -184,6 +184,8 @@ Older audits and status documents describe their review date. Recheck their find
 
 ## Documentation map
 
+- [Current privacy/security evidence and remaining closure actions — October 27](docs/compliance/closure-2026-10-27.md). Richard confirmed as security/privacy lead; current runtime observed read-only. Includes the `security_readiness` command; no full HIPAA approval or completed training/pentest is asserted.
+
 - [AWS production cutover and successful deployment — October 20](docs/validation/aws-cutover-2026-10-20.md)
 - [AWS foundation and infrastructure controls](docs/validation/aws-foundation-2026-10-20.md)
 - [AWS isolated rehearsal and restore proof](docs/validation/aws-rehearsal-2026-10-20.md)

@@ -276,8 +276,9 @@ class GoogleWorkspaceView(PracticeContextMixin, TemplateView):
         try:
             if integration.calendar_enabled:
                 context['calendar_events'] = list_calendar_events(integration)
-        except Exception as error:
-            context['google_error'] = str(error)
+        except Exception:
+            # Provider exceptions may contain request URLs, tokens or calendar data.
+            context['google_error'] = 'Calendar could not be loaded. Try again or reconnect Google in integrations.'
         return context
 
 

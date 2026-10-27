@@ -1,4 +1,15 @@
-# Expediente de preparación clínica — 15 octubre 2026
+# Expediente de privacidad y seguridad — estado actual
+
+Actualización 27 octubre 2026: consultar el [expediente de cierre](closure-2026-10-27.md)
+para el origen AWS actual, la aprobación OAuth, el responsable confirmado, los
+controles observados y los pendientes reales. Estado: **cierre parcial; no se declara
+cumplimiento HIPAA completo**. La prueba comercial de 30 días y la oferta estándar
+DPA/BAA/anexo ya están implementadas; no se confunden con aprobación clínica.
+
+La evidencia anterior se conserva a continuación con su fecha. Contabo/R2 ya no son
+el origen de producción: son copias históricas pendientes de gestión deliberada.
+
+## Histórico — 15 octubre 2026
 
 Estado: **preparación en curso; no aprobación para datos reales de pacientes**.
 Esta es una evaluación interna del código y de evidencias operativas disponibles,

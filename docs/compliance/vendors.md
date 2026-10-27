@@ -1,4 +1,17 @@
-# Inventario inicial de proveedores y contratos
+# Proveedores: estado actual e inventario histórico
+
+**Actualización 27/10/2026:** el origen de producción es AWS EC2/PostgreSQL/S3 en
+us-east-1 desde el corte del 20/10. El titular confirmó BAA AWS y aportó su texto;
+la aceptación específica en Artifact requiere evidencia privada. Gmail/Drive están
+deshabilitados y Calendar limitado a los permisos aprobados y datos minimizados.
+El correo SMTP Brevo sigue activo para acceso/avisos; no queda contractualmente
+aprobado para todo uso clínico por estar cifrado. Véanse los flujos y cierres P01–P04
+del [expediente actual](closure-2026-10-27.md#flujos-externos-y-límite-operativo).
+
+La tabla siguiente describe el **15/10**, no el alojamiento actual. No reactivar ni
+borrar el origen antiguo o R2 sin un plan de copias y disposición autorizado.
+
+## Inventario histórico
 
 15 octubre 2026. Las funciones y garantías se revisan por producto, cuenta y región;
 un logotipo o un DPA no acredita por sí mismo un BAA ni autoriza datos clínicos.

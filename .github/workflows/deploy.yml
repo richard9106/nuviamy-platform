@@ -55,7 +55,7 @@ jobs:
         run: |
           python -m venv /tmp/nuviamy-cfn-validation
           /tmp/nuviamy-cfn-validation/bin/pip install cfn-lint==1.57.2
-          /tmp/nuviamy-cfn-validation/bin/cfn-lint ops/aws/foundation.json ops/aws/deployment.json
+          /tmp/nuviamy-cfn-validation/bin/cfn-lint ops/aws/foundation.json ops/aws/deployment.json ops/aws/audit-logging.json
       - name: Check AWS deployment command
         run: python -m unittest ops.aws.test_github_deploy
       - name: Check cookie preference behavior

@@ -19,6 +19,9 @@ class GoogleOAuthSelectionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.practice = practice
         self.instance.provider = ExternalIntegration.Provider.GOOGLE
+        if not self.is_bound:
+            # This checkbox starts a new authorization; it does not change an existing connection.
+            self.initial['calendar_enabled'] = False
 
     def clean(self):
         cleaned_data = super().clean()

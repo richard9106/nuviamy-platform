@@ -58,6 +58,8 @@ jobs:
           /tmp/nuviamy-cfn-validation/bin/cfn-lint ops/aws/foundation.json ops/aws/deployment.json ops/aws/audit-logging.json
       - name: Check AWS deployment command
         run: python -m unittest ops.aws.test_github_deploy
+      - name: Check access log privacy
+        run: python -m unittest ops.test_log_privacy ops.test_s3_recovery ops.test_operational_health
       - name: Check cookie preference behavior
         run: node ops/check_cookie_choices.cjs
       - name: Run deployment checks

@@ -17,7 +17,9 @@ from .models import AccountSecurity
 
 
 def requires_mfa(user):
-    return settings.MFA_REQUIRED and (user.is_staff or user.is_superuser or not is_client_user(user))
+    privileged = user.is_staff or user.is_superuser
+    return ((settings.MFA_REQUIRED and (privileged or not is_client_user(user)))
+            or (settings.MFA_PRIVILEGED_REQUIRED and privileged))
 
 
 def security_state(user):

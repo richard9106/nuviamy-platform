@@ -215,6 +215,9 @@ if DJANGO_ENVIRONMENT == 'production':
 
 # MFA is deferred during pre-client development; enable before clinical onboarding.
 MFA_REQUIRED = os.getenv('DJANGO_MFA_REQUIRED', 'false').strip().lower() == 'true'
+# Operators must enroll an authenticator even when global clinician MFA is off.
+MFA_PRIVILEGED_REQUIRED = os.getenv('DJANGO_MFA_PRIVILEGED_REQUIRED',
+    'true' if DJANGO_ENVIRONMENT == 'production' else 'false').strip().lower() == 'true'
 SECURITY_IDLE_TIMEOUT = 60 * 60
 SECURITY_ABSOLUTE_TIMEOUT = 8 * 60 * 60
 SECURITY_CHALLENGE_TIMEOUT = 10 * 60

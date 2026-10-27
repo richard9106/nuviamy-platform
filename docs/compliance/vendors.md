@@ -1,12 +1,14 @@
 # Proveedores: estado actual e inventario histórico
 
 **Actualización 27/10/2026:** el origen de producción es AWS EC2/PostgreSQL/S3 en
-us-east-1 desde el corte del 20/10. El titular confirmó BAA AWS y aportó su texto;
-la aceptación específica en Artifact requiere evidencia privada. Gmail/Drive están
+us-east-1 desde el corte del 20/10. BAA AWS activo desde el 20/10 comprobado en Artifact;
+la evidencia de aceptación se conserva en privado. Gmail/Drive están
 deshabilitados y Calendar limitado a los permisos aprobados y datos minimizados.
 El correo SMTP Brevo sigue activo para acceso/avisos; no queda contractualmente
 aprobado para todo uso clínico por estar cifrado. Véanse los flujos y cierres P01–P04
 del [expediente actual](closure-2026-10-27.md#flujos-externos-y-límite-operativo).
+La [matriz de decisiones del 27/10](vendor-decisions-2026-10-27.md) añade la alternativa
+SES, su estado pendiente de verificación y el alcance autorizado de avisos operativos.
 
 La tabla siguiente describe el **15/10**, no el alojamiento actual. No reactivar ni
 borrar el origen antiguo o R2 sin un plan de copias y disposición autorizado.

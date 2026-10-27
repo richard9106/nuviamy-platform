@@ -40,7 +40,8 @@ def security_readiness_report():
     privileged = users.filter(is_staff=True) | users.filter(is_superuser=True)
     privileged_count = privileged.count()
     enrolled = AccountSecurity.objects.filter(user__in=privileged, confirmed=True).count()
-    add('privileged_totp', 'pass' if privileged_count and enrolled == privileged_count else 'review',
+    add('privileged_totp', 'pass' if privileged_count and enrolled == privileged_count
+        and (settings.MFA_REQUIRED or settings.MFA_PRIVILEGED_REQUIRED) else 'review',
         'Review privileged TOTP enrollment and offline recovery; email verification is a separate control.')
     add('privileged_access', 'review', 'Review each active privileged account and document its purpose.')
     counts = {'active_users': users.count(), 'active_privileged_users': privileged_count,

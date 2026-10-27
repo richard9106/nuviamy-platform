@@ -40,6 +40,15 @@ Less time on admin.</h1>
       <figure class="product-preview hero-product"><div class="preview-bar"><span class="preview-dots" aria-hidden="true">● ● ●</span><span>Your practice at a glance</span><span class="badge brand">Product preview</span></div><a href="#product-tour" aria-label="Explore the NuviaMy product tour"><img src="{% static 'marketing/product-overview.webp' %}" width="1265" height="712" alt="NuviaMy dashboard showing sessions, active clients and follow-up tasks in a fictional demo practice" fetchpriority="high"></a><figcaption>Actual NuviaMy interface · Fictional demonstration data</figcaption></figure>
     </section>
 
+    <aside class="security-highlights" aria-label="Infrastructure safeguards">
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg><span>Encrypted storage</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 15 6-6M7 14l-2 2a3.5 3.5 0 0 0 5 5l4-4a3.5 3.5 0 0 0 0-5M17 10l2-2a3.5 3.5 0 0 0-5-5l-4 4a3.5 3.5 0 0 0 0 5"/></svg><span>Secure connections</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg><span>AWS BAA in place</span></li>
+      </ul>
+      <a href="#security">About our safeguards <span aria-hidden="true">→</span></a>
+    </aside>
+
     {% include 'marketing/partials/product_tour.html' %}
 
     <section class="marketing-section feature-proof" id="features">
@@ -91,6 +100,7 @@ Less time on admin.</h1>
     <section class="marketing-section" id="security">
       <p class="eyebrow">Security-Minded Foundation</p>
       <h2>Designed with healthcare privacy patterns from the start.</h2>
+      <p>Production storage is encrypted at rest, and connections to NuviaMy use HTTPS. We have a Business Associate Addendum (BAA) with AWS for eligible infrastructure services. This agreement covers our AWS infrastructure; your practice’s obligations and other integrations require separate consideration.</p>
       <div class="marketing-grid two">
         <article><h3>A workspace for your practice</h3><p>Keep your team’s client records together in a practice-specific workspace, with access based on each person’s role.</p></article>
         <article><h3>Client-only portal access</h3><p>Clients have a separate portal for their appointments, forms, shared documents and invoices. Your team controls what is shared.</p></article>

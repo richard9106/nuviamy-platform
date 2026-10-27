@@ -1,0 +1,18 @@
+[Unit]
+Description=NuviaMy bounded backup and HTTPS health verification
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/apps/django-analytics-dashboard
+UMask=0077
+EnvironmentFile=-/home/deploy/.config/nuviamy-production/operational-health.env
+ExecStart=/usr/bin/python3 /home/deploy/.config/nuviamy-production/operational_health.py --app-dir /home/deploy/apps/django-analytics-dashboard --state /home/deploy/.config/nuviamy-production/operational-health.json --recipient ${OPERATOR_ALERT_RECIPIENT}
+TimeoutStartSec=180
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

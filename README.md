@@ -6,7 +6,7 @@ NuviaMy is a Django-based practice management SaaS for solo therapists and multi
 
 ## Current status
 
-Last documentation review: **October 20, 2026**. The application is commercially deployed on AWS, live subscription billing is enabled, and Google OAuth verification remains pending according to the operator. Recent releases include signed immutable addenda, email two-step sign-in, native S3 storage, AWS recovery validation and GitHub OIDC/SSM deployment.
+Last documentation review: **October 27, 2026**. The application is commercially deployed on AWS and live subscription billing is enabled. Google approved OAuth verification for project `nuviamy` and `calendar.events.owned` on October 27, 2026; production connections now request that Calendar permission for all practices. Recent releases include signed immutable addenda, email two-step sign-in, native S3 storage, AWS recovery validation and GitHub OIDC/SSM deployment.
 
 - Production at `nuviamy.com` runs on AWS EC2 in `us-east-1`, using Docker Compose, PostgreSQL, Gunicorn and host Nginx with HTTPS. Native S3 holds private documents and encrypted scheduled database backups in separate buckets. AWS is the sole active application origin; the former Contabo app and its timers are stopped.
 - Stripe mode follows the protected deployment credentials; the operator has authorized **live subscription billing**. Published pricing (excluding applicable taxes) is **USD 39 per active internal user/month** or **USD 421/user/year**.
@@ -82,7 +82,7 @@ See [Initial consultations](docs/initial-consultation.md).
 - **List and Agenda highlight past sessions without a signed note in orange**, using the scheduled end time regardless of appointment status. Text distinguishes Note missing from Signature pending; future and signed sessions are unflagged.
 - **Create note** and **Session details** open dialogs from List. Note creation loads on demand, fixes client/therapist/session, retains validation errors and proceeds to review after saving. Full-page links remain available without JavaScript.
 - Calendar availability supports date/range overrides, all-day or partial unavailability, repeated overrides, and review/edit/remove of individual changes. Weekly working hours remain the baseline fallback.
-- Google Calendar sync metadata and Gmail reminder delivery are supported. Session purpose appears in exports and Google event descriptions.
+- Google Calendar synchronization uses generic reserved-time blocks without client names, session purpose or clinical details. Gmail-based reminder delivery is unavailable pending separate scope approval.
 
 See [Session documentation and signatures](docs/session-list-and-signatures.md).
 
@@ -133,9 +133,9 @@ python manage.py issue_early_access_invitation SLOT EMAIL
 
 ### Documents, portal and integrations
 
-- Authorized client document upload, download, portal visibility and optional Google Drive export; local filesystem, Cloudflare R2 and native AWS S3 storage backends. Production uses native S3 with instance-role credentials; R2 is a legacy backend.
+- Authorized client document upload, download, portal visibility; Google Drive export is currently unavailable pending separate approval. Supported storage includes local filesystem, Cloudflare R2 and native AWS S3 storage backends. Production uses native S3 with instance-role credentials; R2 is a legacy backend.
 - Portal accounts are restricted to client-facing routes and activated through emailed setup links; legacy temporary passwords still require a change. Clients can view their sessions/documents, submit requests/forms, message the practice and pay eligible invoices.
-- Google OAuth supports Gmail, Calendar and Drive; tokens are encrypted through `FIELD_ENCRYPTION_KEY`. NuviaMy remains the source of truth.
+- Google OAuth is enabled for the primary Google Calendar using `calendar.events.owned`, plus `openid` and `userinfo.email` identity scopes. Gmail and Drive capabilities are unavailable pending separate approval; encrypted tokens use `FIELD_ENCRYPTION_KEY`. NuviaMy remains the source of truth.
 - Optional client/team photos, team invitations and granular therapist permissions are implemented.
 - Telehealth rooms are reserved for future provider integration; video appointment format is not an embedded telehealth service.
 
@@ -176,7 +176,7 @@ This is a checkpoint, not a new audit or a claim that every historical finding r
 ### Paid launch and clinical readiness
 
 - Finalize international taxes and tax-inclusive/exclusive price presentation, retention and provider agreements; published commercial conditions and separate versioned Checkout acceptance are implemented. SMTP, support forwarding and password reset have been verified with the operator.
-- Stripe live rollout is complete. Observe subsequent real payment/subscription delivery after the AWS migration; no new charge was created by the cutover checks. Complete Google OAuth verification in Google Console; identity scopes were reduced to `openid email`, with additional scopes selected by integration.
+- Stripe live rollout is complete. Observe subsequent real payment/subscription delivery after the AWS migration; no new charge was created by the cutover checks. Google Calendar OAuth verification was approved on October 27, 2026. See the [approved Calendar rollout and review-access cleanup](docs/operations/google-calendar-approval.md); adding Gmail, Drive or other permissions requires a separate review.
 - Confirm launch states, provider contracts/BAAs, risk assessment, retention/legal-hold policy, incident response, patient rights workflows and remaining continuity controls. AWS migration and an actual database recovery are already documented.
 - Complete clinical workflow validation and independent security review before using real patient data.
 

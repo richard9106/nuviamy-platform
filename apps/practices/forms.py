@@ -1,28 +1,16 @@
 from django import forms
-from django.conf import settings
 
 from .models import ExternalIntegration
+from .google_policy import CALENDAR_SCOPE
 
 
-GOOGLE_SCOPE_MAP = {
-    'send_email_enabled': 'https://www.googleapis.com/auth/gmail.send',
-    'read_email_enabled': 'https://www.googleapis.com/auth/gmail.readonly',
-    'calendar_enabled': 'https://www.googleapis.com/auth/calendar.events',
-    'file_storage_enabled': 'https://www.googleapis.com/auth/drive.file',
-}
+GOOGLE_SCOPE_MAP = {'calendar_enabled': CALENDAR_SCOPE}
 
 
 class GoogleOAuthSelectionForm(forms.ModelForm):
     class Meta:
         model = ExternalIntegration
-        fields = [
-            'send_email_enabled',
-            'read_email_enabled',
-            'calendar_enabled',
-            'file_storage_enabled',
-            'default_folder',
-            'notes',
-        ]
+        fields = ['calendar_enabled', 'notes']
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 3}),
         }
@@ -39,10 +27,16 @@ class GoogleOAuthSelectionForm(forms.ModelForm):
         return cleaned_data
 
     def get_enabled_scopes(self):
-        scope_map = dict(GOOGLE_SCOPE_MAP)
-        if self.practice and str(self.practice.pk) in settings.GOOGLE_CALENDAR_OWNED_SCOPE_PRACTICE_IDS:
-            scope_map['calendar_enabled'] = 'https://www.googleapis.com/auth/calendar.events.owned'
-        return [scope for field, scope in scope_map.items() if self.cleaned_data.get(field)]
+        return [CALENDAR_SCOPE] if self.cleaned_data.get('calendar_enabled') else []
+
+    def save(self, commit=True):
+        integration = super().save(commit=False)
+        integration.send_email_enabled = False
+        integration.read_email_enabled = False
+        integration.file_storage_enabled = False
+        if commit:
+            integration.save()
+        return integration
 
 
 class DropboxIntegrationForm(forms.ModelForm):

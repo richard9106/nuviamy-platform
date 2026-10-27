@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.practices.google_oauth import google_api_request, refresh_google_access_token
 from apps.practices.models import ExternalIntegration
+from apps.practices.google_policy import require_approved_api_url
 
 from .models import ClientDocument
 
@@ -25,6 +26,7 @@ def get_drive_integration(practice):
 
 
 def drive_request(integration, url, method='GET', data=None, content_type='application/json'):
+    require_approved_api_url(url)
     access_token = refresh_google_access_token(integration)
     req = Request(url, data=data, method=method)
     req.add_header('Authorization', f'Bearer {access_token}')

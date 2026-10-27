@@ -6,9 +6,10 @@ from urllib.request import Request, urlopen
 
 from django.conf import settings
 from django.utils import timezone
+from .google_policy import require_approved_capabilities, require_approved_api_url
 
 
-GOOGLE_BASE_SCOPES = ['openid', 'email']
+GOOGLE_BASE_SCOPES = ['openid', 'https://www.googleapis.com/auth/userinfo.email']
 GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo'
@@ -24,6 +25,7 @@ def get_google_redirect_uri(request):
 
 
 def build_google_authorization_url(request, scopes, state):
+    require_approved_capabilities(scopes)
     query = urlencode({
         'client_id': settings.GOOGLE_OAUTH_CLIENT_ID,
         'redirect_uri': get_google_redirect_uri(request),
@@ -32,10 +34,8 @@ def build_google_authorization_url(request, scopes, state):
         'access_type': 'offline',
         'prompt': 'consent',
         'state': state,
-        # Avoid combining a demo grant with previously granted, broader scopes.
-        'include_granted_scopes': (
-            'false' if 'https://www.googleapis.com/auth/calendar.events.owned' in scopes else 'true'
-        ),
+        # Do not inherit older Gmail, Drive or broader Calendar grants.
+        'include_granted_scopes': 'false',
     })
     return f'{GOOGLE_AUTH_URL}?{query}'
 
@@ -93,6 +93,7 @@ def refresh_google_access_token(integration):
 
 
 def google_api_request(integration, url, method='GET', data=None):
+    require_approved_api_url(url)
     access_token = refresh_google_access_token(integration)
     body = json.dumps(data).encode() if data is not None else None
     req = Request(url, data=body, method=method)

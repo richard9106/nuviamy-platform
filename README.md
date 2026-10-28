@@ -338,3 +338,7 @@ Support message bodies and contact fields are encrypted in the application datab
 email carries generic notices only. Platform review is restricted to audited superuser
 access. See the [support and patient-checkout boundaries](docs/compliance/private-support-and-payments-2026-10-28.md),
 including release steps and remaining contractual/operational limits.
+
+The [data-return and rights workflow](docs/compliance/data-return-and-rights-2026-10-28.md)
+describes scoped ZIP inventories, checksums and fail-closed handling of unavailable
+files, plus the clinical retention and disposal decisions that remain case-specific.

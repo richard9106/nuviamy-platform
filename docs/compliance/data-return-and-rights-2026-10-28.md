@@ -4,6 +4,8 @@ Estado: procedimiento y correcciones preparados; no acredita cierre integral de
 retención ni autorización para eliminar producción. No se han borrado expedientes,
 objetos, versiones ni copias reales. Las reglas definitivas de una consulta piloto
 requieren país/estado/comunidad, profesión, edades y tipos documentales confirmados.
+Se prepara una [plantilla de consulta piloto](templates/practice-retention-instructions.md)
+para completar con la primera consulta, sin inventar un establecimiento ni sus plazos.
 
 ## Flujo operativo
 

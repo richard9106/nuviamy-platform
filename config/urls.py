@@ -26,6 +26,7 @@ from apps.dashboard.views import (
     TherapySchedulingPageView,
 )
 from apps.billing.urls import settings_patterns
+from apps.dashboard.support_views import SupportTicketListView, SupportTicketDetailView
 from apps.accounts.views import ConfirmLogoutView, ForcePasswordChangeView, RateLimitedPasswordResetView, RoleAwareLoginView
 from apps.portal.settings_urls import urlpatterns as portal_settings_patterns
 from apps.portal.intake_urls import urlpatterns as intake_patterns
@@ -67,6 +68,8 @@ urlpatterns = [
     path('pricing/', PricingPageView.as_view(), name='pricing'),
     path('help/', HelpCenterView.as_view(), name='help_center'),
     path('help/contact/', SupportContactView.as_view(), name='support_contact'),
+    path('help/requests/', SupportTicketListView.as_view(), name='support_requests'),
+    path('help/requests/<uuid:pk>/', SupportTicketDetailView.as_view(), name='support_request_detail'),
     path('cookie-policy/', TemplateView.as_view(template_name='marketing/cookie_policy.html'), name='cookie_policy'),
     path('privacy/', TemplateView.as_view(template_name='marketing/privacy_policy.html'), name='privacy_policy'),
     path('terms/', TemplateView.as_view(template_name='marketing/terms.html'), name='terms_of_service'),

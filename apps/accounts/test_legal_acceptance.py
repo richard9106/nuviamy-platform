@@ -64,5 +64,7 @@ class GooglePrivacyNoticeTests(TestCase):
                      'Google Calendar', 'Google Drive', 'Limited Use requirements',
                      'non-personalized', 'Google data deletion',
                      'does not itself revoke', 'myaccount.google.com/connections',
-                     'Before accessing Google user data for a new purpose'):
+                     'Before accessing Google user data for a new purpose',
+                     'Email notifications contain only a generic notice',
+                     'Patient checkout sends the amount', 'Gmail reading:</strong> disabled'):
             self.assertContains(response, text)

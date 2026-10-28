@@ -241,7 +241,7 @@ class ClientInvoicePaymentView(ClientPortalAccessMixin, View):
                 line_items=[{
                     'price_data': {
                         'currency': 'usd',
-                        'product_data': {'name': f'Invoice {invoice.invoice_number}'},
+                        'product_data': {'name': 'Practice invoice payment'},
                          'unit_amount': int(invoice.client_balance_due * 100),
                     },
                     'quantity': 1,

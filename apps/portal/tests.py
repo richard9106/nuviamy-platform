@@ -85,7 +85,7 @@ class ClientPortalViewTests(TestCase):
         invoice = Invoice.objects.create(
             practice=practice,
             client=client,
-            invoice_number="INV-PAY-001",
+            invoice_number="Private patient reference",
             amount=Decimal("120.00"),
             status=Invoice.Status.SENT,
         )
@@ -98,6 +98,8 @@ class ClientPortalViewTests(TestCase):
         self.assertEqual(response.url, "https://checkout.stripe.test/invoice")
         kwargs = mock_create.call_args.kwargs
         self.assertEqual(kwargs["mode"], "payment")
+        self.assertEqual(kwargs["line_items"][0]["price_data"]["product_data"], {"name": "Practice invoice payment"})
+        self.assertNotIn(invoice.invoice_number, str(kwargs))
         self.assertEqual(kwargs["line_items"][0]["price_data"]["unit_amount"], 12000)
         self.assertEqual(kwargs["customer_email"], "maya@example.com")
         self.assertEqual(kwargs["payment_intent_data"]["transfer_data"]["destination"], "acct_practice")

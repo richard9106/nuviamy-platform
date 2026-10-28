@@ -377,19 +377,23 @@ class DashboardTests(TestCase):
         self.assertEqual(response.json(), {'status': 'ok'})
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend', SUPPORT_EMAIL='support@example.com')
+    @override_settings(FIELD_ENCRYPTION_KEY='MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=')
     def test_support_contact_sends_email(self):
-        response = self.client.post(reverse('support_contact'), {
-            'name': 'Jane Smith',
-            'email': 'jane@example.com',
-            'topic': 'setup',
-            'message': 'I need help connecting Gmail.',
-            'website': '',
-        })
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse('support_contact'), {
+                'name': 'Jane Smith',
+                'email': 'jane@example.com',
+                'topic': 'setup',
+                'message': 'I need help connecting Gmail.',
+                'website': '',
+            })
 
         self.assertRedirects(response, '/help/contact/?sent=1')
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ['support@example.com'])
-        self.assertIn('connecting Gmail', mail.outbox[0].body)
+        self.assertNotIn('connecting Gmail', mail.outbox[0].body)
+        from apps.dashboard.models import SupportTicket
+        self.assertEqual(SupportTicket.objects.get().messages.get().body, 'I need help connecting Gmail.')
 
     def test_support_contact_is_rate_limited(self):
         for _ in range(5):

@@ -3,6 +3,7 @@ from datetime import datetime, timezone as dt_timezone
 
 import stripe
 from django.conf import settings
+from django.db import transaction as db_transaction
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -333,6 +334,9 @@ class TeamMemberActionView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         practice = get_practice_for_user(request.user)
         target = get_object_or_404(UserProfile.objects.select_related("user"), pk=kwargs["pk"], practice=practice)
+        if target.user.is_staff or target.user.is_superuser:
+            request._audit_denied_reason = 'platform_account_protected'
+            raise PermissionDenied('Platform accounts are managed through secured platform administration.')
         action = request.POST.get("action")
         if action == "delete":
             if target.role == UserProfile.Role.OWNER:
@@ -345,8 +349,12 @@ class TeamMemberActionView(LoginRequiredMixin, View):
                 messages.error(request, "Deactivate the team member before deleting the account permanently.")
                 return redirect("team_management")
             member_name = target.user.get_full_name() or target.user.email
+            target_user_id = target.user_id
             try:
-                target.user.delete()
+                with db_transaction.atomic():
+                    target.user.delete()
+                    log_audit_event(request, AuditLog.Action.DELETE, 'auth.User', target_user_id,
+                        practice=practice, metadata={'event': 'team_member_deleted'})
             except ProtectedError:
                 messages.error(request, "This member has related records and cannot be deleted. Keep the account deactivated instead.")
                 return redirect("team_management")
@@ -363,7 +371,10 @@ class TeamMemberActionView(LoginRequiredMixin, View):
                 }
                 for resource_key, _resource_label in PERMISSION_RESOURCES
             }
-            target.save(update_fields=['permissions', 'updated_at'])
+            with db_transaction.atomic():
+                target.save(update_fields=['permissions', 'updated_at'])
+                log_audit_event(request, AuditLog.Action.UPDATE, 'accounts.UserProfile', target.pk,
+                    practice=practice, metadata={'event': 'team_permissions_updated', 'permissions': target.permissions})
             messages.success(request, f'Permissions updated for {target.user.get_full_name() or target.user.email}.')
             return redirect('team_management')
         if target.role == UserProfile.Role.OWNER and action == "deactivate":
@@ -375,8 +386,11 @@ class TeamMemberActionView(LoginRequiredMixin, View):
             messages.error(request, "You cannot deactivate your own account.")
             return redirect("team_management")
         if action == "deactivate":
-            target.user.is_active = False
-            target.user.save(update_fields=["is_active"])
+            with db_transaction.atomic():
+                target.user.is_active = False
+                target.user.save(update_fields=["is_active"])
+                log_audit_event(request, AuditLog.Action.UPDATE, 'auth.User', target.user_id,
+                    practice=practice, metadata={'event': 'team_member_deactivated'})
             messages.success(request, f"{target.user.get_full_name() or target.user.email} was deactivated.")
             if not sync_subscription_user_quantity(practice):
                 messages.warning(request, 'Stripe subscription quantity could not be updated. Please review billing in Stripe.')
@@ -393,6 +407,8 @@ class TeamMemberActionView(LoginRequiredMixin, View):
                     return redirect("team_management")
                 target.user.is_active = True
                 target.user.save(update_fields=["is_active"])
+                log_audit_event(request, AuditLog.Action.UPDATE, 'auth.User', target.user_id,
+                    practice=practice, metadata={'event': 'team_member_reactivated'})
             messages.success(request, f"{target.user.get_full_name() or target.user.email} was reactivated.")
             if not sync_subscription_user_quantity(practice):
                 messages.warning(request, 'Stripe subscription quantity could not be updated. Please review billing in Stripe.')
@@ -400,6 +416,8 @@ class TeamMemberActionView(LoginRequiredMixin, View):
             if target.user.has_usable_password():
                 messages.error(request, 'This account is already set up. They can use password recovery from the sign-in page.')
                 return redirect('team_management')
+            log_audit_event(request, AuditLog.Action.UPDATE, 'auth.User', target.user_id,
+                practice=practice, metadata={'event': 'team_invitation_requested'})
             try:
                 sent = send_account_access_email(request, target.user)
             except Exception:

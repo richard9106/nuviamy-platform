@@ -227,3 +227,44 @@ class HttpAuthorizationMatrix(TestCase):
                 response=self.client.post(reverse(name,args=[pk]),{},secure=True) if name=='portal:invoice_pay' else self.client.get(reverse(name,args=[pk]),secure=True)
                 self.assertIn(response.status_code,(403,404))
                 self.assertNotIn(b'OTHER-PATIENT-SENTINEL',response.content)
+
+    def test_practice_owner_cannot_manage_platform_accounts_in_the_same_practice(self):
+        for privileged_flag in ('is_staff','is_superuser'):
+            for action in ('deactivate','reactivate','delete','update_permissions','resend_invitation'):
+                with self.subTest(flag=privileged_flag,action=action):
+                    active=action not in {'reactivate','delete'}
+                    target=get_user_model().objects.create_user('platform-'+privileged_flag+'-'+action,
+                        email='synthetic-platform@example.invalid',is_active=active,**{privileged_flag:True})
+                    profile=UserProfile.objects.create(user=target,practice=self.practice,role='therapist',
+                        permissions={'clients':{'view':True}})
+                    response=self.client.post(reverse('team_member_action',args=[profile.pk]),{'action':action},secure=True)
+                    self.assertEqual(response.status_code,403)
+                    target.refresh_from_db();profile.refresh_from_db()
+                    self.assertEqual(target.is_active,active)
+                    self.assertEqual(profile.permissions,{'clients':{'view':True}})
+                    self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.DENIED,
+                        metadata__reason='platform_account_protected').exists())
+                    page=self.client.get(reverse('team_management'),secure=True)
+                    self.assertEqual(page.status_code,200)
+                    self.assertNotIn(('action="'+reverse('team_member_action',args=[profile.pk])+'"').encode(),page.content)
+
+    def test_regular_practice_admin_can_be_managed_and_changes_are_audited(self):
+        target=get_user_model().objects.create_user('regular-practice-admin',email='practice-admin@example.invalid')
+        profile=UserProfile.objects.create(user=target,practice=self.practice,role='admin')
+        url=reverse('team_member_action',args=[profile.pk])
+        for action,active,event in [('deactivate',False,'team_member_deactivated'),('reactivate',True,'team_member_reactivated')]:
+            response=self.client.post(url,{'action':action},secure=True)
+            self.assertEqual(response.status_code,302)
+            target.refresh_from_db();self.assertEqual(target.is_active,active)
+            self.assertTrue(AuditLog.objects.filter(object_id=str(target.pk),metadata__event=event).exists())
+        self.client.post(url,{'action':'deactivate'},secure=True)
+        target_id=target.pk
+        self.assertEqual(self.client.post(url,{'action':'delete'},secure=True).status_code,302)
+        self.assertFalse(get_user_model().objects.filter(pk=target_id).exists())
+        self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.DELETE,object_id=str(target_id),metadata__event='team_member_deleted').exists())
+        colleague=get_user_model().objects.create_user('regular-therapist-permissions')
+        permissions=UserProfile.objects.create(user=colleague,practice=self.practice,role='therapist')
+        self.assertEqual(self.client.post(reverse('team_member_action',args=[permissions.pk]),
+            {'action':'update_permissions','perm_clients_view':'on'},secure=True).status_code,302)
+        changed=AuditLog.objects.get(metadata__event='team_permissions_updated')
+        self.assertTrue(changed.metadata['permissions']['clients']['view'])

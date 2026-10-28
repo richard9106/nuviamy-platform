@@ -48,12 +48,25 @@ django.setup()
 from django.apps import apps
 from django.db import connection
 from apps.practices.fields import EncryptedTextField
+from apps.dashboard.fields import SupportEncryptedTextField
+from django.core.management import call_command
+from django.db.migrations.executor import MigrationExecutor
 from apps.clinical.models import SessionNote
-from ops.postgres_roles import GUARDS
+from ops.postgres_roles import GUARDS, verify_contract_guards
 with connection.cursor() as cursor:
     cursor.execute("SELECT tgname, tgenabled FROM pg_trigger WHERE tgname = ANY(%s)", [list(GUARDS)])
     guards = dict(cursor.fetchall())
     assert set(guards) == GUARDS and all(v == 'O' for v in guards.values()), 'Guard validation failed'
+# A valid older backup can precede the candidate release's migrations. Upgrade
+# only the disposable copy, after checking its baseline protections.
+executor = MigrationExecutor(connection)
+plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
+applied = [migration.app_label + '.' + migration.name for migration, backward in plan]
+assert not any(backward for _, backward in plan), 'Unexpected reverse migration'
+call_command('migrate', interactive=False, verbosity=0)
+connection.ensure_connection()
+contracts = verify_contract_guards(connection.connection)
+with connection.cursor() as cursor:
     cursor.execute('SELECT count(*) FROM django_migrations')
     migrations = cursor.fetchone()[0]
 counts, encrypted, signed = {}, 0, 0
@@ -61,7 +74,7 @@ for model in apps.get_models():
     if not model.__module__.startswith('apps.') or model._meta.proxy:
         continue
     counts[model._meta.label] = model.objects.count()
-    fields = [f.name for f in model._meta.fields if isinstance(f, EncryptedTextField)]
+    fields = [f.name for f in model._meta.fields if isinstance(f, (EncryptedTextField, SupportEncryptedTextField))]
     if fields:
         for values in model.objects.values_list(*fields).iterator():
             encrypted += sum(bool(value) for value in values)
@@ -69,7 +82,8 @@ for note in SessionNote.objects.select_related('signature').filter(signature__is
     assert note.review_digest() == note.signature_digest, 'Signed note digest mismatch'
     signed += 1
 assert migrations > 0 and counts, 'Restored schema is empty'
-print(json.dumps(dict(model_counts=counts, enabled_guards=len(guards), migrations=migrations,
+print(json.dumps(dict(model_counts=counts, enabled_guards=len(guards)+contracts, migrations=migrations,
+                     migrations_applied_to_isolated_copy=applied,
                      encrypted_values_read=encrypted, signed_note_digests_verified=signed)))
 '''
 

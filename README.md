@@ -342,3 +342,7 @@ including release steps and remaining contractual/operational limits.
 The [data-return and rights workflow](docs/compliance/data-return-and-rights-2026-10-28.md)
 describes scoped ZIP inventories, checksums and fail-closed handling of unavailable
 files, plus the clinical retention and disposal decisions that remain case-specific.
+
+The [October 28 internal operational validation](docs/compliance/operational-validation-2026-10-28.md)
+records isolated disposition/restore, real synthetic S3 version cleanup, automated
+incident containment and scoped HTTP authorization exercises, with their explicit limits.

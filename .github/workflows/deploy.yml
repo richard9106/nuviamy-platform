@@ -59,7 +59,7 @@ jobs:
       - name: Check AWS deployment command
         run: python -m unittest ops.aws.test_github_deploy
       - name: Check access log privacy
-        run: python -m unittest ops.test_log_privacy ops.test_s3_recovery ops.test_operational_health
+        run: python -m unittest ops.test_log_privacy ops.test_s3_recovery ops.test_operational_health ops.test_disposition_gate
       - name: Check cookie preference behavior
         run: node ops/check_cookie_choices.cjs
       - name: Run deployment checks
@@ -104,6 +104,10 @@ jobs:
           nuviamy-ci python -m ops.check_packaged_assets
       - name: Run test suite
         run: python manage.py test --noinput
+      - name: Run isolated disposition and incident exercises
+        run: |
+          install -d -m 700 /tmp/nuviamy-operational-ci
+          python -m ops.run_operational_drill --image nuviamy-ci --evidence-dir /tmp/nuviamy-operational-ci
       - name: Verify PostgreSQL role separation and backup restore
         run: python -m ops.check_postgres_roles
         env:

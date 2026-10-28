@@ -61,3 +61,9 @@ de designaciones, formación o firmas ya realizadas. No se declara cerrado un ri
 por la mera existencia de este documento.
 
 Fuente: [HHS, análisis de riesgos](https://www.hhs.gov/hipaa/for-professionals/security/guidance/guidance-risk-analysis/index.html).
+
+## Validación técnica del 28 de octubre de 2026
+
+[Ensayos ejecutados, hallazgos y límites](operational-validation-2026-10-28.md):
+disposición/restauración ficticias, versiones S3 separadas, contención de sesión y
+revisión de acceso por rutas. Las evidencias completas permanecen en custodia privada.

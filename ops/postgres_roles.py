@@ -15,6 +15,20 @@ GUARDS = {'audit_capture_actor', 'audit_reject_mutation', 'audit_reject_truncate
           'clinical_protect_addendum', 'clinical_addendum_reject_truncate'}
 
 
+CONTRACT_TABLES = ('accounts_clinicalcontractrequest', 'accounts_clinicalcontractbundle',
+                   'accounts_clinicalcontractsignature', 'accounts_standardagreementacceptance')
+CONTRACT_TRIGGERS = ('contract_reject_mutation', 'contract_reject_truncate')
+
+
+def verify_contract_guards(conn):
+    rows = conn.execute("SELECT c.relname, t.tgname, t.tgenabled FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname=ANY(%s) AND t.tgname=ANY(%s)",
+                        [list(CONTRACT_TABLES), list(CONTRACT_TRIGGERS)]).fetchall()
+    expected = {(table, name) for table in CONTRACT_TABLES for name in CONTRACT_TRIGGERS}
+    if {(table, name) for table, name, _ in rows} != expected or any(enabled != 'O' for _, _, enabled in rows):
+        raise ValueError('Contract evidence protections are missing or disabled.')
+    return len(rows)
+
+
 def identifier(value):
     if not re.fullmatch(r'[a-z][a-z0-9_]{0,62}', value or ''):
         raise ValueError('Dedicated database role names must be lowercase SQL identifiers.')
@@ -92,6 +106,7 @@ def verify_runtime(conn):
         expected = (True, False, False, False) if name == 'django_migrations' else (True, True, False, False) if name == 'audit_auditlog' else (True, True, True, True)
         if (read, insert, update, delete) != expected or elevated:
             raise ValueError('Runtime table privileges differ from the required policy.')
+    verify_contract_guards(conn)
     guards = dict(conn.execute('SELECT tgname, tgenabled FROM pg_trigger WHERE tgname=ANY(%s)', [list(GUARDS)]).fetchall())
     if set(guards) != GUARDS or any(value != 'O' for value in guards.values()):
         raise ValueError('Required audit/clinical guards are missing or disabled.')

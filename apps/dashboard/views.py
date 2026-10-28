@@ -388,6 +388,7 @@ class TaskDetailView(LoginRequiredMixin, PracticePermissionMixin, DetailView):
 
 
 class TaskStatusUpdateView(LoginRequiredMixin, PracticePermissionMixin, TemplateView):
+    http_method_names = ['post']
     permission_resource = 'tasks'
     permission_action = 'edit'
     def post(self, request, pk):

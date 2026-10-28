@@ -53,6 +53,16 @@ def main():
                     else:
                         raise AssertionError('Disabled clinical guard was accepted')
                 owner.execute('ALTER TABLE clinical_sessionnote ENABLE TRIGGER clinical_protect_finalized')
+                owner.execute('ALTER TABLE accounts_standardagreementacceptance DISABLE TRIGGER contract_reject_mutation')
+                with psycopg.connect(**dict(connection_args, dbname=database, user=app, password=app_password)) as runtime:
+                    try:
+                        verify_runtime(runtime)
+                    except ValueError:
+                        pass
+                    else:
+                        raise AssertionError('Disabled contract guard was accepted')
+                owner.execute('ALTER TABLE accounts_standardagreementacceptance ENABLE TRIGGER contract_reject_mutation')
+
             with psycopg.connect(**dict(connection_args, dbname=database, user=app, password=app_password)) as runtime:
                 verify_runtime(runtime)
                 runtime.execute("INSERT INTO future_migration_fixture (value) VALUES ('Synthetic migration defaults')")

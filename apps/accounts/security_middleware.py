@@ -103,7 +103,12 @@ class SecuritySessionMiddleware(MiddlewareMixin):
             response['Referrer-Policy'] = 'same-origin'
         if request.path.startswith('/accounts/invitations/') or request.path.startswith('/password-reset/'):
             patch_cache_control(response, no_store=True, no_cache=True, private=True, max_age=0)
-            response['Referrer-Policy'] = 'no-referrer'
+            # Hide the one-time token on the initial redirect. The form URL has
+            # already replaced it with a non-secret sentinel; same-origin lets
+            # HTTPS CSRF checks work in browsers/webviews that omit Origin.
+            match = getattr(request, 'resolver_match', None)
+            tokenless_form = bool(match and match.kwargs.get('token') == 'set-password')
+            response['Referrer-Policy'] = 'same-origin' if tokenless_form else 'no-referrer'
         if request.path.startswith('/accounts/security/'):
             response['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
         return response

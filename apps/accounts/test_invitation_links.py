@@ -69,13 +69,52 @@ class InvitationLinkTests(TestCase):
         self.user.email='changed@example.invalid';self.user.save(update_fields=['email'])
         self.assertContains(self.client.get(url),'no longer valid')
 
-    def test_link_and_form_have_no_store_and_no_referrer(self):
+    def test_secret_link_has_no_referrer_and_tokenless_form_allows_same_origin(self):
         url=self.send();response=self.client.get(url)
         self.assertEqual(response['Referrer-Policy'],'no-referrer')
         self.assertIn('no-store',response['Cache-Control'])
         response=self.client.get(response.url)
-        self.assertEqual(response['Referrer-Policy'],'no-referrer')
+        self.assertEqual(response['Referrer-Policy'],'same-origin')
         self.assertNotContains(response,url)
+
+    def test_https_password_setup_without_origin_keeps_csrf_protection(self):
+        from django.test import Client
+        client = Client(enforce_csrf_checks=True)
+        url = self.send()
+        initial = client.get(url, secure=True)
+        self.assertEqual(initial['Referrer-Policy'], 'no-referrer')
+        form = client.get(initial.url, secure=True)
+        self.assertEqual(form['Referrer-Policy'], 'same-origin')
+        data = {'new_password1': 'SafeUnique2026!invite', 'new_password2': 'SafeUnique2026!invite',
+                'csrfmiddlewaretoken': client.cookies['csrftoken'].value}
+        referer = 'https://testserver' + initial.url
+        # Missing CSRF token and foreign referrers still fail.
+        self.assertEqual(client.post(initial.url, {}, secure=True, HTTP_REFERER=referer).status_code, 403)
+        self.assertEqual(client.post(initial.url, data, secure=True).status_code, 403)
+        self.assertEqual(client.post(initial.url, data, secure=True,
+                                    HTTP_REFERER='https://foreign.invalid/').status_code, 403)
+        self.assertEqual(client.post(initial.url, data, secure=True, HTTP_REFERER=referer).status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(data['new_password1']))
+
+    def test_https_password_reset_has_same_tokenless_form_policy(self):
+        from django.test import Client
+        self.user.set_password('ExistingSafe2026!fixture')
+        self.user.save(update_fields=['password'])
+        token = default_token_generator.make_token(self.user)
+        url = reverse('password_reset_confirm', kwargs={
+            'uidb64': urlsafe_base64_encode(force_bytes(self.user.pk)), 'token': token})
+        client = Client(enforce_csrf_checks=True)
+        initial = client.get(url, secure=True)
+        self.assertEqual(initial['Referrer-Policy'], 'no-referrer')
+        form = client.get(initial.url, secure=True)
+        self.assertEqual(form['Referrer-Policy'], 'same-origin')
+        data = {'new_password1': 'ResetSafeUnique2026!fixture', 'new_password2': 'ResetSafeUnique2026!fixture',
+                'csrfmiddlewaretoken': client.cookies['csrftoken'].value}
+        response = client.post(initial.url, data, secure=True, HTTP_REFERER='https://testserver' + initial.url)
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(data['new_password1']))
 
     def test_existing_password_is_unchanged_when_reset_email_is_sent(self):
         self.user.set_password('OriginalSecure2026!');self.user.save(update_fields=['password'])

@@ -5,6 +5,9 @@ para el origen AWS actual, la aprobación OAuth, el responsable confirmado, los
 controles observados y los pendientes reales. Estado: **cierre parcial; no se declara
 cumplimiento HIPAA completo**. La prueba comercial de 30 días y la oferta estándar
 DPA/BAA/anexo ya están implementadas; no se confunden con aprobación clínica.
+El [seguimiento del 28/10](../validation/security-release-2026-10-28.md) registra el
+despliegue, la revisión de accesos administrativos, entregas de auditoría, aprobación
+SES y revisión de dependencias, con sus límites y pasos aún pendientes.
 
 La evidencia anterior se conserva a continuación con su fecha. Contabo/R2 ya no son
 el origen de producción: son copias históricas pendientes de gestión deliberada.

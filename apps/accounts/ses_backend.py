@@ -28,9 +28,24 @@ class EmailBackend(BaseEmailBackend):
                     raise ValueError('SES sender must match the configured transactional identity.')
                 if email.attachments:
                     raise ValueError('Transactional email does not support clinical document attachments.')
+                email.message()  # Retain Django's header validation.
+                charset = email.encoding or settings.DEFAULT_CHARSET
+                if email.content_subtype not in ('plain', 'html'):
+                    raise ValueError('Unsupported transactional email content type.')
+                body = {'Html' if email.content_subtype == 'html' else 'Text':
+                        {'Data': email.body, 'Charset': charset}}
+                for content, mimetype in getattr(email, 'alternatives', ()):
+                    if mimetype not in ('text/plain', 'text/html'):
+                        raise ValueError('Unsupported transactional email alternative.')
+                    body['Html' if mimetype == 'text/html' else 'Text'] = {'Data': content, 'Charset': charset}
+                destination = {key: values for key, values in (
+                    ('ToAddresses', email.to), ('CcAddresses', email.cc), ('BccAddresses', email.bcc)) if values}
+                # Simple content uses only ses:SendEmail. Raw MIME unexpectedly
+                # requires SendRawEmail even through the SES v2 SendEmail API.
                 client.send_email(FromEmailAddress=email.from_email,
-                    Destination={'ToAddresses': email.recipients()},
-                    Content={'Raw': {'Data': email.message().as_bytes(linesep='\r\n')}},
+                    Destination=destination,
+                    Content={'Simple': {'Subject': {'Data': email.subject, 'Charset': charset}, 'Body': body}},
+                    **({'ReplyToAddresses': email.reply_to} if email.reply_to else {}),
                     ConfigurationSetName=configuration)
                 sent += 1
             except Exception:

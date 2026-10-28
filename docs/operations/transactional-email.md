@@ -4,6 +4,27 @@
 automatic approval of every mail flow or the recipient's mailbox. Keep messages
 minimal and keep clinical documents in the authenticated portal.
 
+28 October update: AWS production access is granted and the domain/DKIM are verified.
+Default TLS configuration is assigned. The approved `email-feedback.json` stack adds
+a dedicated encrypted SNS topic (customer-managed rotating KMS key), an SSE-encrypted
+SQS queue with the maximum 14-day retention and a private subscription. SES may
+publish only for this account/domain; the application host may read queue depth only.
+It cannot receive or delete messages. No email/SMS subscribers or public endpoints.
+
+Before cutting over, configure Bounce and Complaint notifications to that topic,
+leave original headers excluded, and disable email feedback forwarding only after
+the replacement is tested. Monitor pending feedback by counter, with a generic
+operator alert; review the event inside the AWS console, preserve incident evidence
+when needed, and resolve the recipient/suppression issue. A queue is transient:
+preserve a relevant case record before its 14-day expiry, and do not treat queue
+retention as a clinical-record policy. The KMS key/topic/queue are retained if their
+stack is removed; account for ongoing costs and deliberate decommissioning.
+
+Test with the AWS mailbox simulator and fictional content only. Do not purge the
+queue or inspect unrelated clinical records. Log a test event separately and remove
+only that identified synthetic event with authorization. Test successful delivery
+to the operator and keep the previous protected app configuration for rollback.
+
 ## Applied and verified
 
 - Domain identity `nuviamy.com`, Easy DKIM RSA-2048. Three CNAME records published

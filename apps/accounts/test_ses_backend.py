@@ -1,8 +1,8 @@
 from unittest.mock import patch
 
 import boto3
-from botocore.stub import Stubber, ANY
-from django.core.mail import EmailMessage
+from botocore.stub import Stubber
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.test import SimpleTestCase, override_settings
 
 from .ses_backend import EmailBackend
@@ -15,17 +15,31 @@ class SESBackendTests(SimpleTestCase):
         return boto3.client('sesv2', region_name='us-east-1',
             aws_access_key_id='test-only', aws_secret_access_key='test-only')
 
-    def test_raw_mime_and_configuration_set_are_sent_without_bcc_header(self):
+    def test_simple_api_and_configuration_set_keep_bcc_separate(self):
         client = self.ses_client()
         email = EmailMessage('Account invitation', 'Fictional invitation',
             to=['recipient@example.com'], bcc=['hidden@example.com'])
-        raw = email.message().as_bytes(linesep='\r\n')
-        self.assertNotIn(b'Bcc:', raw)
         with Stubber(client) as stub, patch('apps.accounts.ses_backend.boto3.client', return_value=client):
             stub.add_response('send_email', {'MessageId': 'test-id'}, {
                 'FromEmailAddress': email.from_email,
-                'Destination': {'ToAddresses': email.recipients()},
-                'Content': {'Raw': {'Data': ANY}}, 'ConfigurationSetName': 'transactional-test'})
+                'Destination': {'ToAddresses': email.to, 'BccAddresses': email.bcc},
+                'Content': {'Simple': {'Subject': {'Data': email.subject, 'Charset': 'utf-8'},
+                            'Body': {'Text': {'Data': email.body, 'Charset': 'utf-8'}}}},
+                'ConfigurationSetName': 'transactional-test'})
+            self.assertEqual(EmailBackend().send_messages([email]), 1)
+            stub.assert_no_pending_responses()
+
+    def test_html_alternative_is_supported_without_raw_email_permission(self):
+        client = self.ses_client()
+        email = EmailMultiAlternatives('Account access', 'Plain test message', to=['a@example.com'])
+        email.attach_alternative('<p>HTML test message</p>', 'text/html')
+        with Stubber(client) as stub, patch('apps.accounts.ses_backend.boto3.client', return_value=client):
+            stub.add_response('send_email', {'MessageId': 'test-id'}, {
+                'FromEmailAddress': email.from_email, 'Destination': {'ToAddresses': email.to},
+                'Content': {'Simple': {'Subject': {'Data': email.subject, 'Charset': 'utf-8'},
+                    'Body': {'Text': {'Data': email.body, 'Charset': 'utf-8'},
+                             'Html': {'Data': '<p>HTML test message</p>', 'Charset': 'utf-8'}}}},
+                'ConfigurationSetName': 'transactional-test'})
             self.assertEqual(EmailBackend().send_messages([email]), 1)
             stub.assert_no_pending_responses()
 

@@ -1,0 +1,9 @@
+{% extends 'support/private_base.html' %}
+{% block support_content %}
+<section class="panel support-request-list" aria-label="Your requests">
+{% for ticket in tickets %}
+<a class="support-request-row" href="{% url 'support_request_detail' ticket.pk %}"><div><strong>{{ ticket.get_topic_display }}</strong><span>{{ ticket.created_at|date:"M j, Y · H:i" }}</span><small>Reference {{ ticket.pk }}</small></div><span class="badge">{{ ticket.get_status_display }}</span></a>
+{% empty %}<div class="support-empty"><h2>No requests yet</h2><p>Create a request to get help. Your conversation will stay here, and emails will contain only a generic notification.</p><a class="btn btn-primary" href="{% url 'support_contact' %}">Contact support</a></div>{% endfor %}
+</section>
+{% if is_paginated %}<nav class="inline-actions" aria-label="Request pages">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+{% endblock %}

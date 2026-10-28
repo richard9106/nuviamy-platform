@@ -9,7 +9,7 @@
     <section class="support-grid" aria-label="Frequently asked questions">
       {% for faq in faqs %}<details class="support-faq"{% if query %} open{% endif %}><summary>{{ faq.question }}</summary><p>{{ faq.answer }}</p></details>{% empty %}<p class="empty-state">No matching help articles. Try another search or contact support.</p>{% endfor %}
     </section>
-    <section class="support-contact-card"><div><p class="eyebrow">Still need help?</p><h2>Contact support</h2><p>Tell us what you were trying to do. Please do not include clinical notes, diagnoses, or other sensitive client information.</p></div><a class="btn btn-secondary" href="{% url 'support_contact' %}">Contact support</a></section>
+    <section class="support-contact-card"><div><p class="eyebrow">Still need help?</p><h2>Contact support</h2><p>Tell us what you were trying to do. Please do not include clinical notes, diagnoses, or other sensitive client information.</p>{% if support_workspace %}<a href="{% url 'support_requests' %}">My support requests</a>{% endif %}</div><a class="btn btn-secondary" href="{% url 'support_contact' %}">Contact support</a></section>
   </main>
 {% include 'marketing/partials/footer.html' %}
 {% include 'partials/security_session.html' %}</body>

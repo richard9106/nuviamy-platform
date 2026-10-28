@@ -332,3 +332,9 @@ through the profile is disabled while email verification is mandatory; contact s
 an identity-checked change. SMTP failures never grant access. Maintain a protected operator
 SSH recovery route and verify each active account has a deliverable email before activation.
 Do not log codes, include them in URLs, or use this feature as a claim of HIPAA certification.
+
+Practice users can follow product/account enquiries in **Help → My support requests**.
+Support message bodies and contact fields are encrypted in the application database;
+email carries generic notices only. Platform review is restricted to audited superuser
+access. See the [support and patient-checkout boundaries](docs/compliance/private-support-and-payments-2026-10-28.md),
+including release steps and remaining contractual/operational limits.

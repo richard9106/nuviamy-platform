@@ -2,19 +2,13 @@ from django import forms
 from django.contrib.auth import get_user_model
 
 from apps.accounts.models import UserProfile
-from .models import Task
+from .models import Task, SupportTicket
 
 
 class SupportContactForm(forms.Form):
     name = forms.CharField(max_length=150, required=False)
     email = forms.EmailField()
-    topic = forms.ChoiceField(choices=(
-        ('setup', 'Practice setup'),
-        ('billing', 'Billing or payments'),
-        ('integrations', 'Gmail, Google, or Stripe'),
-        ('technical', 'Technical issue'),
-        ('other', 'Other'),
-    ))
+    topic = forms.ChoiceField(choices=SupportTicket.Topic.choices)
     message = forms.CharField(widget=forms.Textarea(attrs={'rows': 6}), max_length=4000)
     website = forms.CharField(required=False, widget=forms.HiddenInput)
 
@@ -23,6 +17,10 @@ class SupportContactForm(forms.Form):
         if value:
             raise forms.ValidationError('Unable to send this request.')
         return value
+
+
+class SupportReplyForm(forms.Form):
+    message = forms.CharField(max_length=4000, widget=forms.Textarea(attrs={'rows': 4}))
 
 
 class TaskForm(forms.ModelForm):

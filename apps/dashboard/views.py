@@ -5,9 +5,11 @@ from decimal import Decimal, ROUND_CEILING
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
 from django.contrib import messages
-from django.core.mail import EmailMessage
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.db import connection
+from django.db import transaction
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.db.models import Sum, Count, Q, F, Value, DecimalField
@@ -27,7 +29,8 @@ from apps.portal.models import ClientPortalRequest
 from apps.practices.models import Practice
 from apps.rate_limit import PostRateLimitMixin
 from .forms import SupportContactForm, TaskForm
-from .models import Task
+from .models import Task, SupportTicket, SupportMessage
+from .support_requests import notify_support
 from .support import FAQS
 
 
@@ -413,10 +416,13 @@ class HelpCenterView(TemplateView):
         if query:
             terms = query.lower().split()
             faqs = [faq for faq in FAQS if all(term in f"{faq['question']} {faq['answer']} {faq['tags']}".lower() for term in terms)]
-        context.update({'faqs': faqs, 'query': query})
+        context.update({'faqs': faqs, 'query': query, 'support_workspace': bool(
+            self.request.user.is_authenticated and not is_client_user(self.request.user)
+            and get_practice_for_user(self.request.user))})
         return context
 
 
+@method_decorator(never_cache, name='dispatch')
 class SupportContactView(PostRateLimitMixin, FormView):
     template_name = 'support/contact.html'
     form_class = SupportContactForm
@@ -431,24 +437,49 @@ class SupportContactView(PostRateLimitMixin, FormView):
             initial.update({'name': self.request.user.get_full_name(), 'email': self.request.user.email})
         return initial
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        user = self.request.user
+        if user.is_authenticated and not is_client_user(user) and get_practice_for_user(user):
+            # Use the signed-in account identity, never an alternative reply address.
+            form.fields['name'].disabled = True
+            form.fields['email'].disabled = True
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context['support_workspace'] = bool(user.is_authenticated and not is_client_user(user)
+                                           and get_practice_for_user(user))
+        context['support_portal_user'] = bool(user.is_authenticated and is_client_user(user))
+        return context
+
+    @transaction.atomic
     def form_valid(self, form):
-        message = EmailMessage(
-            subject=f"NuviaMy support: {form.cleaned_data['topic']}",
-            body=(
-                f"Name: {form.cleaned_data['name']}\n"
-                f"Email: {form.cleaned_data['email']}\n"
-                f"Topic: {form.cleaned_data['topic']}\n\n"
-                f"{form.cleaned_data['message']}"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[settings.SUPPORT_EMAIL],
-            reply_to=[form.cleaned_data['email']],
-        )
+        user = self.request.user
+        if user.is_authenticated and is_client_user(user):
+            raise PermissionDenied
+        from apps.practices.fields import get_fernet
         try:
-            message.send(fail_silently=False)
-        except Exception:
-            messages.error(self.request, 'Support is temporarily unavailable. Please try again later.')
+            get_fernet()  # Support storage must never fall back to plaintext.
+        except (ImproperlyConfigured, ValueError):
+            form.add_error(None, 'Support is temporarily unavailable. Please try again later.')
             return self.form_invalid(form)
+        practice = get_practice_for_user(user) if user.is_authenticated else None
+        requester = user if practice else None
+        ticket = SupportTicket.objects.create(practice=practice, requester=requester,
+            contact_name=user.get_full_name() if requester else form.cleaned_data['name'],
+            contact_email=user.email if requester else form.cleaned_data['email'],
+            topic=form.cleaned_data['topic'])
+        SupportMessage.objects.create(ticket=ticket, author=requester, body=form.cleaned_data['message'])
+        from apps.audit.utils import log_audit_event
+        from apps.audit.models import AuditLog
+        log_audit_event(self.request, AuditLog.Action.CREATE, 'dashboard.SupportTicket',
+                        ticket.pk, practice=practice, platform=practice is None,
+                        metadata={'event': 'support_request_created'})
+        transaction.on_commit(lambda: notify_support(ticket))
+        if requester:
+            return redirect('support_request_detail', pk=ticket.pk)
         return super().form_valid(form)
 
 

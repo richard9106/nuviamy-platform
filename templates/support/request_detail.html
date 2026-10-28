@@ -1,0 +1,9 @@
+{% extends 'support/private_base.html' %}
+{% block support_title %}{{ ticket.get_topic_display }}{% endblock %}
+{% block support_content %}
+<section class="panel support-thread" aria-label="Support conversation">
+<header class="panel-head"><div><h2>Your conversation</h2><p class="support-reference">Reference {{ ticket.pk }}</p></div><span class="badge">{{ ticket.get_status_display }}</span></header>
+{% for entry in thread_messages %}<article class="support-message {% if entry.is_operator %}support-message-operator{% endif %}"><header><strong>{% if entry.is_operator %}NuviaMy support{% else %}You{% endif %}</strong><time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:"M j, Y · H:i" }}</time></header><div>{{ entry.body|linebreaksbr }}</div></article>{% endfor %}
+{% if ticket.status == 'open' %}<form method="post" class="support-reply">{% csrf_token %}{{ form.non_field_errors }}<label for="id_message">Add a reply</label>{{ form.message }}{{ form.message.errors }}<p>Only you and authorized platform support can open this conversation. Requesting help does not grant access to your client records.</p><button class="btn btn-primary" type="submit">Send reply</button></form>{% else %}<p>This request is closed. You can create a new request if you need more help.</p>{% endif %}
+</section>
+{% endblock %}

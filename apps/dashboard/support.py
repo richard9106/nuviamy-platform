@@ -1,12 +1,12 @@
 FAQS = [
     {
         'question': 'How do I finish setting up my practice?',
-        'answer': 'Start by adding a client from the dashboard, set your availability in Appointments, and schedule a session. Invite team members if you work with others. Gmail for email delivery and Stripe Connect for online client invoice payments can be connected later; neither is required to create clients or manage your calendar.',
+        'answer': 'Start by adding a client from the dashboard, set your availability in Appointments, and schedule a session. Invite team members if you work with others. Google Calendar synchronization and Stripe Connect for online client invoice payments can be connected later; neither is required to create clients or manage your calendar.',
         'tags': 'setup gmail stripe clients',
     },
     {
         'question': 'How do I connect Gmail?',
-        'answer': 'Open Settings, choose Integrations, select the Google capabilities you need, and click Connect Google. NuviaMy uses OAuth and never stores your Google password.',
+        'answer': 'Gmail sending and inbox access are not currently available. The Google integration supports Calendar synchronization with your primary owned calendar. Open Settings > Integrations to connect Google Calendar; NuviaMy uses OAuth and never stores your Google password.',
         'tags': 'gmail google oauth email',
     },
     {
@@ -16,7 +16,7 @@ FAQS = [
     },
     {
         'question': 'How do I invite a therapist or admin?',
-        'answer': 'Open Settings > Team. Add the member and choose whether to email a temporary password. Connected Gmail is used first, with Brevo SMTP as a fallback.',
+        'answer': 'Open Settings > Team and invite the member. NuviaMy sends a one-time account setup link through its transactional email service. The recipient chooses their own password; do not share passwords through support.',
         'tags': 'team invitation therapist admin password',
     },
     {
@@ -31,12 +31,12 @@ FAQS = [
     },
     {
         'question': 'Can I export client documents to Google Drive?',
-        'answer': 'Yes. Connect Google with Drive file storage enabled, then use the export action on an authorized client document. NuviaMy remains the source of truth.',
+        'answer': 'Google Drive export is not currently available. Use the authorized document and practice export tools in NuviaMy, and handle downloaded records securely.',
         'tags': 'drive documents google export',
     },
     {
         'question': 'How do I get help with a problem?',
-        'answer': 'Use Contact support below. Include the page you were using and a short description. Do not include clinical notes, diagnoses, or other sensitive client information.',
+        'answer': 'Sign in to your practice account and use Contact support. Follow the conversation in My support requests; emails contain only generic update notices. Include the page and a short description, without client names, clinical notes, passwords or payment card details. Patients should contact their treating practice through the patient portal.',
         'tags': 'support contact help issue',
     },
 ]

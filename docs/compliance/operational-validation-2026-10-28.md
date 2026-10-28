@@ -34,6 +34,22 @@ público, en el expediente privado del operador.
    cifrado y firmas. El ensayo simula una copia anterior a las tablas de soporte y
    comprueba esa actualización aislada. No migra la DB de producción para verificarla.
 
+5. Las acciones de equipo podían modificar una cuenta de plataforma asociada a la
+   misma consulta. Se bloquean desactivación, reactivación, eliminación, permisos e
+   invitaciones de cuentas Django staff/superuser desde ese flujo, incluso con un
+   POST manipulado. Esas cuentas se administran por el canal de plataforma protegido.
+   La UI retira sus acciones y el test comprueba estado, permisos y auditoría de rechazo.
+   Se añaden eventos estructurales de cambios de equipo autorizados: activación,
+   desactivación, eliminación, permisos e inicio de reenvío de invitación, sin contenido
+   de mensajes ni credenciales. Activación, desactivación, permisos y eliminación
+   se guardan atómicamente con su evento; el reenvío registra la petición previa,
+   sin afirmar recepción del correo.
+
+La copia S3 actual del servicio también se restauró en un contenedor aislado con
+el código desplegado: se verificaron los 17 triggers, campos cifrados y firmas,
+y se aplicó únicamente en esa copia la migración de soporte pendiente. La DB de
+producción permaneció sin modificaciones; los detalles y agregados son privados.
+
 Los tiempos registrados son de ejecuciones automáticas acotadas: la repetición con
 la copia descargada de S3 duró aproximadamente 23 segundos; la ejecución local con
 contratos/cifrado/migraciones aisladas duró aproximadamente 42 segundos. El retest

@@ -1,0 +1,38 @@
+"""Reviewed export field allowlist; new model fields require an explicit update.
+Authentication secrets, OAuth tokens and other users' private support are excluded.
+"""
+
+EXPORT_FIELDS = {
+    'clients.Client': ('id', 'practice_id', 'primary_therapist_id', 'public_id', 'first_name', 'last_name', 'profile_photo', 'email', 'phone', 'date_of_birth', 'status', 'billing_type', 'insurance_payer_id', 'insurance_state', 'insurance_copay', 'insurance_provider', 'insurance_member_id', 'emergency_contact_name', 'emergency_contact_phone', 'address_line1', 'address_line2', 'created_at', 'updated_at'),
+    'appointments.Appointment': ('id', 'practice_id', 'client_id', 'therapist_id', 'starts_at', 'ends_at', 'status', 'session_kind', 'appointment_type', 'location', 'meeting_url', 'notes', 'sync_enabled', 'external_calendar_provider', 'external_calendar_id', 'external_event_id', 'external_event_url', 'last_synced_at', 'sync_status', 'sync_error', 'reminder_enabled', 'reminder_status', 'reminder_sent_at', 'reminder_error', 'series_id', 'created_at', 'updated_at'),
+    'clinical.Diagnosis': ('id', 'practice_id', 'client_id', 'code', 'label', 'diagnosed_at', 'active', 'notes', 'created_at', 'updated_at'),
+    'clinical.TreatmentPlan': ('id', 'practice_id', 'client_id', 'therapist_id', 'title', 'status', 'goals', 'objectives', 'interventions', 'start_date', 'review_date', 'completed_at', 'created_at', 'updated_at'),
+    'clinical.SessionNote': ('id', 'practice_id', 'client_id', 'therapist_id', 'appointment_id', 'treatment_plan_id', 'note_type', 'content', 'treatment_progress', 'is_locked', 'locked_at', 'created_at', 'updated_at'),
+    'clinical.SessionNoteSignature': ('id', 'note_id', 'signed_by_id', 'signed_at', 'signer_name', 'digest'),
+    'clinical.SessionNoteAddendum': ('id', 'note_id', 'signed_by_id', 'signer_name', 'signed_at', 'reason', 'content', 'original_digest', 'digest', 'review_id'),
+    'documents.ClientDocument': ('id', 'practice_id', 'client_id', 'uploaded_by_id', 'document_type', 'title', 'file', 'original_filename', 'content_type', 'file_size', 'visible_to_client', 'description', 'external_storage_provider', 'external_file_id', 'external_file_url', 'external_synced_at', 'external_sync_status', 'external_sync_error', 'created_at'),
+    'portal.ClientPortalAccess': ('id', 'user_id', 'practice_id', 'client_id', 'is_active', 'invited_at', 'accepted_at', 'created_at', 'updated_at'),
+    'portal.ClientPortalRequest': ('id', 'practice_id', 'client_id', 'appointment_id', 'submitted_by_id', 'category', 'subject', 'message', 'status', 'created_at', 'updated_at'),
+    'portal.PortalConversation': ('id', 'public_id', 'practice_id', 'client_id', 'subject', 'status', 'created_by_id', 'resolved_at', 'resolved_by_id', 'created_at', 'updated_at'),
+    'portal.PortalMessage': ('id', 'conversation_id', 'practice_id', 'author_id', 'author_kind', 'body', 'created_at', 'read_at'),
+    'portal.PublicBookingRequest': ('id', 'practice_id', 'client_id', 'appointment_id', 'approved_by_id', 'first_name', 'last_name', 'email', 'phone', 'requested_starts_at', 'requested_ends_at', 'appointment_type', 'reason', 'status', 'created_at', 'updated_at'),
+    'portal.IntakePacketTemplate': ('id', 'practice_id', 'name', 'description', 'questions', 'active', 'created_at', 'updated_at'),
+    'portal.ClientIntakeAssignment': ('id', 'practice_id', 'client_id', 'template_id', 'assigned_by_id', 'status', 'template_snapshot', 'answers', 'submitted_at', 'reviewed_at', 'reviewed_by_id', 'created_at', 'updated_at'),
+    'billing.Invoice': ('id', 'practice_id', 'client_id', 'appointment_id', 'package_id', 'billing_type', 'insurance_payer_id', 'insurance_payer_name', 'service_code', 'insurance_state', 'contracted_amount', 'client_responsibility', 'invoice_number', 'amount', 'status', 'due_date', 'paid_at', 'published_at', 'published_by_id', 'notes', 'created_at', 'updated_at'),
+    'billing.Payment': ('id', 'practice_id', 'client_id', 'invoice_id', 'amount', 'method', 'external_payment_id', 'paid_at', 'created_at'),
+    'billing.ServicePackage': ('id', 'practice_id', 'client_id', 'template_id', 'name', 'sessions_purchased', 'sessions_used', 'total_price', 'status', 'purchased_at', 'expires_at', 'notes', 'created_at', 'updated_at'),
+    'billing.SessionPackageTemplate': ('id', 'practice_id', 'name', 'sessions_included', 'price', 'description', 'active', 'created_at', 'updated_at'),
+    'billing.PackageUsage': ('id', 'package_id', 'appointment_id', 'quantity', 'charge_reason', 'used_at', 'notes', 'created_at'),
+    'billing.InsurancePayer': ('id', 'practice_id', 'name', 'payer_id', 'is_system_template', 'active', 'notes', 'created_at', 'updated_at'),
+    'billing.InsuranceRate': ('id', 'practice_id', 'payer_id', 'state', 'service_code', 'service_label', 'reimbursement_amount', 'active', 'notes', 'created_at', 'updated_at'),
+    'billing.PracticeInsurancePayer': ('id', 'practice_id', 'payer_id', 'active'),
+    'dashboard.Task': ('id', 'practice_id', 'title', 'description', 'due_date', 'priority', 'status', 'assignee_id', 'created_by_id', 'created_at', 'updated_at'),
+    'audit.AuditLog': ('id', 'practice_id', 'actor_id', 'actor_id_snapshot', 'actor_username_snapshot', 'action', 'object_type', 'object_id', 'metadata', 'created_at'),
+    'practices.TherapistProfile': ('id', 'user_id', 'practice_id', 'license_number', 'license_state', 'specialty', 'created_at', 'updated_at'),
+    'appointments.PracticeWorkingHour': ('id', 'practice_id', 'weekday', 'starts_at', 'ends_at', 'active', 'created_at', 'updated_at'),
+    'appointments.PracticeAvailabilityOverride': ('id', 'practice_id', 'date', 'starts_at', 'ends_at', 'is_available', 'note', 'created_at', 'updated_at'),
+    'accounts.StandardAgreementAcceptance': ('id', 'created_at', 'practice_id', 'signer_id', 'version', 'snapshot', 'digest'),
+    'accounts.ClinicalContractRequest': ('id', 'created_at', 'practice_id', 'requested_by_id', 'details'),
+    'accounts.ClinicalContractBundle': ('created_at', 'id', 'request_id', 'version', 'dpa_text', 'baa_text', 'schedule_text', 'provider_signer_id', 'provider_name', 'provider_title', 'provider_consent', 'digest'),
+    'accounts.ClinicalContractSignature': ('id', 'created_at', 'bundle_id', 'signer_id', 'signer_name', 'signer_email', 'signer_title', 'bundle_digest', 'consent_text'),
+}

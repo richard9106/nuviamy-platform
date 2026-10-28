@@ -90,9 +90,13 @@ class SecuritySessionMiddleware(MiddlewareMixin):
         standard_signing = name == 'clinical_contracts' and request.method == 'POST' and 'hipaa_role' not in request.POST
         provider_signing = (name == 'admin:accounts_clinicalcontractbundle_add' and request.method == 'POST'
                             and bool(request.POST.get('execute_as_provider')))
-        if ((settings.MFA_REQUIRED and sensitive) or contract_signing or standard_signing or provider_signing) and now - session.get('security_auth_at', 0) >= settings.SECURITY_REAUTH_TIMEOUT:
+        fresh_export = name == 'practice_data_export'
+        if (fresh_export or (settings.MFA_REQUIRED and sensitive) or contract_signing or standard_signing or provider_signing) and now - session.get('security_auth_at', 0) >= settings.SECURITY_REAUTH_TIMEOUT:
             request._audit_denied_reason = 'fresh_authentication_required'
             target = reverse('clinical_contract_review', kwargs={'pk': view_kwargs['pk']}) if contract_signing else request.path
+            if fresh_export:
+                # Return to the form: replaying a POST-only download as GET gives 405.
+                target = reverse('profile_settings') + '#practice-data-export'
             return redirect(reverse('security_reauthenticate') + '?' + urlencode({'next': target}))
         return None
 

@@ -1,5 +1,5 @@
 import json
-import os
+import hashlib
 import zipfile
 from datetime import datetime
 from html import escape
@@ -7,73 +7,185 @@ from io import BytesIO
 from uuid import UUID
 
 from django.http import HttpResponse
+from django.core.exceptions import SuspiciousFileOperation
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+from django.utils import timezone
+from botocore.exceptions import BotoCoreError, ClientError
+from .export_schema import EXPORT_FIELDS
+from .models import UserProfile
+from .contract_models import StandardAgreementAcceptance, ClinicalContractRequest, ClinicalContractBundle, ClinicalContractSignature
+from apps.practices.models import TherapistProfile
+from apps.appointments.models import PracticeWorkingHour, PracticeAvailabilityOverride
 
 from apps.appointments.models import Appointment
 from apps.audit.models import AuditLog
-from apps.billing.models import Invoice, Payment, ServicePackage, InsurancePayer, InsuranceRate, PracticeInsurancePayer
+from apps.billing.models import Invoice, Payment, ServicePackage, InsurancePayer, InsuranceRate, PracticeInsurancePayer, SessionPackageTemplate, PackageUsage
 from apps.clients.models import Client
 from apps.clinical.models import Diagnosis, SessionNote, SessionNoteSignature, SessionNoteAddendum, TreatmentPlan
 from apps.dashboard.models import Task
 from apps.documents.models import ClientDocument
-from apps.portal.models import ClientPortalAccess
+from apps.portal.models import (ClientPortalAccess, ClientPortalRequest, PortalConversation, PortalMessage,
+    PublicBookingRequest, IntakePacketTemplate, ClientIntakeAssignment)
 
 
 def _rows(queryset, *fields):
     return list(queryset.values(*fields))
 
 
-def build_export_data(practice, scope):
-    data = {'scope': scope, 'practice': {'id': practice.pk, 'name': practice.name, 'email': practice.email}}
-    if scope in {'all', 'clinical'}:
-        data['clients'] = _rows(Client.objects.filter(practice=practice), 'id', 'public_id', 'first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'status', 'billing_type', 'insurance_payer_id', 'insurance_state', 'insurance_copay', 'insurance_provider', 'insurance_member_id', 'created_at', 'updated_at')
-        data['appointments'] = _rows(Appointment.objects.filter(practice=practice), 'id', 'client_id', 'therapist_id', 'starts_at', 'ends_at', 'status', 'session_kind', 'appointment_type', 'location', 'meeting_url', 'created_at')
-        data['diagnoses'] = _rows(Diagnosis.objects.filter(practice=practice), 'id', 'client_id', 'code', 'label', 'diagnosed_at', 'active', 'created_at')
-        data['treatment_plans'] = _rows(TreatmentPlan.objects.filter(practice=practice), 'id', 'client_id', 'therapist_id', 'title', 'status', 'goals', 'objectives', 'interventions', 'start_date', 'review_date', 'completed_at', 'created_at', 'updated_at')
-        data['session_notes'] = _rows(SessionNote.objects.filter(practice=practice), 'id', 'client_id', 'therapist_id', 'appointment_id', 'treatment_plan_id', 'note_type', 'content', 'treatment_progress', 'is_locked', 'locked_at', 'created_at', 'updated_at')
-        data['session_note_signatures'] = _rows(SessionNoteSignature.objects.filter(note__practice=practice), 'id', 'note_id', 'signed_by_id', 'signer_name', 'signed_at', 'digest')
-        data['session_note_addenda'] = _rows(SessionNoteAddendum.objects.filter(note__practice=practice), 'id', 'note_id', 'signed_by_id', 'signer_name', 'signed_at', 'reason', 'content', 'original_digest', 'digest', 'review_id')
-        data['documents'] = _rows(ClientDocument.objects.filter(practice=practice), 'id', 'client_id', 'title', 'document_type', 'file', 'visible_to_client', 'created_at')
-        data['portal_access'] = _rows(ClientPortalAccess.objects.filter(practice=practice), 'id', 'client_id', 'user_id', 'is_active', 'created_at', 'updated_at')
-    if scope in {'all', 'billing'}:
-        data['invoices'] = _rows(Invoice.objects.filter(practice=practice), 'id', 'client_id', 'appointment_id', 'package_id', 'invoice_number', 'amount', 'billing_type', 'insurance_payer_id', 'insurance_payer_name', 'service_code', 'insurance_state', 'contracted_amount', 'client_responsibility', 'status', 'due_date', 'paid_at', 'created_at', 'updated_at')
-        data['payments'] = _rows(Payment.objects.filter(practice=practice), 'id', 'client_id', 'invoice_id', 'amount', 'method', 'external_payment_id', 'paid_at', 'created_at')
-        data['service_packages'] = _rows(ServicePackage.objects.filter(practice=practice), 'id', 'client_id', 'template_id', 'name', 'sessions_purchased', 'sessions_used', 'total_price', 'status', 'purchased_at', 'expires_at', 'created_at', 'updated_at')
-    if scope in {'all', 'billing', 'clinical'}:
-        from django.db.models import Q
-        relevant = InsurancePayer.objects.filter(Q(practice=practice) | Q(practice_selections__practice=practice) | Q(insured_clients__practice=practice) | Q(invoices__practice=practice) | Q(rates__practice=practice)).distinct()
-        data['insurance_payers'] = _rows(relevant, 'id', 'name', 'payer_id', 'practice_id', 'active')
-    if scope in {'all', 'billing'}:
-        data['insurance_rates'] = _rows(InsuranceRate.objects.filter(practice=practice), 'id', 'payer_id', 'state', 'service_code', 'service_label', 'reimbursement_amount', 'active', 'notes')
-        data['payer_selections'] = _rows(PracticeInsurancePayer.objects.filter(practice=practice), 'payer_id', 'active')
-    if scope == 'all':
-        data['tasks'] = _rows(Task.objects.filter(practice=practice), 'id', 'title', 'description', 'due_date', 'priority', 'status', 'assignee_id', 'created_by_id', 'created_at', 'updated_at')
-        data['audit_logs'] = _rows(AuditLog.objects.filter(practice=practice), 'id', 'actor_id', 'action', 'object_type', 'object_id', 'metadata', 'created_at')
-
-    return data
-
-
 def _download_response(content, content_type, filename):
     response = HttpResponse(content.getvalue(), content_type=content_type)
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
     return response
+
+
+def _records(queryset):
+    return _rows(queryset, *EXPORT_FIELDS[queryset.model._meta.label])
+
+
+def build_export_data(practice, scope):
+    if scope not in {'all', 'clinical', 'billing'}:
+        raise ValueError('Unknown export scope.')
+    data = {'scope': scope, 'practice': {name: getattr(practice, name) for name in (
+        'id', 'name', 'practice_type', 'email', 'phone', 'address_line1', 'address_line2',
+        'city', 'state', 'postal_code', 'description')}}
+    sections = {}
+    if scope in {'all', 'clinical'}:
+        sections.update({
+            'clients': Client.objects.filter(practice=practice),
+            'appointments': Appointment.objects.filter(practice=practice),
+            'diagnoses': Diagnosis.objects.filter(practice=practice),
+            'treatment_plans': TreatmentPlan.objects.filter(practice=practice),
+            'session_notes': SessionNote.objects.filter(practice=practice),
+            'session_note_signatures': SessionNoteSignature.objects.filter(note__practice=practice),
+            'session_note_addenda': SessionNoteAddendum.objects.filter(note__practice=practice),
+            'documents': ClientDocument.objects.filter(practice=practice),
+            'portal_access': ClientPortalAccess.objects.filter(practice=practice),
+            'portal_requests': ClientPortalRequest.objects.filter(practice=practice),
+            'portal_conversations': PortalConversation.objects.filter(practice=practice),
+            'portal_messages': PortalMessage.objects.filter(practice=practice, conversation__practice=practice),
+            'public_booking_requests': PublicBookingRequest.objects.filter(practice=practice),
+            'intake_templates': IntakePacketTemplate.objects.filter(practice=practice),
+            'intake_assignments': ClientIntakeAssignment.objects.filter(practice=practice),
+        })
+    if scope in {'all', 'billing'}:
+        sections.update({
+            'invoices': Invoice.objects.filter(practice=practice),
+            'payments': Payment.objects.filter(practice=practice),
+            'service_packages': ServicePackage.objects.filter(practice=practice),
+            'session_package_templates': SessionPackageTemplate.objects.filter(practice=practice),
+            'package_usages': PackageUsage.objects.filter(package__practice=practice, appointment__practice=practice),
+            'insurance_rates': InsuranceRate.objects.filter(practice=practice),
+            'payer_selections': PracticeInsurancePayer.objects.filter(practice=practice),
+        })
+    relevant = InsurancePayer.objects.filter(Q(practice=practice) | Q(practice_selections__practice=practice)
+        | Q(insured_clients__practice=practice) | Q(invoices__practice=practice) | Q(rates__practice=practice))
+    sections['insurance_payers'] = relevant.filter(Q(practice=practice) | Q(practice__isnull=True)).distinct()
+    if scope == 'all':
+        sections.update({
+            'tasks': Task.objects.filter(practice=practice),
+            'audit_logs': AuditLog.objects.filter(practice=practice),
+            'therapists': TherapistProfile.objects.filter(practice=practice),
+            'working_hours': PracticeWorkingHour.objects.filter(practice=practice),
+            'availability_overrides': PracticeAvailabilityOverride.objects.filter(practice=practice),
+            'standard_agreements': StandardAgreementAcceptance.objects.filter(practice=practice),
+            'contract_requests': ClinicalContractRequest.objects.filter(practice=practice),
+            'contract_bundles': ClinicalContractBundle.objects.filter(request__practice=practice),
+            'contract_signatures': ClinicalContractSignature.objects.filter(bundle__request__practice=practice),
+        })
+        data['team_profiles'] = _rows(UserProfile.objects.filter(practice=practice),
+            'id', 'user_id', 'practice_id', 'role', 'phone', 'permissions', 'profile_photo', 'created_at', 'updated_at')
+    if scope in {'all', 'clinical'}:
+        # Resolve authors without exporting passwords, MFA or other account secrets.
+        staff = get_user_model().objects.filter(Q(nuvia_profile__practice=practice)
+            | Q(therapist_profile__practice=practice)).distinct()
+        data['team_members'] = _rows(staff, 'id', 'first_name', 'last_name', 'email', 'is_active')
+        data['therapists'] = _records(TherapistProfile.objects.filter(practice=practice))
+    data.update({name: _records(queryset.order_by('pk')) for name, queryset in sections.items()})
+    return data
+
+
+class ExportFileUnavailable(Exception):
+    """An archive must not silently omit a file referenced by the selected records."""
+
+
+def _export_files(practice, scope, data):
+    # Iterate the captured record list, not a second database query with different rows.
+    if scope in {'all', 'clinical'}:
+        for row in data['documents']:
+            yield 'documents', row['id'], row['file'], ClientDocument._meta.get_field('file').storage
+        for row in data['clients']:
+            if row['profile_photo']:
+                yield 'client-photos', row['id'], row['profile_photo'], Client._meta.get_field('profile_photo').storage
+    if scope == 'all':
+        for row in data['team_profiles']:
+            if row['profile_photo']:
+                yield 'team-photos', row['id'], row['profile_photo'], UserProfile._meta.get_field('profile_photo').storage
 
 
 def build_zip_export(practice, scope, data):
     archive = BytesIO()
-    with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as bundle:
-        bundle.writestr('practice-data.json', json.dumps(data, default=str, indent=2))
-        if scope in {'all', 'clinical'}:
-            for document in ClientDocument.objects.filter(practice=practice).exclude(file=''):
+    manifest = {'schema_version': 2, 'scope': scope, 'created_at': timezone.now().isoformat(),
+                'record_counts': {key: len(value) for key, value in data.items() if isinstance(value, list)},
+                'files': [], 'excluded': ['Authentication secrets and OAuth tokens',
+                    'Private product-support conversations', 'Provider-side data and historic object versions',
+                    'Backups and platform-only security records']}
+    records = json.dumps(data, default=str, indent=2).encode('utf-8')
+    manifest['records'] = {'path': 'practice-data.json', 'bytes': len(records),
+                           'sha256': hashlib.sha256(records).hexdigest()}
+    try:
+        with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as bundle:
+            bundle.writestr('practice-data.json', records)
+            for category, record_id, name, storage in _export_files(practice, scope, data):
+                if not name:
+                    raise ExportFileUnavailable('A selected file is unavailable.')
+                # No user-controlled filename or storage path becomes an archive entry.
+                path = f'{category}/{record_id}'
+                digest = hashlib.sha256()
+                size = 0
                 try:
-                    with document.file.open('rb') as source:
-                        bundle.writestr(f"documents/{document.pk}-{os.path.basename(document.file.name)}", source.read())
-                except (FileNotFoundError, OSError):
-                    continue
-    archive.seek(0)
-    return _download_response(archive, 'application/zip', f'nuviamy-{practice.pk}-export.zip')
+                    with storage.open(name, 'rb') as source, bundle.open(path, 'w') as destination:
+                        while chunk := source.read(64 * 1024):
+                            destination.write(chunk)
+                            digest.update(chunk)
+                            size += len(chunk)
+                except (OSError, SuspiciousFileOperation, BotoCoreError, ClientError) as error:
+                    raise ExportFileUnavailable('A selected file is unavailable.') from error
+                manifest['files'].append({'category': category, 'record_id': record_id, 'path': path,
+                                          'bytes': size, 'sha256': digest.hexdigest()})
+            bundle.writestr('manifest.json', json.dumps(manifest, indent=2))
+            bundle.writestr('README.txt', EXPORT_README)
+        archive.seek(0)
+        return _download_response(archive, 'application/zip', f'nuviamy-{practice.pk}-export.zip')
+    finally:
+        archive.close()
+
+
+EXPORT_README = '''NuviaMy practice return archive (schema 2)
+Confidential: store on an encrypted device and share only through an approved channel.
+practice-data.json contains records for the selected scope. manifest.json lists record
+counts, maps file entries to their source records and includes SHA-256 hashes of the
+captured JSON and file bytes. Verify these hashes and record counts before accepting
+return. Hashes detect changes after capture; they do not authenticate the sender or
+prove a coherent snapshot across simultaneous edits. Coordinate a quiet export window.
+Document titles and original names are in JSON; archive file paths use record IDs.
+PDF/SVG are summaries; Excel has data tables, without binary files. This ZIP does not
+include provider-side records, old object versions, backups, authentication secrets,
+platform-only security records or private product-support conversations. It is not a
+patient access-response bundle: review third-party information and clinical access
+rules before disclosing to a patient. No automatic import into another EHR is provided.
+Export does not cancel, erase, anonymize, or change records. Cancellation alone does
+not authorize deletion. Arrange an authenticated closure review for retention duties,
+legal holds, active data, object versions, backups and prevention of reintroduction
+on restore. Do not email clinical records to product support.
+'''
 
 
 def _cell_value(value):
+    if isinstance(value, str) and value.startswith(('=', '+', '-', '@', '\t', '\r', '\n')):
+        return "'" + value
     if isinstance(value, UUID):
         return str(value)
     if isinstance(value, (dict, list)):
@@ -118,7 +230,7 @@ def build_pdf_export(practice, scope, data):
     output = BytesIO()
     document = SimpleDocTemplate(output, pagesize=landscape(letter), rightMargin=0.4 * inch, leftMargin=0.4 * inch, topMargin=0.4 * inch, bottomMargin=0.4 * inch)
     styles = getSampleStyleSheet()
-    story = [Paragraph('NuviaMy Practice Data Export', styles['Title']), Paragraph(f'{practice.name} · Scope: {scope}', styles['Normal']), Spacer(1, 12)]
+    story = [Paragraph('NuviaMy Practice Data Export', styles['Title']), Paragraph(f'{escape(practice.name)} · Scope: {escape(scope)}', styles['Normal']), Spacer(1, 12)]
     story.append(Paragraph('Summary preview: up to 1,000 rows per section and 500 characters per field. Download the ZIP export for complete records and documents.', styles['Normal']))
     for name, rows in data.items():
         story.append(Paragraph(name.replace('_', ' ').title(), styles['Heading2']))

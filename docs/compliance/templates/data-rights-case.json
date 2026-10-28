@@ -1,0 +1,58 @@
+{
+  "template_version": "2026-10-28-v1",
+  "instruction": "Copy into the restricted evidence store; never commit completed cases or patient information to Git.",
+  "case_reference": "",
+  "received_at": null,
+  "request_kind": "pending",
+  "requester_account_reference": "",
+  "practice_reference": "",
+  "subject_reference": "",
+  "authenticated_support_reference": "",
+  "authority_review": {
+    "reviewer": "",
+    "checked_at": null,
+    "practice_owner_or_authorized_representative": "pending",
+    "scope_and_instruction_confirmed": "pending"
+  },
+  "retention_matrix": {
+    "country_and_state_or_region": "",
+    "profession_and_service": "",
+    "adults_or_minors": "pending",
+    "record_classes": [],
+    "applicable_sources_and_reasoning": [],
+    "trigger_event": "",
+    "minimum_retention_and_exceptions": "",
+    "legal_holds_checked": "pending",
+    "legal_hold_references": [],
+    "responsible_practice_approval": "pending"
+  },
+  "response": {
+    "applicable_deadline_and_basis": "",
+    "due_at": null,
+    "third_party_and_clinical_disclosure_review": "pending",
+    "responded_at": null,
+    "secure_delivery_and_recipient_reference": ""
+  },
+  "return": {
+    "selected_scope": "",
+    "archive_sha256": "",
+    "inventory_and_hashes_verified": "pending",
+    "recipient_receipt_confirmed": "pending"
+  },
+  "disposition": {
+    "decision": "pending",
+    "authorized_by": "",
+    "authorized_at": null,
+    "approved_scope_and_timetable": "",
+    "active_database": "pending",
+    "current_files": "pending",
+    "object_versions_and_replicas": "pending",
+    "database_backups_and_snapshots": "pending",
+    "provider_side_records": "pending",
+    "independent_evidence_and_keys": "pending",
+    "restore_reintroduction_prevention": "pending",
+    "lawfully_retained_records_and_reason": "",
+    "verified_by": "",
+    "completed_at": null
+  }
+}

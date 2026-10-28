@@ -27,7 +27,7 @@ from .forms import EmailAuthenticationForm, ForcePasswordChangeForm, PracticeSig
 from .invitations import send_account_access_email
 from .models import UserProfile
 from .security import requires_mfa, security_state
-from .export import build_practice_export
+from .export import build_practice_export, ExportFileUnavailable
 
 
 def sync_subscription_user_quantity(practice):
@@ -219,7 +219,13 @@ class PracticeDataExportView(LoginRequiredMixin, View):
         if export_format not in {'zip', 'xlsx', 'pdf', 'svg'}:
             return HttpResponseBadRequest('Unknown export format.')
         practice = get_practice_for_user(request.user)
-        response = build_practice_export(practice, scope, export_format)
+        try:
+            response = build_practice_export(practice, scope, export_format)
+        except ExportFileUnavailable:
+            log_audit_event(request, AuditLog.Action.DENIED, 'practices.Practice', practice.pk,
+                practice=practice, metadata={'event': 'export_file_unavailable', 'export_scope': scope, 'format': export_format})
+            messages.error(request, 'A file could not be read, so no ZIP was delivered. Your records are unchanged. Please contact support for an export review, without sending clinical records.')
+            return redirect('profile_settings')
         log_audit_event(
             request,
             AuditLog.Action.EXPORT,

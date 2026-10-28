@@ -152,12 +152,13 @@
                    <option value="xlsx">Excel</option>
                    <option value="svg">SVG</option>
                  </select>
-                 <p class="export-format-help" id="practice-export-format-help"><strong>ZIP / JSON</strong> — Complete archive with JSON records and available document files. PDF creates a readable report, Excel provides tabular data, and SVG provides a visual summary only.</p>
+                 <p class="export-format-help" id="practice-export-format-help"><strong>ZIP / JSON</strong> — Practice records for the selected scope, current document and photo files, and an integrity inventory. See the archive README for exclusions. PDF creates a readable report, Excel provides tabular data, and SVG provides a visual summary only.</p>
                </div>
               <button class="btn btn-primary" type="submit" aria-describedby="practice-export-status">Prepare secure download</button></form>
-              <p class="export-status" id="practice-export-status"><span aria-hidden="true">i</span> The ZIP includes JSON records and available document files.</p>
+              <p class="export-status" id="practice-export-status"><span aria-hidden="true">i</span> The ZIP includes records and current files. If a required file cannot be read, no partial ZIP is delivered.</p>
             </div>
           </div>
+          <p class="export-format-help">Closing your practice? <a href="{% url 'support_contact' %}">Request a closure review</a> to agree return, retention and deletion instructions. Cancellation does not delete records. Do not send clinical records through support.</p>
         </details>{% endif %}
        <dialog class="modal-dialog" id="profile-edit-modal"{% if profile_form.errors %} data-profile-errors{% endif %}><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Account</p><h2>Edit profile</h2></div><button class="modal-close" type="button" data-modal-close aria-label="Close">×</button></div><form class="appointment-form" method="post" action="{% url 'profile_settings' %}">{% csrf_token %}{% if profile_form.errors %}<div class="form-error">Please correct the profile details below.</div>{% endif %}<div class="field-grid two"><div class="field"><label for="id_first_name">First name</label>{{ profile_form.first_name }}{{ profile_form.first_name.errors }}</div><div class="field"><label for="id_last_name">Last name</label>{{ profile_form.last_name }}{{ profile_form.last_name.errors }}</div><div class="field full"><label for="id_email">Login email</label>{{ profile_form.email }}{{ profile_form.email.errors }}</div><div class="field full"><label for="id_phone">Phone</label>{{ profile_form.phone }}{{ profile_form.phone.errors }}</div></div><p class="empty-state">Changing this login email does not disconnect Gmail OAuth or change your Stripe subscription/Connect account.</p><div class="form-actions"><button class="btn btn-secondary" type="button" data-modal-close>Cancel</button><button class="btn btn-primary" type="submit">Save profile</button></div></form></div></dialog>
       {% if subscription and can_manage_client_payments %}

@@ -1,5 +1,13 @@
 # AWS migration foundation
 
+27 October update: the separate `audit-logging.json` stack is active. It provides a
+retained private log bucket and multi-region CloudTrail. The desired foundation now
+requires `AuditLogBucketName` and configures document/backup server access logging.
+For a new environment, create the audit stack first using the intended source bucket
+names. Read [the audit runbook](../../docs/operations/aws-audit-logging.md) before
+updating an existing stack: source logging was enabled in the console, and reconciling
+the foundation must not replace the host through a newer resolved SSM AMI.
+
 `foundation.json` provisions a single Ubuntu 24.04 x86_64 `t3a.medium` in a dedicated
 VPC, one public subnet, one final Elastic IP, a free S3 gateway endpoint, a 60 GiB
 encrypted gp3 root disk, private versioned document and backup buckets, and daily

@@ -296,6 +296,20 @@ class IntegrationSettingsTests(TestCase):
         gmail.assert_not_called()
         self.assertContains(response, "Therapy session")
 
+    def test_google_workspace_withholds_provider_exception_details(self):
+        user, practice = self.create_practice_user()
+        ExternalIntegration.objects.create(practice=practice,
+            provider=ExternalIntegration.Provider.GOOGLE,
+            status=ExternalIntegration.Status.CONNECTED, calendar_enabled=True)
+        self.client.force_login(user)
+        with patch('apps.practices.views.list_calendar_events',
+                   side_effect=RuntimeError('private-patient-marker access_token=secret-marker')):
+            response = self.client.get(reverse('practice_settings:google_workspace'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Calendar could not be loaded.')
+        self.assertNotContains(response, 'private-patient-marker')
+        self.assertNotContains(response, 'secret-marker')
+
     def test_google_workspace_send_email_rejects_legacy_send_capability(self):
         user, practice = self.create_practice_user()
         ExternalIntegration.objects.create(

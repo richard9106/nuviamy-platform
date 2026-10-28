@@ -1,5 +1,13 @@
 # Recuperación de configuración y claves — evidencia 15 octubre 2026
 
+**Actualización 27/10/2026:** este informe describe una copia histórica del VPS
+anterior. No ejecutar su comando contra el origen antiguo como si siguiera siendo
+producción. El [corte AWS y restauración real](../validation/aws-cutover-2026-10-20.md)
+documentan el destino actual y el ensayo del 20/10. Último backup programado observado
+el 27/10: Result=success, ExecMainStatus=0. No se ha repetido una restauración integral
+ni acreditado alerta/custodia independiente en esta revisión; ver P03/P06 del
+[expediente actual](closure-2026-10-27.md).
+
 Se ejecutó `ops/offsite_config_backup.py` desde el ordenador del operador. El VPS
 cifra con un certificado público RSA-3072 y OpenSSL CMS AES-256-GCM/RSA-OAEP. La
 clave privada se genera y conserva localmente; no se envía al VPS. SSH transporta

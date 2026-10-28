@@ -199,6 +199,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'fa
 SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'false' if DEBUG else 'true').lower() == 'true'
 
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+AWS_SES_REGION = os.getenv('AWS_SES_REGION', '')
+AWS_SES_CONFIGURATION_SET = os.getenv('AWS_SES_CONFIGURATION_SET', '')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '25'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
@@ -215,6 +217,9 @@ if DJANGO_ENVIRONMENT == 'production':
 
 # MFA is deferred during pre-client development; enable before clinical onboarding.
 MFA_REQUIRED = os.getenv('DJANGO_MFA_REQUIRED', 'false').strip().lower() == 'true'
+# Operators must enroll an authenticator even when global clinician MFA is off.
+MFA_PRIVILEGED_REQUIRED = os.getenv('DJANGO_MFA_PRIVILEGED_REQUIRED',
+    'true' if DJANGO_ENVIRONMENT == 'production' else 'false').strip().lower() == 'true'
 SECURITY_IDLE_TIMEOUT = 60 * 60
 SECURITY_ABSOLUTE_TIMEOUT = 8 * 60 * 60
 SECURITY_CHALLENGE_TIMEOUT = 10 * 60

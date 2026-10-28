@@ -1,0 +1,297 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "NuviaMy proposed audit logging: separate retained private log bucket, multi-region CloudTrail and scoped S3 data events. No existing app resources changed.",
+  "Parameters": {
+    "TrailName": {
+      "Type": "String",
+      "Default": "nuviamy-audit",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9_-]{2,100}"
+    },
+    "DocumentsBucket": {
+      "Type": "String",
+      "AllowedPattern": "[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]"
+    },
+    "BackupsBucket": {
+      "Type": "String",
+      "AllowedPattern": "[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]"
+    }
+  },
+  "Resources": {
+    "AuditLogs": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BucketName": {
+          "Fn::Sub": "nuviamy-${AWS::AccountId}-${AWS::Region}-audit"
+        },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "BucketOwnerEnforced"
+            }
+          ]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "NuviaMy"
+          },
+          {
+            "Key": "Purpose",
+            "Value": "Audit evidence"
+          }
+        ]
+      }
+    },
+    "AuditLogPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "AuditLogs"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "DenyNonTLS",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:*",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AuditLogs",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Sub": "${AuditLogs.Arn}/*"
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              }
+            },
+            {
+              "Sid": "TrailBucketCheck",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+              },
+              "Action": "s3:GetBucketAcl",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AuditLogs",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${TrailName}"
+                  }
+                }
+              }
+            },
+            {
+              "Sid": "TrailDelivery",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+              },
+              "Action": "s3:PutObject",
+              "Resource": {
+                "Fn::Sub": "${AuditLogs.Arn}/cloudtrail/AWSLogs/${AWS::AccountId}/*"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${TrailName}"
+                  },
+                  "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+              }
+            },
+            {
+              "Sid": "DocumentAccessLogDelivery",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "logging.s3.amazonaws.com"
+              },
+              "Action": "s3:PutObject",
+              "Resource": {
+                "Fn::Sub": "${AuditLogs.Arn}/s3-access/documents/*"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${DocumentsBucket}"
+                  }
+                }
+              }
+            },
+            {
+              "Sid": "BackupAccessLogDelivery",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "logging.s3.amazonaws.com"
+              },
+              "Action": "s3:PutObject",
+              "Resource": {
+                "Fn::Sub": "${AuditLogs.Arn}/s3-access/backups/*"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${BackupsBucket}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AuditTrail": {
+      "Type": "AWS::CloudTrail::Trail",
+      "DependsOn": "AuditLogPolicy",
+      "Properties": {
+        "TrailName": {
+          "Ref": "TrailName"
+        },
+        "IsLogging": true,
+        "IsMultiRegionTrail": true,
+        "IncludeGlobalServiceEvents": true,
+        "EnableLogFileValidation": true,
+        "S3BucketName": {
+          "Ref": "AuditLogs"
+        },
+        "S3KeyPrefix": "cloudtrail",
+        "AdvancedEventSelectors": [
+          {
+            "Name": "All management read and write events",
+            "FieldSelectors": [
+              {
+                "Field": "eventCategory",
+                "Equals": [
+                  "Management"
+                ]
+              }
+            ]
+          },
+          {
+            "Name": "Documents and backups object activity",
+            "FieldSelectors": [
+              {
+                "Field": "eventCategory",
+                "Equals": [
+                  "Data"
+                ]
+              },
+              {
+                "Field": "resources.type",
+                "Equals": [
+                  "AWS::S3::Object"
+                ]
+              },
+              {
+                "Field": "resources.ARN",
+                "StartsWith": [
+                  {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${DocumentsBucket}/"
+                  },
+                  {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${BackupsBucket}/"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "Name": "Audit object access except deliveries to prevent recursion",
+            "FieldSelectors": [
+              {
+                "Field": "eventCategory",
+                "Equals": [
+                  "Data"
+                ]
+              },
+              {
+                "Field": "resources.type",
+                "Equals": [
+                  "AWS::S3::Object"
+                ]
+              },
+              {
+                "Field": "resources.ARN",
+                "StartsWith": [
+                  {
+                    "Fn::Sub": "${AuditLogs.Arn}/"
+                  }
+                ]
+              },
+              {
+                "Field": "eventName",
+                "NotEquals": [
+                  "PutObject"
+                ]
+              }
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "NuviaMy"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "AuditBucketName": {
+      "Value": {
+        "Ref": "AuditLogs"
+      }
+    },
+    "TrailArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "AuditTrail",
+          "Arn"
+        ]
+      }
+    }
+  }
+}

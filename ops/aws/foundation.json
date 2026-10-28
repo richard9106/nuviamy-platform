@@ -15,6 +15,11 @@
     "UbuntuImage": {
       "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
       "Default": "/aws/service/canonical/ubuntu/server/noble/stable/current/amd64/hvm/ebs-gp3/ami-id"
+    },
+    "AuditLogBucketName": {
+      "Type": "String",
+      "AllowedPattern": "[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]",
+      "Description": "Required private audit bucket in this account and region. Create audit-logging stack first; use its AuditBucketName output. Never silently disable source bucket logging."
     }
   },
   "Resources": {
@@ -230,7 +235,13 @@
             "Key": "Name",
             "Value": "nuviamy-documents"
           }
-        ]
+        ],
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Ref": "AuditLogBucketName"
+          },
+          "LogFilePrefix": "s3-access/documents/"
+        }
       },
       "DeletionPolicy": "Retain",
       "UpdateReplacePolicy": "Retain"
@@ -325,6 +336,12 @@
               }
             }
           ]
+        },
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Ref": "AuditLogBucketName"
+          },
+          "LogFilePrefix": "s3-access/backups/"
         }
       },
       "DeletionPolicy": "Retain",

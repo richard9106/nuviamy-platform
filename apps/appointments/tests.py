@@ -194,6 +194,22 @@ class AppointmentModelTests(TestCase):
         send_email.assert_called_once()
         self.assertEqual(send_email.call_args.args[1], "client@example.com")
 
+    def test_failed_reminder_does_not_store_provider_exception_content(self):
+        self.client.email = 'client@example.com'
+        self.client.save(update_fields=['email'])
+        appointment = self.build_appointment()
+        appointment.save()
+        ExternalIntegration.objects.create(practice=self.practice,
+            provider=ExternalIntegration.Provider.GOOGLE,
+            status=ExternalIntegration.Status.CONNECTED, send_email_enabled=True)
+        with patch('apps.appointments.reminders.send_gmail_message',
+                   side_effect=RuntimeError('patient-marker token=secret-marker')):
+            self.assertFalse(send_appointment_reminder(appointment))
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.reminder_status, Appointment.ReminderStatus.FAILED)
+        self.assertEqual(appointment.reminder_error,
+                         'Reminder delivery failed. Check the connection or contact support.')
+
     def test_due_reminder_appointments_returns_next_24_hours_only(self):
         due = self.build_appointment(starts_at=timezone.now() + timedelta(hours=23), ends_at=timezone.now() + timedelta(hours=24))
         due.save()

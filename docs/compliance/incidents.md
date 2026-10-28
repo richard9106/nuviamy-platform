@@ -1,4 +1,13 @@
-# Respuesta a incidentes — procedimiento inicial
+# Respuesta a incidentes
+
+Actualización 27/10/2026: Richard Andres Marles Bonilla ha confirmado que asume
+seguridad y privacidad. Contacto alternativo, formación y simulacro siguen pendientes.
+El [paquete operativo](closure-2026-10-27.md#paquete-preparado-para-aprobación-del-operador)
+incluye un ejercicio ficticio listo para ejecutar y registrar; no se afirma realizado.
+Usar el origen AWS actual; preservar también evidencia de copias históricas cuando
+sea relevante. El procedimiento inicial siguiente mantiene su fecha y límites.
+
+## Procedimiento inicial
 
 Versión 1, 15 octubre 2026. Responsable propuesto: Richard; pendiente de aceptación,
 contacto alternativo y ejercicio con el operador. Canal inicial: support@nuviamy.com.

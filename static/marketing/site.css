@@ -1,4 +1,10 @@
 /* Public website presentation; app layouts do not load this stylesheet. */
+.website-home .security-highlights { max-width: 1200px; margin: 0 auto 32px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-block: 1px solid #e7e3f0; }
+.website-home .security-highlights ul { display: flex; flex-wrap: wrap; gap: 20px 36px; list-style: none; margin: 0; padding: 0; }
+.website-home .security-highlights li { display: flex; align-items: center; gap: 10px; color: #395c60; font-size: 14px; font-weight: 700; }
+.website-home .security-highlights svg { width: 24px; height: 24px; flex: 0 0 24px; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.website-home .security-highlights a { color: #51409d; font-size: 13px; font-weight: 700; }
+@media(max-width:640px) { .website-home .security-highlights { margin-inline: 16px; padding: 20px 0; align-items: flex-start; flex-direction: column; } .website-home .security-highlights ul { gap: 18px; flex-direction: column; } }
 .website-home .marketing-hero { max-width: 1280px; min-height: 0; margin: 0 auto; padding: 72px 40px 64px; display: grid; grid-template-columns: .85fr 1.15fr; align-items: center; gap: 36px; background: radial-gradient(ellipse at top left,#ccfbf580,transparent 65%); }
 .website-home .marketing-hero > .hero-copy { grid-column: auto; width: auto; transform: none; }
 .website-home .hero-copy h1 { font-size: clamp(38px,4.1vw,58px); max-width: 520px; white-space: pre-line; }

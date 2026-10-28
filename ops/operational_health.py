@@ -9,11 +9,23 @@ import fcntl
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import time
 import urllib.request
 
 import boto3
+
+
+def feedback_clear(queue_url):
+    match = re.fullmatch(r'https://sqs\.([a-z0-9-]+)\.amazonaws\.com/\d{12}/[A-Za-z0-9_-]+', queue_url)
+    if not match:
+        raise ValueError('Expected a native regional SQS URL.')
+    fields = ['ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesNotVisible',
+              'ApproximateNumberOfMessagesDelayed']
+    attrs = boto3.client('sqs', region_name=match.group(1)).get_queue_attributes(
+        QueueUrl=queue_url, AttributeNames=fields)['Attributes']
+    return all(int(attrs[field]) == 0 for field in fields)
 
 
 def checked(args, **kwargs):
@@ -57,6 +69,13 @@ print(json.dumps({k:e.get(k,'') for k in ('BACKUP_S3_BUCKET','BACKUP_S3_PREFIX',
         checks['encrypted_backup_recent'] = 0 <= age <= 26 * 3600
     except Exception:
         checks['encrypted_backup_recent'] = False
+    queue_url = os.environ.get('NUVIAMY_FEEDBACK_QUEUE_URL', '')
+    if queue_url:
+        try:
+            # Only queue depth, never ReceiveMessage, message bodies or recipients.
+            checks['ses_feedback_review'] = feedback_clear(queue_url)
+        except Exception:
+            checks['ses_feedback_review'] = False
     return checks
 
 

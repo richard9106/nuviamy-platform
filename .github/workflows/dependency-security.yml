@@ -1,0 +1,30 @@
+name: Dependency security review
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve the application environment separately from audit tooling
+        run: |
+          python -m venv /tmp/nuviamy-app-audit
+          /tmp/nuviamy-app-audit/bin/pip install --requirement requirements.txt
+          /tmp/nuviamy-app-audit/bin/pip freeze > /tmp/nuviamy-resolved.txt
+          python -m venv /tmp/nuviamy-audit-tool
+          /tmp/nuviamy-audit-tool/bin/pip install pip-audit==2.10.1
+      - name: Check known advisories for resolved application dependencies
+        run: >-
+          /tmp/nuviamy-audit-tool/bin/pip-audit
+          --requirement /tmp/nuviamy-resolved.txt --no-deps --disable-pip

@@ -1,0 +1,51 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Private encrypted SES bounce/complaint collection. No email subscribers; host can inspect queue depth only.",
+  "Parameters": {
+    "HostRoleName": {"Type": "String", "AllowedPattern": "[A-Za-z0-9+=,.@_-]{1,64}"},
+    "SenderDomain": {"Type": "String", "Default": "nuviamy.com", "AllowedPattern": "[a-z0-9.-]+"}
+  },
+  "Resources": {
+    "FeedbackKey": {
+      "Type": "AWS::KMS::Key", "DeletionPolicy": "Retain", "UpdateReplacePolicy": "Retain",
+      "Properties": {"Description": "Encrypt only the NuviaMy SES feedback topic", "EnableKeyRotation": true,
+        "KeyPolicy": {"Version": "2012-10-17", "Statement": [
+          {"Sid": "AccountAdministration", "Effect": "Allow", "Principal": {"AWS": {"Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"}}, "Action": "kms:*", "Resource": "*"},
+          {"Sid": "SESTopicEncryption", "Effect": "Allow", "Principal": {"Service": "ses.amazonaws.com"}, "Action": ["kms:GenerateDataKey", "kms:Decrypt"], "Resource": "*", "Condition": {"StringEquals": {"kms:EncryptionContext:aws:sns:topicArn": {"Fn::Sub": "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:nuviamy-email-feedback"}}}},
+          {"Sid": "SNSTopicEncryption", "Effect": "Allow", "Principal": {"Service": "sns.amazonaws.com"}, "Action": ["kms:GenerateDataKey", "kms:Decrypt"], "Resource": "*", "Condition": {"StringEquals": {"kms:EncryptionContext:aws:sns:topicArn": {"Fn::Sub": "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:nuviamy-email-feedback"}}}}
+        ]}}
+    },
+    "FeedbackTopic": {
+      "Type": "AWS::SNS::Topic", "DeletionPolicy": "Retain", "UpdateReplacePolicy": "Retain",
+      "Properties": {"TopicName": "nuviamy-email-feedback", "KmsMasterKeyId": {"Ref": "FeedbackKey"}}
+    },
+    "FeedbackTopicPolicy": {
+      "Type": "AWS::SNS::TopicPolicy", "Properties": {"Topics": [{"Ref": "FeedbackTopic"}], "PolicyDocument": {
+        "Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "ses.amazonaws.com"},
+          "Action": "sns:Publish", "Resource": {"Ref": "FeedbackTopic"},
+          "Condition": {"StringEquals": {"AWS:SourceAccount": {"Ref": "AWS::AccountId"}},
+                        "ArnEquals": {"AWS:SourceArn": {"Fn::Sub": "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/${SenderDomain}"}}}}]}}
+    },
+    "FeedbackQueue": {
+      "Type": "AWS::SQS::Queue", "DeletionPolicy": "Retain", "UpdateReplacePolicy": "Retain",
+      "Properties": {"QueueName": "nuviamy-email-feedback", "SqsManagedSseEnabled": true,
+        "MessageRetentionPeriod": 1209600, "VisibilityTimeout": 60}
+    },
+    "FeedbackQueuePolicy": {
+      "Type": "AWS::SQS::QueuePolicy", "Properties": {"Queues": [{"Ref": "FeedbackQueue"}], "PolicyDocument": {
+        "Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "sns.amazonaws.com"},
+          "Action": "sqs:SendMessage", "Resource": {"Fn::GetAtt": ["FeedbackQueue", "Arn"]},
+          "Condition": {"ArnEquals": {"aws:SourceArn": {"Ref": "FeedbackTopic"}}}}]}}
+    },
+    "FeedbackSubscription": {
+      "Type": "AWS::SNS::Subscription", "DependsOn": "FeedbackQueuePolicy",
+      "Properties": {"TopicArn": {"Ref": "FeedbackTopic"}, "Protocol": "sqs",
+        "Endpoint": {"Fn::GetAtt": ["FeedbackQueue", "Arn"]}, "RawMessageDelivery": true}
+    },
+    "HostFeedbackMetadataPolicy": {
+      "Type": "AWS::IAM::Policy", "Properties": {"PolicyName": "nuviamy-email-feedback-depth", "Roles": [{"Ref": "HostRoleName"}],
+        "PolicyDocument": {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": "sqs:GetQueueAttributes", "Resource": {"Fn::GetAtt": ["FeedbackQueue", "Arn"]}}]}}
+    }
+  },
+  "Outputs": {"FeedbackTopicArn": {"Value": {"Ref": "FeedbackTopic"}}, "FeedbackQueueUrl": {"Value": {"Ref": "FeedbackQueue"}}}
+}

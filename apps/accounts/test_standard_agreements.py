@@ -126,6 +126,41 @@ class StandardAgreementTests(TestCase):
         practice = record.practice
         self.assertEqual(practice.free_trial_ends_at-practice.free_trial_started_at, timedelta(days=30))
 
+    def test_new_offer_preserves_historical_receipt_and_requires_new_acceptance(self):
+        with patch('apps.accounts.standard_agreements.AGREEMENT_VERSION', '2026-10-20-standard-v1'):
+            old_record = self.accept()
+        original_snapshot, original_digest = old_record.snapshot, old_record.digest
+        response = self.client.get(reverse('clinical_contracts'))
+        self.assertContains(response, 'Review the updated practice agreements')
+        self.assertContains(response, reverse('standard_agreement_download', args=[old_record.pk]))
+        self.assertContains(self.client.get(reverse('dashboard')), 'Review updated agreements')
+        self.assertEqual(StandardAgreementAcceptance.objects.count(), 1)
+        response = self.client.post(reverse('clinical_contracts'), self.payload())
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(StandardAgreementAcceptance.objects.count(), 2)
+        old_record.refresh_from_db()
+        self.assertEqual((old_record.snapshot, old_record.digest), (original_snapshot, original_digest))
+        response = self.client.get(reverse('standard_agreement_download', args=[old_record.pk]))
+        with ZipFile(io.BytesIO(response.content)) as archive:
+            self.assertEqual(json.loads(archive.read('acceptance.json'))['snapshot'], original_snapshot)
+        self.assertContains(self.client.get(reverse('clinical_contracts')), 'Previously accepted agreements')
+        self.assertNotContains(self.client.get(reverse('dashboard')), 'Review updated agreements')
+
+    def test_new_offer_discloses_current_services_and_unresolved_eea_scope(self):
+        texts = documents()
+        for text in texts.values():
+            self.assertNotIn('DRAFT, NOT OFFERED', text)
+        schedule = texts['schedule']
+        for fragment in ('Amazon Web Services EMEA SARL', 'Amazon SES',
+                         'Gmail and Drive capabilities are disabled',
+                         'does not record that assessment as complete',
+                         'recipient certification covers the data'):
+            self.assertIn(fragment, schedule)
+        self.assertIn('richard@nuviamy.com', texts['dpa'])
+        response = self.client.get(reverse('privacy_policy'))
+        self.assertContains(response, 'evaluation of the hosted EEA clinical-data flows remains pending')
+        self.assertContains(response, '2026-10-29-v6')
+
     def test_trial_migration_extends_only_standard_fifteen_day_trials(self):
         from importlib import import_module
         from django.apps import apps

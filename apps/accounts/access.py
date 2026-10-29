@@ -99,10 +99,13 @@ def permission_context(request):
     user = getattr(request, 'user', None)
     profile = getattr(user, 'nuvia_profile', None) if user and user.is_authenticated else None
     needs_agreements = False
+    has_previous_agreements = False
     if profile and profile.role == UserProfile.Role.OWNER:
         from .contract_models import StandardAgreementAcceptance
         from .standard_agreements import AGREEMENT_VERSION
-        needs_agreements = not StandardAgreementAcceptance.objects.filter(practice_id=profile.practice_id, version=AGREEMENT_VERSION).exists()
+        acceptances = StandardAgreementAcceptance.objects.filter(practice_id=profile.practice_id)
+        needs_agreements = not acceptances.filter(version=AGREEMENT_VERSION).exists()
+        has_previous_agreements = needs_agreements and acceptances.exists()
     context = {
         'needs_standard_agreements': needs_agreements,
         'workspace_permissions': {
@@ -128,8 +131,10 @@ def permission_context(request):
         activities = []
         if context['can_manage_contracts'] and needs_agreements:
             activities.append({
-                'label': 'Review and accept agreements',
-                'detail': 'Accept your practice agreements before using real client records.',
+                'label': 'Review updated agreements' if has_previous_agreements else 'Review and accept agreements',
+                'detail': ('Review the new offer; your previously accepted copy remains available.'
+                           if has_previous_agreements else
+                           'Accept your practice agreements before using real client records.'),
                 'url': reverse('clinical_contracts'),
             })
         activities.extend(setup_steps(request))

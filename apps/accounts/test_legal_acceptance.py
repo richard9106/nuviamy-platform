@@ -33,7 +33,8 @@ class LegalAcceptanceTests(TestCase):
         for name in ('legal_notice','terms_of_service','privacy_policy'):
             response=self.client.get(reverse(name))
             self.assertContains(response,'Richard Andres Marles Bonilla')
-            self.assertContains(response,'marleswebinfo@gmail.com')
+            contact = 'richard@nuviamy.com' if name == 'privacy_policy' else 'marleswebinfo@gmail.com'
+            self.assertContains(response, contact)
             self.assertContains(response,reverse('terms_of_service'))
             self.assertContains(response,reverse('legal_notice'))
         self.assertContains(self.client.get(reverse('legal_notice')),'FICTIONAL-TAX-ID')

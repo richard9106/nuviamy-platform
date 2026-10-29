@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 
 from .legal import TERMS_VERSION, PRIVACY_VERSION, legal_context
 
-AGREEMENT_VERSION = '2026-10-20-standard-v1'
+AGREEMENT_VERSION = '2026-10-29-standard-v2'
 CONSENT = ('I am authorized to bind the identified practice. I have read and electronically accept '
            'the Terms of Use, Data Processing Agreement and Standard Processing Schedule, and the '
            'Business Associate Agreement where HIPAA applies. I acknowledge the Privacy Notice. '
@@ -18,7 +18,7 @@ CONSENT = ('I am authorized to bind the identified practice. I have read and ele
 
 
 def documents():
-    directory = Path(__file__).parent / 'agreements' / '2026-10-20-v1'
+    directory = Path(__file__).parent / 'agreements' / '2026-10-29-v2'
     result = {name: (directory / f'{name}.txt').read_text() for name in ('dpa', 'baa', 'schedule')}
     context = legal_context(None)
     for name, template in [('terms', 'terms'), ('privacy', 'privacy_policy')]:

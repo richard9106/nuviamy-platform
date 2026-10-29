@@ -54,6 +54,20 @@ class PasswordPageTests(TestCase):
         self.assertContains(response, 'aria-live="polite"')
         self.assertEqual(PracticeSignupForm().password_minimum_length, 8)
 
+    def test_signup_and_login_preserve_the_exact_password_including_spaces(self):
+        from .test_legal_acceptance import LegalAcceptanceTests
+        data = LegalAcceptanceTests().payload()
+        password = '  UniquePassphrase9!  '
+        response = self.client.post(reverse('signup'), data | {'password1': password, 'password2': password})
+        self.assertEqual(response.status_code, 302)
+        user = get_user_model().objects.get(email=data['email'])
+        self.assertTrue(user.check_password(password))
+        self.assertFalse(user.check_password(password.strip()))
+        self.client.logout()
+        response = self.client.post(reverse('login'), {'username': user.email, 'password': password})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
+
     def test_existing_password_can_still_be_used_for_login(self):
         user = get_user_model().objects.create_user('legacy-password-fixture', 'legacy@example.invalid', 'existingpassword')
         response = self.client.post(reverse('login'), {'username': user.email, 'password': 'existingpassword'})

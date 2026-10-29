@@ -43,6 +43,19 @@ class EmailSecurityTests(TestCase):
         self.client.post(self.url, {'code': code})
         self.assertNotIn('email_verified_binding', self.client.session)
 
+    def test_email_has_safe_html_and_plain_code_with_no_scripts_or_tracking(self):
+        self.client.get(self.url)
+        message = mail.outbox[-1]
+        code = self.code()
+        self.assertIn('10 minutes', message.body)
+        self.assertEqual(len(message.alternatives), 1)
+        html, mimetype = message.alternatives[0]
+        self.assertEqual(mimetype, 'text/html')
+        self.assertIn(code, html)
+        self.assertIn('Confirm it’s you', html)
+        for forbidden in ('<script', 'onclick', '<img', self.user.email, 'Copy code</button>'):
+            self.assertNotIn(forbidden, html)
+
     def test_expiration(self):
         self.client.get(self.url)
         AccountSecurity.objects.filter(user=self.user).update(email_code_sent_at=timezone.now()-timedelta(minutes=11))

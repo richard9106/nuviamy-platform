@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/dashboard.css">
+  {% include 'partials/password_tools_assets.html' %}
 </head>
 <body class="signup-page">
   <main class="signup-shell">
@@ -90,21 +91,22 @@
               {{ form.last_name }}
               {{ form.last_name.errors }}
             </div>
-            <div class="field">
+            <div class="field full">
               <label for="id_email">Email</label>
               {{ form.email }}
               {{ form.email.errors }}
             </div>
             <div class="field">
               <label for="id_password1">Password</label>
-              {{ form.password1 }}
+              {% include 'partials/password_field.html' with field=form.password1 %}
               {{ form.password1.errors }}
             </div>
             <div class="field">
               <label for="id_password2">Confirm password</label>
-              {{ form.password2 }}
+              {% include 'partials/password_field.html' with field=form.password2 %}
               {{ form.password2.errors }}
             </div>
+            <div class="field full">{% include 'partials/password_requirements.html' with field=form.password1 requirements_id='signup-password-requirements' minimum_length=form.password_minimum_length %}</div>
           </div>
         </fieldset>
 

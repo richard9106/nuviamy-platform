@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/dashboard.css">
+  {% include 'partials/password_tools_assets.html' %}
 </head>
 <body class="login-page">
   <main class="login-shell">
@@ -51,7 +52,7 @@
         {{ form.username }}
 
         <label for="id_password">Password</label>
-        {{ form.password }}
+        {% include 'partials/password_field.html' with field=form.password %}
 
         <button type="submit">Sign in</button>
       </form>

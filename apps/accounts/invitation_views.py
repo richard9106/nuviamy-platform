@@ -6,9 +6,11 @@ from django.utils import timezone
 from apps.rate_limit import PostRateLimitMixin
 from .invitations import invitation_token_generator
 from .models import UserProfile
+from .forms import PasswordSetupForm
 
 
 class AccountPasswordConfirmView(PostRateLimitMixin, PasswordResetConfirmView):
+    form_class = PasswordSetupForm
     rate_limit_scope = 'account_password_confirm'
     rate_limit_count = 20
     rate_limit_seconds = 900

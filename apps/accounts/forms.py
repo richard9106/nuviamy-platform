@@ -4,7 +4,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm
-from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.password_validation import validate_password, get_default_password_validators, MinimumLengthValidator
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.crypto import get_random_string
@@ -14,6 +14,15 @@ from apps.accounts.models import UserProfile
 from apps.practices.models import Practice, TherapistProfile
 
 from .standard_agreements import StandardAgreementForm, accept_standard_agreement
+
+
+def configure_password_fields(form, first, confirmation, requirements_id):
+    minimum = max((validator.min_length for validator in get_default_password_validators()
+                   if isinstance(validator, MinimumLengthValidator)), default=8)
+    form.password_minimum_length = minimum
+    for name in (first, confirmation):
+        form.fields[name].widget.attrs.update(autocomplete='new-password', minlength=minimum)
+    form.fields[first].widget.attrs.update({'data-password-minimum': minimum, 'aria-describedby': requirements_id})
 
 
 class PracticeSignupForm(StandardAgreementForm):
@@ -26,12 +35,16 @@ class PracticeSignupForm(StandardAgreementForm):
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
     email = forms.EmailField()
-    password1 = forms.CharField(widget=forms.PasswordInput)
-    password2 = forms.CharField(widget=forms.PasswordInput)
+    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Confirm password", widget=forms.PasswordInput)
     license_number = forms.CharField(max_length=60)
     license_state = forms.CharField(max_length=60)
     specialty = forms.CharField(max_length=140, required=False)
     profile_photo = forms.ImageField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        configure_password_fields(self, 'password1', 'password2', 'signup-password-requirements')
 
     def clean_email(self):
         email = self.cleaned_data["email"]
@@ -63,7 +76,10 @@ class PracticeSignupForm(StandardAgreementForm):
 
         if password1:
             try:
-                validate_password(password1)
+                candidate = get_user_model()(email=cleaned_data.get('email', ''),
+                    username=cleaned_data.get('email', ''), first_name=cleaned_data.get('first_name', ''),
+                    last_name=cleaned_data.get('last_name', ''))
+                validate_password(password1, user=candidate)
             except ValidationError as error:
                 self.add_error("password1", error)
 
@@ -129,9 +145,14 @@ class PracticeSignupForm(StandardAgreementForm):
         return user
 
 
-class ForcePasswordChangeForm(SetPasswordForm):
-    pass
+class PasswordSetupForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        configure_password_fields(self, 'new_password1', 'new_password2', 'new-password-requirements')
 
+
+class ForcePasswordChangeForm(PasswordSetupForm):
+    pass
 
 class EmailAuthenticationForm(AuthenticationForm):
     username = forms.EmailField(

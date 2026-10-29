@@ -10,6 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.db import transaction
 from django.shortcuts import redirect
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare, salted_hmac
 from django.utils.decorators import method_decorator
@@ -81,7 +82,8 @@ class EmailChallengeView(LoginRequiredMixin, PostRateLimitMixin, FormView):
                 sent = send_mail('Your NuviaMy sign-in code',
                     f'Your sign-in code is {code}.\n\nIt expires in 10 minutes and can only be used once. '
                     'Do not share this code. If you did not try to sign in, change your password or contact support.',
-                    settings.DEFAULT_FROM_EMAIL, [request.user.email], fail_silently=False)
+                    settings.DEFAULT_FROM_EMAIL, [request.user.email], fail_silently=False,
+                    html_message=render_to_string('accounts/emails/sign_in_code.html', {'code': code}))
                 if not sent:
                     raise ValueError('Delivery unavailable')
             except Exception:

@@ -55,7 +55,7 @@ def redeem_existing_offer(user, code):
     if not profile or not user.is_active:
         raise ValidationError('Only the practice owner can redeem this offer.')
     practice = Practice.objects.select_for_update().get(pk=profile.practice_id)
-    if (practice.free_access_kind != 'trial' or FoundingTherapistInvitation.objects.filter(practice=practice).exists()
+    if (not practice.subscription_required or practice.free_access_kind != 'trial' or FoundingTherapistInvitation.objects.filter(practice=practice).exists()
             or PracticeSubscription.objects.filter(practice=practice).exists()):
         raise ValidationError('This offer is for a new practice or an ordinary trial without a subscription.')
     if practice.user_profiles.filter(user__is_active=True,role__in=['owner','admin','therapist']).count() != 1:

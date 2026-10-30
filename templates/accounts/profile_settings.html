@@ -143,7 +143,7 @@
 </article>
 {% endif %}
       </div>
-      {% if can_manage_contracts and practice.free_access_kind == 'trial' and not subscription %}
+      {% if can_manage_contracts and practice.subscription_required and practice.free_access_kind == 'trial' and not subscription %}
       <article class="panel">
         <h2>Have a personal offer code?</h2>
         <p>Founding therapist invitations include six months free for one internal user. No card required and no automatic charges.</p>

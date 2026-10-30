@@ -126,15 +126,17 @@ class FoundingOfferTests(TestCase):
 
     def test_existing_paid_team_and_legacy_access_cannot_be_overwritten(self):
         data=self.issue();user,practice=self.owner()
-        for reason in ('paid','team','legacy'):
+        for reason in ('paid','team','legacy','unrestricted'):
             with self.subTest(reason=reason),transaction.atomic():
                 sid=transaction.savepoint()
                 if reason=='paid':PracticeSubscription.objects.create(practice=practice,status='active')
                 elif reason=='team':
                     other=get_user_model().objects.create_user('team-fixture')
                     UserProfile.objects.create(user=other,practice=practice,role='therapist')
-                else:
+                elif reason=='legacy':
                     Practice.objects.filter(pk=practice.pk).update(free_access_kind='early_access')
+                else:
+                    Practice.objects.filter(pk=practice.pk).update(subscription_required=False)
                 with self.assertRaises(ValidationError):redeem_existing_offer(user,data['code'])
                 transaction.savepoint_rollback(sid)
         self.assertIsNone(offer_for(data['code']).redeemed_at)
@@ -188,7 +190,7 @@ class ConcurrentFoundingOfferTests(ProtectedRecordsTransactionTestCase):
         code=json.loads(output.getvalue())['code']
         users=[]
         for i in range(2):
-            p=Practice.objects.create(name=f'Synthetic concurrent {i}')
+            p=Practice.objects.create(name=f'Synthetic concurrent {i}',subscription_required=True)
             u=get_user_model().objects.create_user(f'owner-{i}',email='owner@example.invalid')
             UserProfile.objects.create(practice=p,user=u,role='owner');users.append(u.pk)
         def redeem(pk):

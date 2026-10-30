@@ -145,3 +145,19 @@ class EarlyAccessInvitation(models.Model):
 
     class Meta:
         constraints = [models.CheckConstraint(condition=models.Q(slot__gte=1, slot__lte=10), name="early_access_ten_slots")]
+
+
+class FoundingTherapistInvitation(models.Model):
+    """Separate six-month campaign; legacy twelve-month invitations stay unchanged."""
+    slot = models.PositiveSmallIntegerField(unique=True)
+    email = models.EmailField(blank=True)
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    redeemed_at = models.DateTimeField(null=True, blank=True)
+    practice = models.OneToOneField(Practice, null=True, blank=True, on_delete=models.PROTECT)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(slot__gte=1, slot__lte=20), name='founding_offer_twenty_slots'),
+            models.UniqueConstraint(models.functions.Lower('email'), condition=~models.Q(email=''), name='founding_offer_unique_email'),
+        ]

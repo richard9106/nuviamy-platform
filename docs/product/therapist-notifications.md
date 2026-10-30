@@ -15,10 +15,10 @@ A minimal `SessionEmailNotification` outbox is written with the event. Delivery 
 
 ## Deployment/runbook
 
-Prepared locally; no production rollout, opt-ins or live test messages are performed by this change alone.
+Deployment does not enable user preferences or send live test messages. No SMS provider is activated.
 
 1. Deploy through the normal reviewed CI workflow; apply the additive accounts/appointments migrations.
-2. Install the included `ops/systemd/nuviamy-session-notifications.{service,timer}` with the other host units, then enable/start the timer. These files are not automatically installed by `ops/deploy.sh`.
+2. Production may run the command from the deploy user’s crontab every minute, protected by a private `flock` lock and a 90-second execution timeout. This uses the existing runtime container and application database role. Preserve all unrelated cron entries, activate only after the new revision is live, and verify the cron service is running. Alternatively install the included `ops/systemd/nuviamy-session-notifications.{service,timer}` with the other host units and enable/start the timer. Neither scheduler is automatically installed by `ops/deploy.sh`; use one, not both.
 3. Immediate delivery works on commit; retries/backlog recovery require the timer (or another scheduler running `python manage.py send_session_notifications` every minute). The command processes at most 100 due records per run. Failed delivery does not roll back the client request/session change.
 4. Optional trusted link origin: `NOTIFICATION_SITE_URL`, default `https://nuviamy.com`. Keep HTTPS and the canonical host in production. No user-supplied Host headers are used.
 5. Monitor outbox state counts/oldest pending age privately without printing identifiers, addresses or content. Provider feedback remains in the existing private SES feedback circuit. Clear an exhausted alert only after investigating; do not indiscriminately replay old clinical workflow events.

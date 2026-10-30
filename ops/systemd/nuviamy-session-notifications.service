@@ -1,0 +1,14 @@
+[Unit]
+Description=NuviaMy therapist email notification retries
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/apps/django-analytics-dashboard
+UMask=0077
+ExecStart=/usr/bin/docker compose exec -T web python manage.py send_session_notifications
+TimeoutStartSec=600
+Nice=10

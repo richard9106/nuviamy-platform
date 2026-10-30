@@ -1,0 +1,10 @@
+[Unit]
+Description=Retry opted-in therapist email alerts every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=1min
+Unit=nuviamy-session-notifications.service
+
+[Install]
+WantedBy=timers.target

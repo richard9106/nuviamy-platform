@@ -305,3 +305,13 @@ class ProfileDetailsForm(forms.Form):
         profile.phone = self.cleaned_data['phone']
         profile.save(update_fields=['phone', 'updated_at'])
         return user
+
+
+class NotificationPreferencesForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ('session_email_notifications', 'request_email_notifications')
+        labels = {
+            'session_email_notifications': 'Session updates',
+            'request_email_notifications': 'Client change requests',
+        }

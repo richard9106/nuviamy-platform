@@ -237,3 +237,6 @@ GOOGLE_REVIEW_ACCESS_EXPIRES_AT = os.getenv('GOOGLE_REVIEW_ACCESS_EXPIRES_AT', '
 
 
 EMAIL_TIMEOUT = 15
+
+# Trusted canonical origin for notification links (never derived from request Host).
+NOTIFICATION_SITE_URL = os.getenv('NOTIFICATION_SITE_URL', 'https://nuviamy.com').rstrip('/')

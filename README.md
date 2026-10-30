@@ -37,6 +37,8 @@ Older custom requests, packets and signatures are preserved. Their historical te
 
 Email delivery and online client payments are optional connections. Client creation and scheduling work without Gmail or Stripe Connect.
 
+Therapist session email alerts are prepared on the feature branch: personal opt-in preferences for session updates and client cancellation/reschedule requests, using transactional email without a Gmail connection. They are not yet deployed. SMS remains research only; no paid sender or SMS sending is enabled. See [notification behavior, deployment steps and SMS pricing](docs/product/therapist-notifications.md).
+
 ### Initial consultation versus client forms
 
 These are separate workflows:

@@ -247,3 +247,32 @@ class Appointment(models.Model):
     def __str__(self):
         return f"{self.client} with {self.therapist} at {self.starts_at:%Y-%m-%d %H:%M}"
 import uuid
+
+
+class SessionEmailNotification(models.Model):
+    """Minimal durable outbox: no patient names, message bodies or email addresses."""
+
+    class Kind(models.TextChoices):
+        CREATED = 'created', 'A session was scheduled'
+        UPDATED = 'updated', 'A session was updated'
+        CANCELLED = 'cancelled', 'A session was cancelled'
+        CANCELLATION_REQUEST = 'cancellation_request', 'A client requested a cancellation'
+        RESCHEDULE_REQUEST = 'reschedule_request', 'A client requested a different time'
+
+    class State(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        SENT = 'sent', 'Accepted by email provider'
+        SKIPPED = 'skipped', 'No longer eligible'
+        FAILED = 'failed', 'Delivery attempts exhausted'
+
+    event_key = models.CharField(max_length=64, unique=True)
+    practice = models.ForeignKey('practices.Practice', on_delete=models.CASCADE)
+    recipient = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE)
+    portal_request = models.ForeignKey('portal.ClientPortalRequest', null=True, blank=True, on_delete=models.CASCADE)
+    kind = models.CharField(max_length=30, choices=Kind.choices)
+    state = models.CharField(max_length=12, choices=State.choices, default=State.PENDING)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(default=timezone.now, db_index=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)

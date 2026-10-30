@@ -129,6 +129,19 @@
   </div>
   {% endif %}
 </section>
+{% if request.user.nuvia_profile %}
+<article class="panel profile-notifications-card">
+  <div class="panel-head compact"><div><p class="eyebrow">Notifications</p><h2>Email alerts</h2></div></div>
+  <p>Choose the updates you receive at your sign-in email. Only sessions assigned to you are included.</p>
+  <form method="post" action="{% url 'notification_preferences' %}">
+    {% csrf_token %}
+    <div class="notification-preference"><label>{{ notification_preferences_form.session_email_notifications }} <strong>Session updates</strong></label><p>When a session is scheduled, changed or cancelled.</p></div>
+    <div class="notification-preference"><label>{{ notification_preferences_form.request_email_notifications }} <strong>Client change requests</strong></label><p>When a client asks to cancel or reschedule. Requests need your practice to review them; they do not change the session automatically.</p></div>
+    <p class="empty-state">Alerts contain no client names, session times or clinical details. Sign in to NuviaMy to review them. Gmail connection is not required.</p>
+    <button class="btn btn-secondary" type="submit">Save email preferences</button>
+  </form>
+</article>
+{% endif %}
       </div>
       {% if can_manage_client_payments %}        <details class="panel profile-export-section" id="practice-data-export">
 <summary><span><strong>Practice data export</strong><small>Download practice records and documents securely</small></span><span class="badge warning">Owner &amp; admin only</span></summary>

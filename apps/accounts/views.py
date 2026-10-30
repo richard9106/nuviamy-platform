@@ -24,7 +24,7 @@ from apps.audit.utils import log_audit_event
 from apps.billing.models import PracticeSubscription
 from apps.appointments.reminders import get_gmail_integration
 from apps.rate_limit import PostRateLimitMixin
-from .forms import EmailAuthenticationForm, ForcePasswordChangeForm, PracticeSignupForm, ProfileDetailsForm, TeamMemberCreateForm
+from .forms import EmailAuthenticationForm, ForcePasswordChangeForm, PracticeSignupForm, ProfileDetailsForm, TeamMemberCreateForm, NotificationPreferencesForm
 from .invitations import send_account_access_email
 from .models import UserProfile
 from .security import requires_mfa, security_state
@@ -184,6 +184,7 @@ class ProfileSettingsView(LoginRequiredMixin, FormView):
         context.update({
             "practice": practice,
             "profile_form": context['form'],
+            "notification_preferences_form": NotificationPreferencesForm(instance=getattr(self.request.user, "nuvia_profile", None)),
             "google_integration": google_integration,
             "can_manage_client_payments": can_manage_account,
             "subscription": subscription,
@@ -482,3 +483,22 @@ class PracticeSignupView(FormView):
         transaction.on_commit(lambda: notify_new_signup(user))
         login(self.request, user)
         return super().form_valid(form)
+
+
+class NotificationPreferencesView(LoginRequiredMixin, View):
+    http_method_names = ['post']
+
+    def post(self, request):
+        profile = getattr(request.user, 'nuvia_profile', None)
+        if not profile or is_client_user(request.user):
+            raise PermissionDenied('Staff workspace required.')
+        form = NotificationPreferencesForm(request.POST, instance=profile)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.save(update_fields=['session_email_notifications', 'request_email_notifications', 'updated_at'])
+            log_audit_event(request, AuditLog.Action.UPDATE, 'accounts.UserProfile', profile.pk,
+                practice=profile.practice, metadata={'notification_preferences_updated': True})
+            messages.success(request, 'Email notification preferences saved.')
+        else:
+            messages.error(request, 'Unable to save email notification preferences.')
+        return redirect('profile_settings')

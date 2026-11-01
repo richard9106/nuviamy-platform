@@ -6,7 +6,7 @@ PUBLIC_WEBSITE_PATHS = frozenset({
     '/cookie-policy/', '/terms/', '/legal/', '/therapy-practice-management-software/',
     '/therapy-scheduling-software/', '/clinical-notes-software-for-therapists/',
     '/client-portal-software-for-therapists/', '/mental-health-billing-software/',
-    '/robots.txt', '/sitemap.xml',
+    '/robots.txt', '/sitemap.xml', '/founding-therapists/',
 })
 
 

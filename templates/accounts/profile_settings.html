@@ -143,6 +143,13 @@
 </article>
 {% endif %}
       </div>
+      {% if can_manage_contracts and practice.subscription_required and practice.free_access_kind == 'trial' and not subscription %}
+      <article class="panel">
+        <h2>Have a personal offer code?</h2>
+        <p>Founding therapist invitations include six months free for one internal user. No card required and no automatic charges.</p>
+        <form method="post" action="{% url 'redeem_founding_offer' %}">{% csrf_token %}<div class="field"><label for="id_offer_code">{{ founding_offer_form.offer_code.label }}</label>{{ founding_offer_form.offer_code }}</div><button class="btn btn-secondary" type="submit">Apply offer code</button></form>
+      </article>
+      {% endif %}
       {% if can_manage_client_payments %}        <details class="panel profile-export-section" id="practice-data-export">
 <summary><span><strong>Practice data export</strong><small>Download practice records and documents securely</small></span><span class="badge warning">Owner &amp; admin only</span></summary>
           <div class="practice-export-layout">

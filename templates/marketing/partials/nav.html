@@ -1,3 +1,4 @@
+{% load static %}{% if request and request.resolver_match.url_name != 'founding_therapists' %}{% include 'marketing/partials/founding_offer.html' %}{% endif %}
 <header class="marketing-nav" aria-label="NuviaMy navigation">
   <input class="marketing-nav-check" id="marketing-nav-toggle" type="checkbox" aria-label="Toggle navigation">
   <div class="marketing-nav-head">

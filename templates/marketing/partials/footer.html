@@ -6,6 +6,7 @@
       <a href="{% url 'pricing' %}">Pricing</a>
       <a href="{% url 'help_center' %}">Help center</a>
       <a href="{% url 'support_contact' %}">Contact</a>
+      {% if request %}<a href="{% url 'founding_therapists' %}">Founding therapist offer</a>{% endif %}
       <a href="{% url 'privacy_policy' %}">Privacy notice</a>
       <a href="{% url 'terms_of_service' %}">Terms of use</a>
       <a href="{% url 'legal_notice' %}">Legal notice</a>

@@ -39,6 +39,8 @@ Email delivery and online client payments are optional connections. Client creat
 
 Profile settings includes personal opt-in email alerts for session updates and client cancellation/reschedule requests, using transactional email without a Gmail connection. SMS remains research only; no paid sender or SMS sending is enabled. See [notification behavior, deployment steps and SMS pricing](docs/product/therapist-notifications.md).
 
+A separate founding therapist offer supports fifty personal email-bound codes, six calendar months for one internal user, redeemable at signup or by an ordinary-trial owner in Profile settings. It does not change the legacy twelve-month invitations, standard thirty-day trial or paid subscriptions. The public website banner and application form collect requests for the fifty-place campaign; production invitation codes are issued only after reviewing applications. See [offer behavior and issuance](docs/product/founding-therapist-offer.md).
+
 ### Initial consultation versus client forms
 
 These are separate workflows:

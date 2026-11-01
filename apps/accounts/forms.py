@@ -28,6 +28,7 @@ def configure_password_fields(form, first, confirmation, requirements_id):
 class PracticeSignupForm(StandardAgreementForm):
     representative_name = None
     invitation = forms.CharField(required=False, widget=forms.HiddenInput, max_length=200)
+    offer_code = forms.CharField(label="Personal offer code", required=False, max_length=100, widget=forms.TextInput(attrs={"autocomplete":"off", "spellcheck":"false"}))
     practice_name = forms.CharField(max_length=140)
     practice_type = forms.ChoiceField(choices=Practice.PracticeType.choices)
     practice_email = forms.EmailField(required=False)
@@ -45,6 +46,23 @@ class PracticeSignupForm(StandardAgreementForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         configure_password_fields(self, 'password1', 'password2', 'signup-password-requirements')
+
+    @property
+    def invitation_months(self):
+        try:
+            code = self['offer_code'].value()
+            legacy = self['invitation'].value()
+            if code and not legacy:
+                from apps.practices.founding_offer import offer_for
+                offer_for(code)
+                return 6
+            if legacy and not code:
+                from apps.practices.early_access import invitation_for
+                invitation_for(legacy)
+                return 12
+        except ValidationError:
+            pass
+        return None
 
     def clean_email(self):
         email = self.cleaned_data["email"]
@@ -89,7 +107,15 @@ class PracticeSignupForm(StandardAgreementForm):
         ).exists():
             self.add_error("license_number", "A therapist profile with this license already exists in that state.")
 
-        if cleaned_data.get("invitation"):
+        if cleaned_data.get('invitation') and cleaned_data.get('offer_code'):
+            self.add_error('offer_code', 'Use only one invitation or offer code.')
+        elif cleaned_data.get('offer_code'):
+            from apps.practices.founding_offer import offer_for
+            try:
+                offer_for(cleaned_data['offer_code'],cleaned_data.get('email'))
+            except ValidationError as error:
+                self.add_error('offer_code',error)
+        elif cleaned_data.get("invitation"):
             from apps.practices.early_access import invitation_for
             invitation_for(cleaned_data["invitation"], cleaned_data.get("email"))
         return cleaned_data
@@ -97,6 +123,10 @@ class PracticeSignupForm(StandardAgreementForm):
     @transaction.atomic
     def save(self):
         invitation = None
+        founding_offer = None
+        if self.cleaned_data.get('offer_code'):
+            from apps.practices.founding_offer import offer_for
+            founding_offer = offer_for(self.cleaned_data['offer_code'],self.cleaned_data['email'],lock=True)
         if self.cleaned_data.get("invitation"):
             from apps.practices.early_access import invitation_for
             invitation = invitation_for(self.cleaned_data["invitation"], self.cleaned_data["email"], lock=True)
@@ -128,6 +158,9 @@ class PracticeSignupForm(StandardAgreementForm):
             invitation.practice = practice
             invitation.redeemed_at = trial_started
             invitation.save(update_fields=["practice", "redeemed_at"])
+        if founding_offer:
+            from apps.practices.founding_offer import redeem_for_practice
+            redeem_for_practice(founding_offer,practice,trial_started)
         TherapistProfile.objects.create(
             user=user,
             practice=practice,
@@ -315,3 +348,8 @@ class NotificationPreferencesForm(forms.ModelForm):
             'session_email_notifications': 'Session updates',
             'request_email_notifications': 'Client change requests',
         }
+
+
+class FoundingOfferForm(forms.Form):
+    offer_code = forms.CharField(label='Personal offer code', max_length=100,
+        widget=forms.TextInput(attrs={'autocomplete':'off','spellcheck':'false'}))

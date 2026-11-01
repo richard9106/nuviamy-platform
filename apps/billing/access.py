@@ -41,9 +41,9 @@ def subscription_access(practice):
 
 class SubscriptionAccessMiddleware(MiddlewareMixin):
     always_available = {
-        'home', 'pricing', 'features', 'help_center', 'support_contact', 'support_requests', 'support_request_detail', 'cookie_policy', 'privacy_policy', 'terms_of_service', 'legal_notice',
+        'home', 'pricing', 'features', 'help_center', 'support_contact', 'founding_therapists', 'support_requests', 'support_request_detail', 'cookie_policy', 'privacy_policy', 'terms_of_service', 'legal_notice',
         'standard_agreement_download', 'standard_agreement_offer', 'clinical_contracts', 'clinical_contract_review', 'clinical_contract_sign', 'clinical_contract_download',
-        'email_security_challenge', 'login', 'logout', 'force_password_change', 'profile_settings', 'notification_preferences', 'practice_data_export',
+        'email_security_challenge', 'login', 'logout', 'force_password_change', 'profile_settings', 'notification_preferences', 'redeem_founding_offer', 'practice_data_export',
         'billing:subscription_access', 'billing:subscribe', 'billing:subscribe_success',
         'billing:subscribe_cancel', 'billing:customer_portal', 'billing:change_plan',
         'billing:plan_preview', 'billing:stripe_webhook', 'signup',

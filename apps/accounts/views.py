@@ -24,7 +24,7 @@ from apps.audit.utils import log_audit_event
 from apps.billing.models import PracticeSubscription
 from apps.appointments.reminders import get_gmail_integration
 from apps.rate_limit import PostRateLimitMixin
-from .forms import EmailAuthenticationForm, ForcePasswordChangeForm, PracticeSignupForm, ProfileDetailsForm, TeamMemberCreateForm, NotificationPreferencesForm
+from .forms import EmailAuthenticationForm, ForcePasswordChangeForm, PracticeSignupForm, ProfileDetailsForm, TeamMemberCreateForm, NotificationPreferencesForm, FoundingOfferForm
 from .invitations import send_account_access_email
 from .models import UserProfile
 from .security import requires_mfa, security_state
@@ -184,6 +184,7 @@ class ProfileSettingsView(LoginRequiredMixin, FormView):
         context.update({
             "practice": practice,
             "profile_form": context['form'],
+            "founding_offer_form": FoundingOfferForm(),
             "notification_preferences_form": NotificationPreferencesForm(instance=getattr(self.request.user, "nuvia_profile", None)),
             "google_integration": google_integration,
             "can_manage_client_payments": can_manage_account,
@@ -459,6 +460,7 @@ class PracticeSignupView(FormView):
     def get_initial(self):
         initial = super().get_initial()
         initial['invitation'] = self.request.GET.get('invitation', '')
+        initial['offer_code'] = self.request.GET.get('offer', '')[:100]
         return initial
 
     def get_context_data(self, **kwargs):
@@ -501,4 +503,30 @@ class NotificationPreferencesView(LoginRequiredMixin, View):
             messages.success(request, 'Email notification preferences saved.')
         else:
             messages.error(request, 'Unable to save email notification preferences.')
+        return redirect('profile_settings')
+
+
+class RedeemFoundingOfferView(LoginRequiredMixin, PostRateLimitMixin, View):
+    http_method_names = ['post']
+    rate_limit_scope = 'founding_offer'
+    rate_limit_count = 5
+    rate_limit_seconds = 900
+
+    def post(self,request):
+        profile = getattr(request.user,'nuvia_profile',None)
+        if not profile or profile.role != UserProfile.Role.OWNER or is_client_user(request.user):
+            raise PermissionDenied('Only the practice owner can redeem an offer.')
+        form = FoundingOfferForm(request.POST)
+        if form.is_valid():
+            from apps.practices.founding_offer import redeem_existing_offer
+            try:
+                practice = redeem_existing_offer(request.user,form.cleaned_data['offer_code'])
+            except ValidationError as error:
+                messages.error(request,' '.join(error.messages))
+            else:
+                log_audit_event(request,AuditLog.Action.UPDATE,'practices.Practice',practice.pk,
+                    practice=practice,metadata={'founding_offer_redeemed':True,'months':6})
+                messages.success(request,'Your six months of free access are active for one internal user. No automatic charges.')
+        else:
+            messages.error(request,'Enter a valid personal offer code.')
         return redirect('profile_settings')

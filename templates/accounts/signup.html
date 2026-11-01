@@ -25,11 +25,11 @@
       </a>
       <p class="eyebrow">Your practice workspace</p>
       <h1>Create your practice workspace.</h1>
-      <p>NuviaMy creates your practice, owner account, therapist profile, and secure workspace in one guided flow. {% if form.invitation.value %}Private invitation: 12 months free for one internal user. No card required.{% else %}Your 30-day free trial starts immediately. No card required.{% endif %}</p>
+      <p>NuviaMy creates your practice, owner account, therapist profile, and secure workspace in one guided flow. {% if form.invitation_months %}Private invitation: {{ form.invitation_months }} months free for one internal user. No card required.{% else %}Your 30-day free trial starts immediately. No card required.{% endif %}</p>
       <div class="trust-list dark">
         <span>{{ selected_plan_label }}</span>
         <span>No card required</span>
-        <span>{% if form.invitation.value %}12 months free · one internal user{% else %}30 days free{% endif %}</span>
+        <span>{% if form.invitation_months %}{{ form.invitation_months }} months free · one internal user{% else %}30 days free{% endif %}</span>
         <span>Practice-scoped data</span>
       </div>
       <div class="hero-actions"><a class="btn btn-secondary" href="{% url 'home' %}">← Back to home</a></div>
@@ -52,6 +52,12 @@
           <p>Use your trial with real clients within the scope of your practice agreements. Special record categories and external clinical integrations require a separate arrangement.</p>
           <p>No card required. You won’t be charged automatically. At the end of your free access, choose a paid subscription or keep read-only access to existing records. Authorized users can export practice data.</p>
         </div>
+
+        <details class="sync-panel"{% if form.offer_code.value or form.offer_code.errors %} open{% endif %}>
+          <summary>Have a personal offer code?</summary>
+          <div class="field"><label for="id_offer_code">{{ form.offer_code.label }}</label>{{ form.offer_code }}{{ form.offer_code.errors }}</div>
+          <p>Use the email address your code was issued to. A valid founding therapist code activates six months free for one internal user, instead of the standard 30 days. No card required.</p>
+        </details>
 
         <fieldset>
           <legend>Practice details</legend>

@@ -133,7 +133,10 @@ def run(image, parent):
         checked(['docker','exec',pg,'createdb','-U','postgres',compatibility])
         checked(['docker','exec','-i',pg,'pg_restore','-U','postgres','--no-owner','--exit-on-error','-d',compatibility],input=dump)
         checked(['docker','exec','-i',pg,'psql','-U','postgres','-d',compatibility,'-v','ON_ERROR_STOP=1'],
-            input=b"DROP TABLE dashboard_supportmessage; DROP TABLE dashboard_supportticket; DELETE FROM django_migrations WHERE app='dashboard' AND name='0003_supportticket_supportmessage';")
+            # This fixture represents dashboard 0002, before support existed.
+            # Remove the support topic migration as well as its parent, so the
+            # synthetic history remains consistent when replaying migrations.
+            input=b"DROP TABLE dashboard_supportmessage; DROP TABLE dashboard_supportticket; DELETE FROM django_migrations WHERE app='dashboard' AND name IN ('0003_supportticket_supportmessage', '0004_early_access_support_topic');")
         compatibility_env = root/'older-schema-application.env'
         save_env(compatibility_env,dict(config,POSTGRES_DB=compatibility))
         older_proof = json.loads(app(['python','-c',VALIDATE],compatibility_env))

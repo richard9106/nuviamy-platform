@@ -4,7 +4,7 @@ Implementation prepared 2026-10-30; not deployed and no production codes issued 
 
 ## Offer and redemption
 
-- At most twenty places, enforced by preallocated unique slots and a database check constraint. One code per email (case-insensitive unique constraint).
+- At most fifty places, enforced by preallocated unique slots and a database check constraint. One code per email (case-insensitive unique constraint).
 - Six calendar months from successful signup/redemption, clipping dates such as August 31 to February 28/29. This replaces the ordinary 30-day trial; it does not add six months to it.
 - One active internal user, no card required, no Stripe coupon/subscription creation or automatic charge. At expiry, existing subscription access logic provides read-only/export access under normal permissions unless a paid subscription is chosen.
 - Codes expire after thirty days if unused, are single use, bound to the invited owner email, generated from 96 random bits, and stored only as hashes. Codes tolerate case, hyphens and whitespace when manually entered.
@@ -28,3 +28,7 @@ Sources:
 - https://www.boe.es/buscar/act.php?id=BOE-A-2002-13758#a21
 - https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business
 - https://docs.aws.amazon.com/ses/latest/dg/faqs-enforcement.html
+
+## Public applications — prepared 2026-11-01
+
+Public website banner links to `/founding-therapists/`. Visitors may dismiss the banner on the current page, without additional browser storage; a footer link remains. The form collects professional name/email, optional practice name, country, role and explicit application-contact permission. Requests are encrypted SupportTickets with the founding therapist topic, visible to authorized platform support/admin; the existing generic operator notification contains no submitted details. Requests do not allocate slots, issue codes or subscribe applicants to marketing. Applications are reviewed in received order, up to fifty approved places. CSRF, shared contact rate limiting and a honeypot apply. Additive migration expands the old twenty places to fifty without replacing existing issued/redeemed invitations. Reverse migration must not be used after new places are allocated; use a reviewed forward fix. Still pending deployment.

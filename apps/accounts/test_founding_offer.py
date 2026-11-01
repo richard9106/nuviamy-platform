@@ -41,11 +41,11 @@ class FoundingOfferTests(TestCase):
         UserProfile.objects.create(user=user,practice=practice,role='owner')
         return user,practice
 
-    def test_twenty_slots_are_seeded_and_old_campaign_is_unchanged(self):
-        self.assertEqual(FoundingTherapistInvitation.objects.count(),20)
+    def test_fifty_slots_are_seeded_and_old_campaign_is_unchanged(self):
+        self.assertEqual(FoundingTherapistInvitation.objects.count(),50)
         self.assertEqual(EarlyAccessInvitation.objects.count(),10)
         with self.assertRaises(IntegrityError), transaction.atomic():
-            FoundingTherapistInvitation.objects.create(slot=21,token_hash='invalid-extra-slot',expires_at=timezone.now())
+            FoundingTherapistInvitation.objects.create(slot=51,token_hash='invalid-extra-slot',expires_at=timezone.now())
 
     def test_command_outputs_private_code_and_hash_only_storage(self):
         data=self.issue()
@@ -61,9 +61,9 @@ class FoundingOfferTests(TestCase):
         with self.assertRaises(CommandError):self.issue()
         rotated=self.issue(rotate=True)
         with self.assertRaises(ValidationError):offer_for(data['code'])
-        for i in range(19):self.issue(f'fixture-{i}@example.invalid')
+        for i in range(49):self.issue(f'fixture-{i}@example.invalid')
         with self.assertRaises(CommandError):self.issue('overflow@example.invalid')
-        self.assertEqual(FoundingTherapistInvitation.objects.exclude(email='').count(),20)
+        self.assertEqual(FoundingTherapistInvitation.objects.exclude(email='').count(),50)
 
     def test_six_calendar_months_clip_month_end_and_keep_time(self):
         start=datetime(2026,8,31,16,45,tzinfo=dt_timezone.utc)

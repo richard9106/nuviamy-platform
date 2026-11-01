@@ -158,6 +158,6 @@ class FoundingTherapistInvitation(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(condition=models.Q(slot__gte=1, slot__lte=20), name='founding_offer_twenty_slots'),
+            models.CheckConstraint(condition=models.Q(slot__gte=1, slot__lte=50), name='founding_offer_fifty_slots'),
             models.UniqueConstraint(models.functions.Lower('email'), condition=~models.Q(email=''), name='founding_offer_unique_email'),
         ]

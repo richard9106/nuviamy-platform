@@ -1,0 +1,6 @@
+{% load static %}<aside class="founding-offer-banner" aria-label="Founding therapist offer" data-founding-offer>
+  <div><span class="founding-offer-label">Founding therapists · 50 places</span><p><strong>Your practice. Your feedback. Up to 6 months free.</strong> Help shape NuviaMy with your honest feedback.</p></div>
+  <a class="btn btn-primary" href="{% url 'founding_therapists' %}">Request an invitation <span aria-hidden="true">→</span></a>
+  <button class="founding-offer-dismiss" type="button" aria-label="Dismiss founding therapist offer" hidden data-founding-dismiss>×</button>
+</aside>
+<script src="{% static 'marketing/founding-offer.js' %}" defer></script>

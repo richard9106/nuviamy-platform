@@ -13,6 +13,7 @@ class SupportTicket(models.Model):
         INTEGRATIONS = 'integrations', 'Google Calendar or Stripe'
         TECHNICAL = 'technical', 'Technical issue'
         OTHER = 'other', 'Other'
+        EARLY_ACCESS = 'early_access', 'Founding therapist application'
 
     class Status(models.TextChoices):
         OPEN = 'open', 'Open'

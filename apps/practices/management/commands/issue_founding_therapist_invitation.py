@@ -16,7 +16,7 @@ from apps.practices.founding_offer import normalize_code
 
 
 class Command(BaseCommand):
-    help = 'Issue one of twenty personal six-month codes. Private output; sends no email.'
+    help = 'Issue one of fifty personal six-month codes. Private output; sends no email.'
 
     def add_arguments(self,parser):
         parser.add_argument('email')
@@ -29,14 +29,14 @@ class Command(BaseCommand):
             validate_email(email)
         except ValidationError as error:
             raise CommandError('Enter a valid email address.') from error
-        # Lock the fixed twenty slots in a stable order for concurrent issuance.
+        # Lock the fixed fifty slots in a stable order for concurrent issuance.
         invitations = list(FoundingTherapistInvitation.objects.select_for_update().order_by('slot'))
         existing = next((item for item in invitations if item.email.casefold()==email.casefold()),None)
         if existing and (existing.redeemed_at or not options['rotate']):
             raise CommandError('This email already has a code. Only an unused code may be explicitly rotated.')
         invitation = existing or next((item for item in invitations if not item.email and not item.redeemed_at),None)
         if not invitation:
-            raise CommandError('All twenty places have been allocated; no code issued.')
+            raise CommandError('All fifty places have been allocated; no code issued.')
         raw = secrets.token_hex(12).upper()
         code = 'NUVIA-'+'-'.join(raw[i:i+4] for i in range(0,24,4))
         invitation.email = email

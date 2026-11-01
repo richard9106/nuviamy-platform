@@ -1,0 +1,42 @@
+{% load static %}<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+{% include 'marketing/partials/seo.html' with seo_title='Founding Therapist Offer | NuviaMy' seo_description='Apply to join 50 founding therapists and receive six months of NuviaMy at no cost if approved. No card required. Personal invitation required.' seo_path='/founding-therapists/' %}
+{% if request.GET.sent %}<meta name="robots" content="noindex,follow">{% endif %}
+<link rel="stylesheet" href="{% static 'dashboard.css' %}"></head>
+<body class="marketing-page founding-page">
+{% include 'marketing/partials/nav.html' %}
+<main class="founding-shell">
+{% if support_portal_user %}
+  <section class="founding-confirmation"><h1>This offer is for practice professionals.</h1><p>For help with your care or records, contact your treating practice through the patient portal.</p><a class="btn btn-primary" href="{% url 'portal:dashboard' %}">Open patient portal</a></section>
+{% elif request.GET.sent %}
+  <section class="founding-confirmation"><span class="founding-check" aria-hidden="true">✓</span><p class="eyebrow">Application received</p><h1>Thank you for helping shape NuviaMy.</h1><p>We’ll review your application and follow up by email. If a place is confirmed, you’ll receive a personal invitation with instructions to activate your six months free.</p><p>You haven’t started a subscription or been charged. Please don’t send patient information in your reply.</p><a class="btn btn-primary" href="{% url 'home' %}">Explore NuviaMy</a></section>
+{% elif offer_full %}
+  <section class="founding-confirmation"><p class="eyebrow">Founding therapist offer</p><h1>All 50 invitations have been allocated.</h1><p>Thank you for your interest. You can still explore NuviaMy with the standard 30-day free trial, with no card required.</p><a class="btn btn-primary" href="{% url 'signup' %}">Start your 30-day trial</a></section>
+{% else %}
+  <div class="founding-layout">
+    <section class="founding-copy"><p class="eyebrow">50 founding therapist places</p><h1>Build a calmer practice.<br><em>Help shape what’s next.</em></h1><p class="founding-intro">We’re inviting therapists and mental health professionals to try NuviaMy with their practice and tell us what works—and what could be better.</p>
+      <div class="founding-six"><strong>6 months free</strong><span>For approved applicants · One internal user</span></div>
+      <ul class="founding-benefits"><li>Keep appointments, client records and notes connected.</li><li>Create intake forms and review client responses.</li><li>Organize invoices and everyday practice tasks.</li></ul>
+      <h2>A personal invitation, a simple process.</h2><ol><li>Tell us a little about your practice.</li><li>We review applications in the order received, up to 50 approved places.</li><li>If approved, activate six months of access with your personal invitation.</li></ol>
+      <p class="founding-terms">No card required. No automatic charges. Six calendar months from activation, replacing the standard 30-day trial, for one internal user in a new practice or an ordinary trial without a subscription. Personal codes expire after 30 days if unused. At expiry, authorized reading and export remain available under our records policy; choose a paid plan if you want to continue editing. Feedback is honest and voluntary. Applying does not reserve a place or create an account.</p>
+    </section>
+    <section class="founding-form-card" aria-labelledby="application-title"><p class="eyebrow">Let’s meet your practice</p><h2 id="application-title">Request your invitation</h2><p>Just a few details. No patient information, documents or payment details.</p>
+      <form method="post" class="support-form">{% csrf_token %}{{ form.non_field_errors }}
+        <div class="field-grid two">
+          <div class="field">{{ form.name.label_tag }}{{ form.name }}{{ form.name.errors }}</div>
+          <div class="field">{{ form.email.label_tag }}{{ form.email }}{{ form.email.errors }}</div>
+          <div class="field full">{{ form.practice_name.label_tag }}<small>Optional</small>{{ form.practice_name }}{{ form.practice_name.errors }}</div>
+          <div class="field">{{ form.country.label_tag }}{{ form.country }}{{ form.country.errors }}</div>
+          <div class="field">{{ form.profession.label_tag }}{{ form.profession }}{{ form.profession.errors }}</div>
+        </div>
+        <label class="founding-consent">{{ form.contact_permission }}<span>{{ form.contact_permission.label }}</span></label>{{ form.contact_permission.errors }}{{ form.website }}
+        <p class="founding-privacy">We use these details to review and respond to your request, without adding you to a marketing list. Read our <a href="{% url 'privacy_policy' %}">privacy notice</a>.</p>
+        <button class="btn btn-primary founding-submit" type="submit">Apply for six months free <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="founding-alternative">Prefer to get started today? <a href="{% url 'signup' %}">Try the standard 30-day trial</a>.</p>
+    </section>
+  </div>
+{% endif %}
+</main>
+{% include 'marketing/partials/footer.html' %}
+</body></html>

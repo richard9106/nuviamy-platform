@@ -1,6 +1,6 @@
 # Personal founding therapist offer
 
-Implementation prepared 2026-10-30; not deployed and no production codes issued as part of preparation. This is a separate campaign from the legacy ten-slot, twelve-month invitation mechanism, which remains unchanged.
+Implemented 2026-10-30; expanded to fifty places with public applications on 2026-11-01. No production codes were issued as part of preparation. This is a separate campaign from the legacy ten-slot, twelve-month invitation mechanism, which remains unchanged.
 
 ## Offer and redemption
 
@@ -12,7 +12,7 @@ Implementation prepared 2026-10-30; not deployed and no production codes issued 
 - Existing ordinary-trial owners can redeem in Profile settings, including an expired ordinary trial. Unrestricted complimentary workspaces, existing subscriptions (including canceled/incomplete ones), teams with more than one internal user and legacy invited access are excluded; billing/previous promises are never overwritten. Other roles cannot redeem. POST/CSRF/authentication and a bounded attempt limit apply.
 - Invitation locking and practice/profile locking prevent double redemption. Failed account creation rolls back code consumption. Codes are not used at login itself: sign up with the code, or sign in and use Profile settings.
 
-## Operator issuance (after deployment)
+## Operator issuance
 
 Run privately on the normal runtime using `python manage.py issue_founding_therapist_invitation owner@example.com`. Output is private JSON containing the code, signup link, claim deadline and allocated slot. It sends no email. Protect output as an invitation credential; never commit it or put it in public issue/CI logs. Repeated issuance for the same email fails; `--rotate` explicitly replaces an unused code for that same email and invalidates its predecessor. Redeemed slots cannot be reused. Allocated places are not automatically recycled, even if the claim deadline passes.
 
@@ -31,4 +31,4 @@ Sources:
 
 ## Public applications — prepared 2026-11-01
 
-Public website banner links to `/founding-therapists/`. Visitors may dismiss the banner on the current page, without additional browser storage; a footer link remains. The form collects professional name/email, optional practice name, country, role and explicit application-contact permission. Requests are encrypted SupportTickets with the founding therapist topic, visible to authorized platform support/admin; the existing generic operator notification contains no submitted details. Requests do not allocate slots, issue codes or subscribe applicants to marketing. Applications are reviewed in received order, up to fifty approved places. CSRF, shared contact rate limiting and a honeypot apply. Additive migration expands the old twenty places to fifty without replacing existing issued/redeemed invitations. Reverse migration must not be used after new places are allocated; use a reviewed forward fix. Still pending deployment.
+Public website banner links to `/founding-therapists/`. Visitors may dismiss the banner on the current page, without additional browser storage; a footer link remains. The form collects professional name/email, optional practice name, country, role and explicit application-contact permission. Requests are encrypted SupportTickets with the founding therapist topic, visible to authorized platform support/admin; the existing generic operator notification contains no submitted details. Requests do not allocate slots, issue codes or subscribe applicants to marketing. Applications are reviewed in received order, up to fifty approved places. CSRF, shared contact rate limiting and a honeypot apply. Additive migration expands the old twenty places to fifty without replacing existing issued/redeemed invitations. Reverse migration must not be used after new places are allocated; use a reviewed forward fix. Deployment follows the reviewed GitHub Actions production workflow.

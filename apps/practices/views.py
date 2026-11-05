@@ -120,6 +120,10 @@ class IntegrationSettingsView(PracticeContextMixin, TemplateView):
             for integration in ExternalIntegration.objects.filter(practice=practice)
         } if practice else {}
         context['practice'] = practice
+        from apps.telehealth.activation import available
+        from apps.telehealth.access import enabled_for
+        context['video_available'] = bool(practice and available(practice.pk))
+        context['video_enabled'] = bool(practice and enabled_for(practice.pk))
         context['google_integration'] = integrations.get(ExternalIntegration.Provider.GOOGLE)
         context['dropbox_integration'] = integrations.get(ExternalIntegration.Provider.DROPBOX)
         context['google_form'] = GoogleOAuthSelectionForm(instance=context['google_integration'], practice=practice)

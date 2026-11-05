@@ -6,10 +6,23 @@
   const role = root.dataset.role;
   const nonce = crypto.randomUUID();
   const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const schedule=el('session-schedule');
+  if (schedule?.dataset.start) {
+    try {
+      const date=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+      const time=new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+      schedule.textContent=date.format(new Date(schedule.dataset.start))+' – '+time.format(new Date(schedule.dataset.end));
+    } catch (_) { /* Server-rendered timezone remains explicit. */ }
+  }
   let preview = null, session = null, controller = null;
   let devicesReady = false, hasCamera = true, joined = false, waiting = false;
   let connecting = false, polling = false, failures = 0, timer = null, expiryTimer = null;
   let microphoneMuted = false, cameraMuted = false, leaving = false, testing = false;
+  let mediaConnected=false, activeExpiresAt=null;
+  function videoActivity() {
+    if (joined && mediaConnected && !leaving && activeExpiresAt)
+      window.dispatchEvent?.(new CustomEvent('nuvia:live-video-activity',{detail:{expiresAt:activeExpiresAt}}));
+  }
   const silentLogger = {info() {}, warn() {}, error() {}, debug() {}, setLogLevel() {}, getLogLevel() { return 4; }};
   const silentEvents = {addObserver() {}, removeObserver() {}, async publishEvent() {}};
   function status(text) { el('video-status').textContent = text; }
@@ -58,6 +71,7 @@
     }
   }
   async function disconnect() {
+    mediaConnected=false;activeExpiresAt=null;
     stopPreview(); joined = false; waiting = false;
     clearInterval(timer); timer = null; clearTimeout(expiryTimer); expiryTimer = null;
     if (session) {
@@ -97,8 +111,8 @@
       configuration.urls.eventIngestionURL = null;
       session = new sdk.DefaultMeetingSession(configuration, silentLogger, controller, silentEvents);
       session.audioVideo.addObserver({
-        audioVideoDidStart() { status('You’re in the session.'); el('connection-label').textContent = 'Connected'; },
-        audioVideoDidStartConnecting(reconnecting) { if (reconnecting) status('Reconnecting…'); },
+        audioVideoDidStart() { mediaConnected=true;videoActivity();status('You’re in the session.'); el('connection-label').textContent = 'Connected'; },
+        audioVideoDidStartConnecting(reconnecting) { if (reconnecting) {mediaConnected=false;status('Reconnecting…');} },
         audioVideoDidStop() { if (!leaving) finish('The video connection ended. Return to your appointments or contact your practice.'); },
         videoTileDidUpdate(tile) {
           if (!tile.boundAttendeeId || tile.isContent) return;
@@ -116,6 +130,7 @@
       if (hasCamera && !cameraMuted) await session.audioVideo.startVideoInput(videoId);
       await session.audioVideo.bindAudioElement(el('remote-audio'));
       if (microphoneMuted) session.audioVideo.realtimeMuteLocalAudio();
+      activeExpiresAt=payload.expiresAt;
       session.audioVideo.start(); if (hasCamera && !cameraMuted) session.audioVideo.startLocalVideoTile();
       joined = true; waiting = false;
       el('toggle-camera').disabled = !hasCamera;
@@ -162,6 +177,7 @@
       if (['ended', 'unavailable', 'superseded', 'left'].includes(result.state)) {
         await finish('This video session is no longer available.'); return;
       }
+      activeExpiresAt=result.expiresAt;videoActivity();
       if (role === 'host') el('waiting-client').hidden = !result.waiting;
       if (role === 'patient' && waiting && result.state === 'admitted' && !connecting) {
         const payload = await post('join');

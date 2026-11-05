@@ -7,28 +7,29 @@ function setup(role='patient') {
     classList:{add(){},remove(){}}, addEventListener(n,f){this.events[n]=f},setAttribute(n,v){this[n]=v},
     replaceChildren(){this.options=[]},appendChild(o){this.options.push(o)}, play(){return Promise.resolve()}};
   get('video-app').dataset={role,api:'/synthetic/action/'};
+  let activityEvents=[], observer=null;
   let calls=[], mediaCalls=[], starts=0, stopped=0, interval, response={state:'waiting'}, permissionResolve;
   const tracks=[{enabled:true,stop(){stopped++}},{enabled:true,stop(){stopped++}}];
   const stream={getTracks:()=>tracks,getAudioTracks:()=>[tracks[0]],getVideoTracks:()=>[tracks[1]]};
-  const audioVideo=new Proxy({addObserver(){},getAllRemoteVideoTiles:()=>[]},{get(t,p){return t[p] || ((...args)=>{mediaCalls.push(p);return Promise.resolve()})}});
-  const sandbox={crypto:{randomUUID:()=> 'synthetic-nonce'},Date,JSON,Promise,
+  const audioVideo=new Proxy({addObserver(value){observer=value},start(){observer.audioVideoDidStart()},getAllRemoteVideoTiles:()=>[]},{get(t,p){return t[p] || ((...args)=>{mediaCalls.push(p);return Promise.resolve()})}});
+  const sandbox={CustomEvent:class{constructor(name,options){this.type=name;this.detail=options.detail}},crypto:{randomUUID:()=> 'synthetic-nonce'},Date,JSON,Promise,
     document:{getElementById:get,querySelector:()=>({value:'synthetic-csrf'}),createElement:()=>({})},
     navigator:{mediaDevices:{getUserMedia:()=>new Promise(r=>permissionResolve=r),enumerateDevices:async()=>[
       {kind:'audioinput',deviceId:'mic'},{kind:'videoinput',deviceId:'camera'}]}},
     fetch:async(url,options)=>{calls.push(options);return {ok:true,json:async()=>typeof response === 'function' ? response(JSON.parse(options.body).action) : response}},
     setInterval:f=>(interval=f,1),clearInterval(){},setTimeout:()=>1,clearTimeout(){},
-    window:{addEventListener(){},NuviaVideoSDK:{DefaultDeviceController:class{destroy(){}},
+    window:{addEventListener(){},dispatchEvent(e){activityEvents.push(e)},NuviaVideoSDK:{DefaultDeviceController:class{destroy(){}},
       MeetingSessionConfiguration:class{constructor(){this.urls={}}},
       DefaultMeetingSession:class{constructor(){starts++;this.audioVideo=audioVideo}destroy(){}}}}};
   vm.runInNewContext(source,sandbox);
-  return {get,calls,tracks,mediaCalls,ready:async()=>{const pending=get('test-devices').events.click();
+  return {get,calls,tracks,mediaCalls,activityEvents,ready:async()=>{const pending=get('test-devices').events.click();
     await Promise.resolve(); assert.equal(get('audio-only').disabled,true);permissionResolve(stream);await pending;},
     response:r=>response=r,poll:()=>interval(),starts:()=>starts,stopped:()=>stopped};
 }
 (async()=>{
   const app=setup(); assert.equal(app.calls.length,0);
   await app.ready(); assert.equal(app.get('join-session').disabled,false);
-  await app.get('join-session').events.click(); assert.equal(app.starts(),0); // waiting: no SDK/media sent
+  await app.get('join-session').events.click(); assert.equal(app.starts(),0);assert.equal(app.activityEvents.length,0); // waiting: no SDK/media sent
   assert.equal(JSON.parse(app.calls[0].body).action,'join');
   assert.equal(app.calls[0].headers['X-CSRFToken'],'synthetic-csrf');
   app.get('toggle-mic').events.click(); assert.equal(app.tracks[0].enabled,false);
@@ -42,6 +43,7 @@ function setup(role='patient') {
   const host=setup('host');await host.ready();
   host.response({state:'joined',Meeting:{},Attendee:{},expiresAt:new Date(Date.now()+60000).toISOString()});
   await host.get('join-session').events.click();assert.equal(host.starts(),1);
+  host.response({state:'admitted',expiresAt:new Date(Date.now()+60000).toISOString()});await host.poll();assert.equal(host.activityEvents.length,1);
   host.response({state:'superseded'});await host.poll();
   assert.match(host.get('video-status').textContent,/no longer available/);
   assert.equal(host.stopped(),2);

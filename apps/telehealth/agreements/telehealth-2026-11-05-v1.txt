@@ -1,0 +1,29 @@
+# NuviaMy Embedded Video Processing Addendum
+
+Version telehealth-2026-11-05-v1
+
+This optional addendum supplements the practice's executed service agreements, DPA, applicable BAA and Processing Schedule. The parties and practice are identified by the referenced accepted agreements and the electronic activation receipt. Richard Andres Marles Bonilla, trading as NuviaMy, offers this addendum. Only an authorized practice owner may accept it. Existing executed agreements and their exclusions remain in force.
+
+## Service and instructions
+
+The practice instructs NuviaMy to provide private, individual audio/video appointments between the assigned therapist and the authenticated client. The therapist opens the room and admits the waiting client. Local device preview is not sent to the other participant. NuviaMy does not enable recording, transcription, screen sharing, public broadcasting or telephone dial-in in this service. This does not prevent someone from making an independent recording outside the service; the practice must establish its own rules and applicable permissions.
+
+## Processing and provider
+
+Amazon Chime SDK processes real-time audio, video, network/device connection information and opaque meeting/participant identifiers on the practice's instructions. Audio/video can contain health information. The control and media region for this release is AWS us-east-1, Northern Virginia, United States. NuviaMy administers the service from Spain. AWS is the existing infrastructure subprocessor under the applicable AWS contractual arrangements and BAA for eligible services, subject to configuration and shared responsibility. This addendum does not assert government certification, EU-only processing or that the operator cannot process data.
+
+NuviaMy does not send client names, email addresses, clinical notes or appointment descriptions as meeting/attendee identifiers. It stores appointment linkage, access/admission state, meeting metadata and audit evidence. Individual join credentials are issued to the authenticated participant, held transiently by the browser and revoked through attendee or meeting deletion; they are not persisted in application records or logs. TLS and the provider's encrypted media transport protect transmission. No recording of the call is retained by NuviaMy. AWS operational processing remains subject to its service terms and applicable processing arrangements.
+
+## Access, duration and exit
+
+Access requires the assigned therapist or active client portal account and a scheduled video appointment. Meetings open up to 15 minutes early, end no later than 15 minutes after the appointment, and have a 120-minute maximum. Service capacity and subscription/trial eligibility apply. Network/device conditions can interrupt a call; the practice must maintain an alternative contact method. Disabling the service stops new joins and initiates closure of active rooms. Accepted contractual/audit evidence and ordinary appointment records follow the existing retention and exit instructions rather than being deleted automatically when a call ends.
+
+## Practice responsibilities and scope restrictions
+
+The practice verifies participant identity, professional authority and location-specific telehealth requirements, obtains and records necessary patient information/consent, and establishes privacy, emergency and alternative-contact procedures. Participants should use a private location and headphones where appropriate. This service is not emergency care and does not determine clinical suitability or legal eligibility.
+
+This activation does not approve EEA clinical-data processing. Such use requires a separately documented and approved transfer/scope arrangement. Exclusions in the existing Processing Schedule, including separately maintained HIPAA psychotherapy notes and records governed by 42 CFR Part 2, continue unless an appropriate written arrangement and controls approve them. Fictional-data evaluation is permitted without treating it as clinical approval.
+
+## Electronic activation
+
+The owner's explicit acceptance and activation records this document, its digest, the applicable Privacy Notice, the practice, authorized account, referenced base agreements and timestamp. It supplements rather than silently replaces previously executed documents. Material changes require a new attributable acceptance. The owner may disable the feature from Video sessions settings; disabling does not erase contractual evidence or waive applicable duties.

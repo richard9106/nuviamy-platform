@@ -23,6 +23,7 @@ def main():
             isolated = rehearsal['services'][service]['environment']
             assert isolated['MIGRATION_REHEARSAL'] == 'true'
             assert isolated['TELEHEALTH_ENABLED'] == 'false'
+            assert isolated['TELEHEALTH_GENERAL_AVAILABLE'] == 'false'
             assert not isolated['TELEHEALTH_PRACTICE_IDS']
             assert isolated['AWS_EC2_METADATA_DISABLED'] == 'true'
             assert isolated['EMAIL_BACKEND'] == 'django.core.mail.backends.dummy.EmailBackend'

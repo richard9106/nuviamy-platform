@@ -64,6 +64,8 @@ jobs:
         run: node ops/check_password_tools.cjs
       - name: Check video waiting room and media lifecycle
         run: node ops/check_telehealth.cjs
+      - name: Check live call activity and security deadlines
+        run: node ops/check_video_session_activity.cjs
       - name: Load actual packaged video SDK
         run: node ops/check_chime_bundle.cjs
       - name: Check cookie preference behavior

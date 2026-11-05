@@ -141,10 +141,13 @@ class ClientPortalDashboardView(ClientPortalAccessMixin, TemplateView):
             ends_at__gt=now,
             status=Appointment.Status.SCHEDULED,
         ).select_related('therapist__user')[:6])
+        video_availability={}
         for appointment in upcoming_appointments:
             appointment.portal_meeting_url = ''
             appointment.portal_native_video_url = ''
-            if (enabled_for(appointment.practice_id) and appointment.appointment_type == Appointment.AppointmentType.VIDEO
+            if appointment.practice_id not in video_availability:
+                video_availability[appointment.practice_id]=enabled_for(appointment.practice_id)
+            if (video_availability[appointment.practice_id] and appointment.appointment_type == Appointment.AppointmentType.VIDEO
                     and not appointment.meeting_url):
                 appointment.portal_native_video_url = reverse('telehealth:room', args=[appointment.pk])
             if appointment.appointment_type == Appointment.AppointmentType.VIDEO and appointment.meeting_url:

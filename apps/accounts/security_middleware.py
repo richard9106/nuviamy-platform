@@ -88,10 +88,11 @@ class SecuritySessionMiddleware(MiddlewareMixin):
             request.method == 'POST' and name in {'team_management', 'team_member_action', 'profile_settings'})
         contract_signing = name == 'clinical_contract_sign' and request.method == 'POST'
         standard_signing = name == 'clinical_contracts' and request.method == 'POST' and 'hipaa_role' not in request.POST
+        video_signing = name == 'telehealth:settings' and request.method == 'POST' and request.POST.get('action') == 'enable'
         provider_signing = (name == 'admin:accounts_clinicalcontractbundle_add' and request.method == 'POST'
                             and bool(request.POST.get('execute_as_provider')))
         fresh_export = name == 'practice_data_export'
-        if (fresh_export or (settings.MFA_REQUIRED and sensitive) or contract_signing or standard_signing or provider_signing) and now - session.get('security_auth_at', 0) >= settings.SECURITY_REAUTH_TIMEOUT:
+        if (fresh_export or (settings.MFA_REQUIRED and sensitive) or contract_signing or standard_signing or provider_signing or video_signing) and now - session.get('security_auth_at', 0) >= settings.SECURITY_REAUTH_TIMEOUT:
             request._audit_denied_reason = 'fresh_authentication_required'
             target = reverse('clinical_contract_review', kwargs={'pk': view_kwargs['pk']}) if contract_signing else request.path
             if fresh_export:

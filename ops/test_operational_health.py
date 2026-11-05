@@ -2,10 +2,21 @@ import unittest
 from unittest.mock import patch
 import boto3
 from botocore.stub import Stubber
-from ops.operational_health import notification_due, feedback_clear
+from ops.operational_health import notification_due, feedback_clear, video_runtime_checks
 
 
 class AlertDeduplicationTests(unittest.TestCase):
+    def test_video_monitor_reports_only_known_flags_and_fails_closed(self):
+        with patch('ops.operational_health.checked') as command:
+            command.return_value=b'{"enabled":false}'
+            self.assertEqual(video_runtime_checks('/synthetic'),{})
+            command.return_value=b'{"enabled":true,"cleanup_fresh":false,"revocations_clear":true}'
+            self.assertEqual(video_runtime_checks('/synthetic'),{'video_cleanup_fresh':False,'video_revocations_clear':True})
+            command.return_value=b'{"enabled":"false"}'
+            self.assertEqual(video_runtime_checks('/synthetic'),{'video_runtime_status':False})
+            command.side_effect=RuntimeError('raw diagnostic must remain private')
+            self.assertEqual(video_runtime_checks('/synthetic'),{'video_runtime_status':False})
+
     def test_healthy_checks_never_send_and_repeated_failures_are_limited(self):
         self.assertFalse(notification_due({}, [], 100000))
         self.assertTrue(notification_due({}, ['backup'], 100000))

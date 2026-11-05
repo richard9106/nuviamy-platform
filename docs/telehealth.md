@@ -62,8 +62,12 @@ on AWS/network availability. It is not instantaneous or guaranteed during an out
 4. Install `ops/systemd/nuviamy-video-cleanup.service` and `.timer` on the host,
    daemon-reload and enable the timer. Run cleanup once and check its successful
    timestamp. The timer runs 30 seconds after the preceding run finishes; the
-   service times out after 55 seconds. Alert on service failure through operational
-   monitoring before a public rollout. Do not overwrite existing notification cron.
+   service times out after 55 seconds. Alternatively, install a managed per-minute
+   cron entry as deploy, using flock and timeout 55, without overwriting other jobs.
+   Install the matching operational_health.py after the app is deployed: it checks
+   the non-identifying `video_health` flags every 15 minutes and uses the existing
+   deduplicated operator alerts. New joins fail closed sooner (150 seconds) if the
+   worker stops. Do not install both cron and timer or overwrite notification cron.
 5. Enable only an isolated fictional practice with `TELEHEALTH_PRACTICE_IDS`, global
    flag true, and reviewed region variables from `.env.example`. Recreate web to
    apply settings. Run Django checks. Verify host-role IAM by opening a synthetic

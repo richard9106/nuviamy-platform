@@ -81,6 +81,17 @@ class EmbeddedVideoTests(TestCase):
         self.assertNotIn('Attendee',response.json())
         self.assertEqual(self.post('patient',action='heartbeat').json()['state'],'waiting')
 
+    def test_operator_health_exposes_only_flags_and_detects_cleanup_failure(self):
+        from .health import video_health
+        self.assertEqual(video_health(), {'enabled':True,'cleanup_fresh':True,'revocations_clear':True})
+        with override_settings(TELEHEALTH_ENABLED=False):
+            self.assertEqual(video_health(), {'enabled':False})
+        self.post()
+        TelehealthRoom.objects.update(status='closing')
+        VideoRuntime.objects.update(last_cleanup_at=timezone.now()-timedelta(minutes=4))
+        self.assertEqual(video_health(), {'enabled':True,'cleanup_fresh':False,'revocations_clear':False})
+        self.api.terminate.assert_not_called()
+
     def test_admission_and_credentials_are_for_the_correct_role_only(self):
         self.open_and_admit()
         response=self.post('patient')

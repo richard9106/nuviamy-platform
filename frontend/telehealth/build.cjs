@@ -1,6 +1,7 @@
 const esbuild = require('esbuild');
 const fs = require('node:fs/promises');
 esbuild.build({entryPoints:['sdk.js'],bundle:true,minify:true,platform:'browser',
+  define:{global:'globalThis'},
   mainFields:['browser','module','main'],format:'iife',globalName:'NuviaVideoSDK',
   legalComments:'linked',outfile:'../../static/telehealth/chime-sdk.js',
   plugins:[{name:'omit-unshipped-source-maps',setup(build){

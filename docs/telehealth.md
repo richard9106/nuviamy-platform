@@ -1,7 +1,9 @@
 # Embedded video pilot — 2026-11-05
 
-Status: implemented locally; disabled by default. Not deployed, not activated in AWS,
-no real media call tested yet. Existing external appointment links are preserved.
+Status: deployed for an operator-only fictional pilot; disabled by default and
+unavailable to other practices. AWS permissions and the two-attendee API lifecycle
+have been verified without connecting media. A successful two-device media call
+has not yet been verified. Existing external appointment links are preserved.
 
 ## User flow
 
@@ -103,3 +105,20 @@ migration consistency, CloudFormation lint and deployment-image asset smoke test
 passed. Desktop and 390px mobile prejoin views were checked in the browser; mobile
 has no horizontal overflow. No camera/microphone permission or live AWS media test
 was performed. The test database was separate from development and production.
+
+Activation preparation subsequently passed 817 tests in CI, the isolated
+disposition/incident drill and PostgreSQL role/backup recovery checks. The deployed
+pilot uses us-east-1 for control and media. Per-minute cleanup cron is installed
+alongside the existing notification job, and the protected operator monitor reads
+the new video health flags. Current agreements were accepted by the operator for
+the fictional practice; this does not approve new clinical/EEA flows.
+
+The first browser attempt exposed a CommonJS initialization cycle caused by deep
+SDK imports. The follow-up uses the SDK's public package entry point, maps its
+Node-style `global` reference to the browser's native `globalThis`, and adds
+`node ops/check_chime_bundle.cjs` to CI. That check loads the actual vendored SDK,
+validates its exports and constructs/destroys a complete meeting session without
+network/media. Initialization also passed in an actual browser without requesting
+camera or microphone permission.
+It reproduces the old loading failure; the corrected bundle passes. A live call
+remains required after deploying this correction.

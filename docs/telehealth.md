@@ -114,8 +114,11 @@ the new video health flags. Current agreements were accepted by the operator for
 the fictional practice; this does not approve new clinical/EEA flows.
 
 The first browser attempt exposed a CommonJS initialization cycle caused by deep
-SDK imports. The follow-up uses the SDK's public package entry point and adds
+SDK imports. The follow-up uses the SDK's public package entry point, maps its
+Node-style `global` reference to the browser's native `globalThis`, and adds
 `node ops/check_chime_bundle.cjs` to CI. That check loads the actual vendored SDK,
-validates its exports and constructs session configuration without network/media.
+validates its exports and constructs/destroys a complete meeting session without
+network/media. Initialization also passed in an actual browser without requesting
+camera or microphone permission.
 It reproduces the old loading failure; the corrected bundle passes. A live call
 remains required after deploying this correction.

@@ -48,7 +48,7 @@ class ContractsView(ContractOwnerMixin, PostRateLimitMixin, View):
         return render(request, 'accounts/standard_agreements.html', {
             'acceptance': acceptance,
             'previous_acceptances': StandardAgreementAcceptance.objects.filter(
-                practice=self.practice).exclude(version=AGREEMENT_VERSION).order_by('-created_at', '-pk'),
+                practice=self.practice).exclude(version=AGREEMENT_VERSION).exclude(version__startswith='telehealth-').order_by('-created_at', '-pk'),
             'form': form or StandardAgreementForm(initial={'legal_name': self.practice.name, 'representative_name': request.user.get_full_name()}),
             'bundles': ClinicalContractBundle.objects.filter(request__practice=self.practice),
         })

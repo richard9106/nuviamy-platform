@@ -9,6 +9,7 @@ services:
     environment: &rehearsal_environment
       MIGRATION_REHEARSAL: "true"
       TELEHEALTH_ENABLED: "false"
+      TELEHEALTH_GENERAL_AVAILABLE: "false"
       TELEHEALTH_PRACTICE_IDS: ""
       AWS_EC2_METADATA_DISABLED: "true"
       AWS_ACCESS_KEY_ID: ""

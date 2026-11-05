@@ -122,3 +122,40 @@ network/media. Initialization also passed in an actual browser without requestin
 camera or microphone permission.
 It reproduces the old loading failure; the corrected bundle passes. A live call
 remains required after deploying this correction.
+
+## General availability: owner activation
+
+`TELEHEALTH_GENERAL_AVAILABLE=true` makes the option discoverable to practice
+owners under Settings → Integrations → Video sessions. It does not automatically
+connect any practice. The owner must have current base practice agreements, review
+and explicitly accept the separate Embedded Video Processing Addendum, and activate
+the service. A `chime` ExternalIntegration stores only enabled/disabled status;
+AWS meeting credentials never belong in its OAuth fields.
+
+The addendum receipt uses the existing append-only StandardAgreementAcceptance
+store with a distinct `telehealth-` version, captured document/Privacy Notice texts,
+digest, signer and base-agreement reference. Existing executed base agreements are
+not rewritten. The owner can download the addendum and disable the feature; its
+receipt remains retained. Fresh account authentication is required for acceptance.
+
+The current general offer discloses us-east-1 control/media processing and excludes
+EEA clinical use without a separately approved arrangement. The owner explicitly
+acknowledges that restriction; the app does not infer patient geography or claim an
+EEA transfer assessment is complete. The operator-controlled practice ID allowlist
+remains available for the previously validated fictional pilot. An explicit owner
+disconnect also disables that pilot.
+
+Only an admitted, connected SDK session following successful authenticated
+heartbeats refreshes local live-call activity. Waiting rooms and disconnected pages
+retain ordinary idle behavior. MFA, session revocation, the server's absolute
+session deadline and the room's own expiry remain in force. The prejoin schedule
+uses the browser's local timezone and labels it; the fallback labels the server
+zone explicitly.
+
+General release checks include owner/tenant isolation, required scope consent,
+changed-offer rejection, immutable/idempotent receipts, disabling active rooms,
+rehearsal isolation and long-call/ordinary idle/absolute deadline browser checks.
+To withdraw general availability, set TELEHEALTH_GENERAL_AVAILABLE=false and keep
+cleanup running until affected rooms close. TELEHEALTH_ENABLED=false withdraws all
+native video. Preserve the cleanup worker and AWS permissions until revocation is
+complete.

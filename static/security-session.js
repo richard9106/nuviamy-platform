@@ -23,6 +23,16 @@
     finally { login(); }
   };
   const expired = () => Date.now() >= deadline || (!pending && Date.now() - activeAt >= idle);
+  // An authenticated, connected video call is activity even without mouse input.
+  // The room renews this only after a successful server heartbeat and SDK start.
+  // MFA challenges, absolute expiry and server session/revocation checks remain.
+  window.addEventListener('nuvia:live-video-activity', event => {
+    if (config.dataset.videoSession !== 'true' || pending || exiting || expired()) return;
+    const until = Date.parse(event.detail?.expiresAt);
+    if (!Number.isFinite(until) || until <= Date.now() || until > Date.now() + 120 * 60000) return;
+    activeAt = Date.now(); dirty = true;
+    channel?.postMessage({type: 'activity', at: activeAt});
+  });
   const activity = event => {
     if (!event.isTrusted || exiting || expired()) return;
     activeAt = Date.now(); dirty = true;

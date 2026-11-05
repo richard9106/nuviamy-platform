@@ -159,7 +159,8 @@ class StandardAgreementTests(TestCase):
         self.assertIn('richard@nuviamy.com', texts['dpa'])
         response = self.client.get(reverse('privacy_policy'))
         self.assertContains(response, 'evaluation of the hosted EEA clinical-data flows remains pending')
-        self.assertContains(response, '2026-10-29-v6')
+        self.assertContains(response, '2026-11-05-v7')
+        self.assertContains(response, 'Amazon Chime SDK')
 
     def test_trial_migration_extends_only_standard_fifteen_day_trials(self):
         from importlib import import_module

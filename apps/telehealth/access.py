@@ -13,7 +13,17 @@ from apps.appointments.models import Appointment
 
 
 def enabled_for(practice_id):
-    return settings.TELEHEALTH_ENABLED and practice_id in settings.TELEHEALTH_PRACTICE_IDS
+    from apps.practices.models import ExternalIntegration
+    from .activation import accepted
+    if not settings.TELEHEALTH_ENABLED:
+        return False
+    pilot=practice_id in settings.TELEHEALTH_PRACTICE_IDS
+    if not pilot and not settings.TELEHEALTH_GENERAL_AVAILABLE:
+        return False
+    integration=ExternalIntegration.objects.filter(practice_id=practice_id,provider='chime').first()
+    if integration is None:
+        return pilot
+    return integration.status=='connected' and (pilot or accepted(practice_id) is not None)
 
 
 def agreements_ready(practice_id):

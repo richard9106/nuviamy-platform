@@ -81,6 +81,7 @@ class ExternalIntegration(models.Model):
     class Provider(models.TextChoices):
         GOOGLE = "google", "Google"
         DROPBOX = "dropbox", "Dropbox"
+        CHIME = 'chime', 'NuviaMy video'
 
     class Status(models.TextChoices):
         DISCONNECTED = "disconnected", "Disconnected"

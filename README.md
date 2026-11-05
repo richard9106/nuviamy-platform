@@ -355,3 +355,9 @@ The [embedded video pilot](docs/telehealth.md) adds an authenticated therapist/c
 room, private device preview and therapist-controlled admission using Amazon Chime
 SDK. It is disabled by default and requires reviewed AWS permissions, an active
 cleanup worker and a two-device pilot test before production activation.
+
+General video availability is opt-in per practice owner under Settings → Integrations
+→ Video sessions, with a separate versioned processing addendum and retained receipt.
+The release exposes US-region processing; EEA clinical scope remains separately
+restricted. Connected calls count as activity without extending absolute account or
+room expiry. See the [video activation runbook](docs/telehealth.md).

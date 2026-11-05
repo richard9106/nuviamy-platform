@@ -159,6 +159,7 @@ FIELD_ENCRYPTION_KEY = os.getenv('FIELD_ENCRYPTION_KEY', '')
 
 # Embedded video is opt-in until its IAM policy, cleanup timer and pilot are reviewed.
 TELEHEALTH_ENABLED = os.getenv('TELEHEALTH_ENABLED', 'false').lower() == 'true'
+TELEHEALTH_GENERAL_AVAILABLE = os.getenv('TELEHEALTH_GENERAL_AVAILABLE', 'false').lower() == 'true'
 TELEHEALTH_PRACTICE_IDS = tuple(int(v.strip()) for v in os.getenv('TELEHEALTH_PRACTICE_IDS', '').split(',') if v.strip())
 TELEHEALTH_CONTROL_REGION = os.getenv('TELEHEALTH_CONTROL_REGION', 'us-east-1')
 TELEHEALTH_MEDIA_REGION = os.getenv('TELEHEALTH_MEDIA_REGION', 'us-east-1')

@@ -92,6 +92,16 @@ class EmbeddedVideoTests(TestCase):
         self.assertEqual(video_health(), {'enabled':True,'cleanup_fresh':False,'revocations_clear':False})
         self.api.terminate.assert_not_called()
 
+    def test_offline_restore_clears_video_references_without_touching_live_meetings(self):
+        from ops.rehearsal import clear_restored_integrations
+        self.post()
+        clear_restored_integrations()
+        room=TelehealthRoom.objects.get()
+        self.assertEqual((room.status,room.external_room_id,room.meeting_payload),('ended','',{}))
+        self.assertEqual(VideoParticipant.objects.get().state,'left')
+        self.assertIsNone(VideoRuntime.objects.get(pk=1).last_cleanup_at)
+        self.api.terminate.assert_not_called()
+
     def test_admission_and_credentials_are_for_the_correct_role_only(self):
         self.open_and_admit()
         response=self.post('patient')

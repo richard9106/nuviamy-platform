@@ -8,6 +8,8 @@ services:
     restart: "no"
     environment: &rehearsal_environment
       MIGRATION_REHEARSAL: "true"
+      TELEHEALTH_ENABLED: "false"
+      TELEHEALTH_PRACTICE_IDS: ""
       AWS_EC2_METADATA_DISABLED: "true"
       AWS_ACCESS_KEY_ID: ""
       AWS_SECRET_ACCESS_KEY: ""

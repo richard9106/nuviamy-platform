@@ -22,6 +22,8 @@ def main():
         for service in ('web','migrate'):
             isolated = rehearsal['services'][service]['environment']
             assert isolated['MIGRATION_REHEARSAL'] == 'true'
+            assert isolated['TELEHEALTH_ENABLED'] == 'false'
+            assert not isolated['TELEHEALTH_PRACTICE_IDS']
             assert isolated['AWS_EC2_METADATA_DISABLED'] == 'true'
             assert isolated['EMAIL_BACKEND'] == 'django.core.mail.backends.dummy.EmailBackend'
             for key in ('STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET','GOOGLE_OAUTH_CLIENT_SECRET','AWS_ACCESS_KEY_ID','AWS_SESSION_TOKEN','DJANGO_STORAGE_BACKEND','SENTRY_DSN'):

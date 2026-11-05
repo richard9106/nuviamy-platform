@@ -39,6 +39,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('apps.accounts.urls')),
     path('appointments/', include('apps.appointments.urls')),
+    path('telehealth/', include('apps.telehealth.urls')),
     path('clients/', include('apps.clients.urls')),
     path('clinical-notes/', include('apps.clinical.urls')),
     path('billing/', include('apps.billing.urls')),

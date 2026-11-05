@@ -108,7 +108,7 @@
                 {% for appointment in day.appointments %}<article class="agenda-session{% if appointment.documentation_pending %} documentation-pending{% endif %}">
                   <div class="agenda-time"><strong>{{ appointment.starts_at|time:"g:i A" }}</strong><span>{{ appointment.ends_at|time:"g:i A" }}</span></div>
                   <div class="agenda-session-info">{% if appointment.session_kind == "initial_consultation" %}<span class="badge brand">Initial consultation</span>{% endif %}<strong>{% if workspace_permissions.appointments.edit %}<a href="{% url 'appointments:edit' appointment.pk %}?next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-modal-{{ appointment.pk }}">{{ appointment.client }}</a>{% elif workspace_permissions.clients.view %}<a href="{% url 'clients:detail' appointment.client_id %}">{{ appointment.client }}</a>{% else %}{{ appointment.client }}{% endif %}</strong><span>{{ appointment.therapist }} · {{ appointment.get_appointment_type_display }}</span></div>
-                  <div class="agenda-session-status"><span class="badge">{{ appointment.get_status_display }}</span>{% if appointment.documentation_pending %}<span class="session-documentation-label">{% if appointment.has_session_note %}Signature pending{% else %}Note missing{% endif %}</span>{% elif appointment.has_signed_note %}<span class="badge success">Signed</span>{% endif %}</div>
+                  <div class="agenda-session-status">{% include "telehealth/link.html" %}<span class="badge">{{ appointment.get_status_display }}</span>{% if appointment.documentation_pending %}<span class="session-documentation-label">{% if appointment.has_session_note %}Signature pending{% else %}Note missing{% endif %}</span>{% elif appointment.has_signed_note %}<span class="badge success">Signed</span>{% endif %}</div>
                 </article>{% empty %}<p class="agenda-empty">No appointments.</p>{% endfor %}</section>
               {% endfor %}
             </div>
@@ -357,7 +357,7 @@
               <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
             </div>
 
-            {% include 'appointments/partials/session_workflow.html' with session=appointment %}
+            {% include 'appointments/partials/session_workflow.html' with session=appointment %}{% include 'telehealth/link.html' %}
             <form class="appointment-form" method="post" action="{% url 'appointments:edit' appointment.pk %}">
               {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
               <div class="field-grid two">

@@ -1,0 +1,42 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Review before execution: embedded video permissions on the existing host role. No media capture, transcription, SIP or storage access.",
+  "Parameters": {
+    "HostRoleName": {"Type": "String", "AllowedPattern": "[A-Za-z0-9+=,.@_-]{1,64}"}
+  },
+  "Resources": {
+    "VideoMeetingPermission": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "nuviamy-embedded-video",
+        "Roles": [{"Ref": "HostRoleName"}],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "CreateTaggedMeetingsOnly",
+              "Effect": "Allow",
+              "Action": "chime:CreateMeeting",
+              "Resource": "*",
+              "Condition": {"StringEquals": {"aws:RequestedRegion": {"Ref": "AWS::Region"}, "aws:RequestTag/Application": "NuviaMyTelehealth"}, "ForAllValues:StringEquals": {"aws:TagKeys": ["Application"]}}
+            },
+            {
+              "Sid": "TagMeetingAtCreation",
+              "Effect": "Allow",
+              "Action": ["chime:TagMeeting", "chime:TagResource"],
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:chime:${AWS::Region}:${AWS::AccountId}:meeting/*"},
+              "Condition": {"StringEquals": {"aws:RequestedRegion": {"Ref": "AWS::Region"}, "aws:RequestTag/Application": "NuviaMyTelehealth"}, "ForAllValues:StringEquals": {"aws:TagKeys": ["Application"]}}
+            },
+            {
+              "Sid": "ManageOwnVideoParticipants",
+              "Effect": "Allow",
+              "Action": ["chime:CreateAttendee", "chime:ListAttendees", "chime:DeleteAttendee", "chime:DeleteMeeting"],
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:chime:${AWS::Region}:${AWS::AccountId}:meeting/*"},
+              "Condition": {"StringEquals": {"aws:RequestedRegion": {"Ref": "AWS::Region"}, "aws:ResourceTag/Application": "NuviaMyTelehealth"}}
+            }
+          ]
+        }
+      }
+    }
+  }
+}

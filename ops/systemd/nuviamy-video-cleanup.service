@@ -1,0 +1,13 @@
+[Unit]
+Description=NuviaMy video room revocation and safety heartbeat
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/apps/django-analytics-dashboard
+UMask=0077
+ExecStart=/usr/bin/docker compose exec -T web python manage.py cleanup_video_rooms
+TimeoutStartSec=55

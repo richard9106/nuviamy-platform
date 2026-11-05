@@ -1,0 +1,14 @@
+{
+  "name": "nuviamy-telehealth-browser",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "node build.cjs"
+  },
+  "dependencies": {
+    "amazon-chime-sdk-js": "3.32.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Revoke stale NuviaMy video sessions every minute
+
+[Timer]
+OnBootSec=30s
+OnUnitInactiveSec=30s
+AccuracySec=1s
+Unit=nuviamy-video-cleanup.service
+
+[Install]
+WantedBy=timers.target

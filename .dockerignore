@@ -15,6 +15,7 @@ graphify-out
 htmlcov
 .coverage
 staticfiles
+frontend/telehealth/node_modules
 
 # Private migration material and restored files never enter application images.
 *.env

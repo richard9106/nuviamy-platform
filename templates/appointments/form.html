@@ -76,7 +76,7 @@
         </div>
       </dialog>
 
-      {% if object.pk %}{% include 'appointments/partials/session_workflow.html' with session=object %}{% endif %}
+      {% if object.pk %}{% include 'appointments/partials/session_workflow.html' with session=object %}{% include 'telehealth/link.html' with appointment=object %}{% endif %}
       <section class="panel form-panel">
         <div class="panel-head">
           <div>

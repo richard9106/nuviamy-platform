@@ -1,0 +1,1 @@
+{% load video_links %}{% video_room_link appointment request.user as native_room_url %}{% if native_room_url %}<a class="btn btn-secondary" href="{{ native_room_url }}">Open video room</a>{% endif %}

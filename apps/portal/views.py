@@ -31,6 +31,7 @@ from apps.clients.models import Client
 from apps.documents.models import ClientDocument
 from apps.practices.models import Practice
 from apps.rate_limit import PostRateLimitMixin
+from apps.telehealth.access import enabled_for
 from .forms import (
     ClientIntakeAssignmentForm,
     ClientIntakeResponseForm,
@@ -142,6 +143,10 @@ class ClientPortalDashboardView(ClientPortalAccessMixin, TemplateView):
         ).select_related('therapist__user')[:6])
         for appointment in upcoming_appointments:
             appointment.portal_meeting_url = ''
+            appointment.portal_native_video_url = ''
+            if (enabled_for(appointment.practice_id) and appointment.appointment_type == Appointment.AppointmentType.VIDEO
+                    and not appointment.meeting_url):
+                appointment.portal_native_video_url = reverse('telehealth:room', args=[appointment.pk])
             if appointment.appointment_type == Appointment.AppointmentType.VIDEO and appointment.meeting_url:
                 try:
                     URLValidator(schemes=['http', 'https'])(appointment.meeting_url)

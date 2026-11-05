@@ -4,6 +4,8 @@ def validate_rehearsal(config, database_name, confirmed):
         raise ValueError('Use a dedicated *_rehearsal database and explicit isolated confirmation.')
     if config.EMAIL_BACKEND!='django.core.mail.backends.dummy.EmailBackend':
         raise ValueError('Rehearsal requires the dummy email backend.')
+    if getattr(config,'TELEHEALTH_ENABLED',False):
+        raise ValueError('Rehearsal must not enable live video rooms.')
     if getattr(config,'DJANGO_STORAGE_BACKEND',''):
         raise ValueError('Rehearsal must use isolated local document storage.')
     for name in ('STRIPE_SECRET_KEY','STRIPE_PUBLISHABLE_KEY','GOOGLE_OAUTH_CLIENT_ID',
@@ -15,7 +17,13 @@ def validate_rehearsal(config, database_name, confirmed):
 def clear_restored_integrations():
     from apps.practices.models import ExternalIntegration
     from django.contrib.sessions.models import Session
+    from apps.telehealth.models import TelehealthRoom, VideoParticipant, VideoRuntime
     Session.objects.all().delete()
+    # These are references in an isolated restored copy, not the live rooms.
+    # Bulk updates deliberately avoid provider calls / pre-delete hooks.
+    TelehealthRoom.objects.filter(provider='chime').update(status='ended',external_room_id='',meeting_payload={})
+    VideoParticipant.objects.update(state='left',session_hash='')
+    VideoRuntime.objects.update(last_cleanup_at=None)
     return ExternalIntegration.objects.update(status=ExternalIntegration.Status.DISCONNECTED,
         access_token='',refresh_token='',token_expires_at=None,oauth_state='',
         send_email_enabled=False,read_email_enabled=False,calendar_enabled=False,file_storage_enabled=False,

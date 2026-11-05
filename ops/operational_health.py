@@ -35,6 +35,21 @@ def checked(args, **kwargs):
     return result.stdout
 
 
+def video_runtime_checks(app_dir):
+    try:
+        # Booleans only: never read participant credentials or clinical metadata.
+        video = json.loads(checked(['docker', 'compose', 'exec', '-T', 'web',
+            'python', 'manage.py', 'video_health'], cwd=app_dir))
+        if video['enabled'] is False:
+            return {}
+        if video['enabled'] is not True:
+            raise ValueError('Invalid video status.')
+        return {'video_cleanup_fresh': video['cleanup_fresh'] is True,
+                'video_revocations_clear': video['revocations_clear'] is True}
+    except Exception:
+        return {'video_runtime_status': False}
+
+
 def collect(app_dir):
     checks = {}
     try:
@@ -76,6 +91,7 @@ print(json.dumps({k:e.get(k,'') for k in ('BACKUP_S3_BUCKET','BACKUP_S3_PREFIX',
             checks['ses_feedback_review'] = feedback_clear(queue_url)
         except Exception:
             checks['ses_feedback_review'] = False
+    checks.update(video_runtime_checks(app_dir))
     return checks
 
 

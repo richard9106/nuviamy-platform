@@ -24,6 +24,8 @@ def prepare(source,destination,revision):
     save('production-candidate.env',source.read_text())
     values['POSTGRES_DB']=values['POSTGRES_DB']+'_rehearsal'
     values['MIGRATION_REHEARSAL']='true'
+    values['TELEHEALTH_ENABLED']='false'
+    values['TELEHEALTH_PRACTICE_IDS']=''
     values.update(EMAIL_BACKEND='django.core.mail.backends.dummy.EmailBackend',SIGNUP_NOTIFICATION_EMAIL='',
         STRIPE_SECRET_KEY='',STRIPE_PUBLISHABLE_KEY='',STRIPE_WEBHOOK_SECRET='',STRIPE_LIVE_VERIFY_WEBHOOK_SECRET='',
         STRIPE_LIVE_VERIFY_NONCE='',SENTRY_DSN='',GOOGLE_OAUTH_CLIENT_ID='',GOOGLE_OAUTH_CLIENT_SECRET='',

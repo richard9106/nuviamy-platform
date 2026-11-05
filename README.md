@@ -350,3 +350,8 @@ files, plus the clinical retention and disposal decisions that remain case-speci
 The [October 28 internal operational validation](docs/compliance/operational-validation-2026-10-28.md)
 records isolated disposition/restore, real synthetic S3 version cleanup, automated
 incident containment and scoped HTTP authorization exercises, with their explicit limits.
+
+The [embedded video pilot](docs/telehealth.md) adds an authenticated therapist/client
+room, private device preview and therapist-controlled admission using Amazon Chime
+SDK. It is disabled by default and requires reviewed AWS permissions, an active
+cleanup worker and a two-device pilot test before production activation.

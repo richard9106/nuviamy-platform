@@ -18,7 +18,8 @@ class RehearsalConfigTests(SimpleTestCase):
             (self.config(STRIPE_SECRET_KEY='synthetic'),'fictional_rehearsal',True),
             (self.config(GOOGLE_OAUTH_CLIENT_ID='synthetic'),'fictional_rehearsal',True),
             (self.config(DJANGO_STORAGE_BACKEND='s3'),'fictional_rehearsal',True),
-            (self.config(AWS_SESSION_TOKEN='synthetic'),'fictional_rehearsal',True)]
+            (self.config(AWS_SESSION_TOKEN='synthetic'),'fictional_rehearsal',True),
+            (self.config(TELEHEALTH_ENABLED=True),'fictional_rehearsal',True)]
         for config,name,confirm in cases:
             with self.assertRaises(ValueError):validate_rehearsal(config,name,confirm)
 

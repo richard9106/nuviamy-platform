@@ -28,6 +28,7 @@ from apps.dashboard.views import (
 from apps.billing.urls import settings_patterns
 from apps.dashboard.support_views import SupportTicketListView, SupportTicketDetailView
 from apps.dashboard.founding_views import FoundingTherapistApplicationView
+from apps.dashboard.blog import ARTICLES, blog_article, blog_index
 from apps.accounts.views import ConfirmLogoutView, ForcePasswordChangeView, RateLimitedPasswordResetView, RoleAwareLoginView
 from apps.portal.settings_urls import urlpatterns as portal_settings_patterns
 from apps.portal.intake_urls import urlpatterns as intake_patterns
@@ -82,8 +83,10 @@ urlpatterns = [
     path('clinical-notes-software-for-therapists/', ClinicalNotesSoftwarePageView.as_view(), name='clinical_notes_software'),
     path('client-portal-software-for-therapists/', ClientPortalSoftwarePageView.as_view(), name='client_portal_software'),
     path('mental-health-billing-software/', MentalHealthBillingSoftwarePageView.as_view(), name='mental_health_billing_software'),
+    path('blog/', blog_index, name='blog'),
+    path('blog/<slug:slug>/', blog_article, name='blog_article'),
     path('robots.txt', TemplateView.as_view(template_name='marketing/robots.txt', content_type='text/plain'), name='robots_txt'),
-    path('sitemap.xml', TemplateView.as_view(template_name='marketing/sitemap.xml', content_type='application/xml'), name='sitemap_xml'),
+    path('sitemap.xml', TemplateView.as_view(template_name='marketing/sitemap.xml', content_type='application/xml', extra_context={'blog_slugs': ARTICLES.keys()}), name='sitemap_xml'),
     path('favicon.ico', RedirectView.as_view(url='/static/favicon.svg', permanent=True), name='favicon'),
     path('', HomePageView.as_view(), name='home'),
 ] 

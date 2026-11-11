@@ -1,0 +1,20 @@
+{% extends 'marketing/blog/base.html' %}
+{% block seo %}
+  {% include 'marketing/partials/seo.html' with seo_title='Private Practice Blog for Therapists | NuviaMy' seo_description='Free guides, checklists, and templates for mental health professionals who manage their own therapy practice.' seo_path='/blog/' %}
+{% endblock %}
+{% block content %}
+  <div class="article-card">
+    <p class="eyebrow coral-eyebrow">NuviaMy blog</p>
+    <h1>Private practice resources for therapists</h1>
+    <p class="lead">Checklists and templates for the work around each therapy session, from the first intake to the final note.</p>
+    <div class="blog-grid">
+      {% for slug, article in articles.items %}
+        <article class="blog-card">
+          <p class="eyebrow coral-eyebrow">{{ article.category }}</p>
+          <h2><a href="{% url 'blog_article' slug %}">{{ article.title }}</a></h2>
+          <p>{{ article.description }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

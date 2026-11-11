@@ -782,6 +782,21 @@ th { color: var(--slate-500); font-size: 12px; text-transform: uppercase; letter
 .article-card .lead { color: var(--slate-800); font-size: 18px; }
 .article-card ul { display: grid; gap: 10px; padding-left: 22px; }
 .article-card li::marker { color: var(--coral-500); }
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+.blog-card {
+  padding: 20px;
+  border: 1px solid rgba(112, 82, 217, .18);
+  border-radius: 18px;
+  background: var(--surface-2, #f7f5ff);
+}
+.article-card .blog-card h2 { margin: 8px 0; font-size: 23px; }
+.blog-card p { margin: 0; }
+.blog-card h2 a:hover, .blog-card h2 a:focus-visible { color: var(--brand-700); }
 .clinical-notes-demo-media {
   display: block;
   width: 100%;

@@ -1,0 +1,27 @@
+{% extends 'marketing/blog/base.html' %}
+{% block seo %}
+  {% url 'blog_article' request.resolver_match.kwargs.slug as canonical_path %}
+  {% include 'marketing/partials/seo.html' with seo_title=seo_title seo_description=article.description seo_path=canonical_path seo_type='article' %}
+{% endblock %}
+{% block content %}
+  <article class="article-card">
+    <p><a href="{% url 'blog' %}">← Back to the blog</a></p>
+    <p class="eyebrow coral-eyebrow">{{ article.category }}</p>
+    <h1>{{ article.title }}</h1>
+    <p class="lead">{{ article.description }}</p>
+    <p>By the NuviaMy team</p>
+    {% include article.body %}
+    <div class="article-cta">
+      <h2>See the workflow in NuviaMy</h2>
+      <a class="btn btn-primary" href="{% url article.product_url %}">{{ article.product_label }}</a>
+    </div>
+    <section>
+      <h2>More guides for your practice</h2>
+      <ul>
+        {% for slug, related in related_articles.items %}
+          <li><a href="{% url 'blog_article' slug %}">{{ related.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </article>
+{% endblock %}

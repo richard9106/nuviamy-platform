@@ -2,14 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  {% include "marketing/partials/seo.html" with seo_title="Clinical Notes Software for Therapists | NuviaMy" seo_description="Keep progress notes, diagnoses and treatment plans connected to client care. Explore documentation and review workflows for your therapy practice." seo_path="/clinical-notes-software-for-therapists/" %}
+  {% include "marketing/partials/seo.html" with seo_title="Clinical Notes Software for Therapists | NuviaMy" seo_description="See how therapists write progress notes, find past notes by client or session, and keep treatment plans connected in NuviaMy." seo_path="/clinical-notes-software-for-therapists/" %}
   <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="{% static 'dashboard.css' %}">
 </head>
 <body id="top" class="marketing-page article-page">
   {% include 'marketing/partials/nav.html' %}
   <main class="article-layout"><article class="article-card">
-    <p class="eyebrow coral-eyebrow">Documentation guide</p><h1>Clinical notes software for therapists who need clarity, not clutter.</h1><p class="lead">Clinical documentation should support care, continuity, and review without overwhelming therapists at the end of the day.</p>
+    <h1>Clinical notes software for therapists</h1>
+    <p class="lead">Write progress notes after a session and find them again by client, appointment, or note type. Keep treatment plans and diagnoses in the same workspace.</p>
+    <section class="clinical-notes-demo" aria-labelledby="clinical-notes-demo-title">
+      <h2 id="clinical-notes-demo-title">See how notes work in NuviaMy</h2>
+      <p>This 10-second walkthrough uses a fictional practice and example notes.</p>
+      <video class="clinical-notes-demo-media" width="1200" height="820" controls playsinline preload="none" poster="{% static 'marketing/clinical-notes/poster.webp' %}" aria-label="Write and find a clinical note in NuviaMy">
+        <source src="{% static 'marketing/clinical-notes/demo.mp4' %}" type="video/mp4">
+      </video>
+      <div class="clinical-notes-demo-steps">
+        <figure>
+          <img class="clinical-notes-demo-media" src="{% static 'marketing/clinical-notes/create.webp' %}" width="978" height="580" loading="lazy" decoding="async" alt="NuviaMy progress note form for a fictional appointment">
+          <figcaption><strong>Write a progress note.</strong> Open a session and add your note with the client and appointment already selected.</figcaption>
+        </figure>
+        <figure>
+          <img class="clinical-notes-demo-media" src="{% static 'marketing/clinical-notes/list.webp' %}" width="978" height="580" loading="lazy" decoding="async" alt="NuviaMy notes list with filters and an expanded fictional client record">
+          <figcaption><strong>Find it before the next session.</strong> Filter by client, session, note type, or status, then open the note to review it.</figcaption>
+        </figure>
+      </div>
+      <p><a class="btn btn-primary" href="{% url 'founding_therapists' %}">Apply for 6 months free</a></p>
+      <p>For approved applicants. No card required.</p>
+    </section>
     <section><h2>Progress notes, intake notes, and general notes</h2><p>NuviaMy supports core therapy documentation workflows and keeps notes tied to clients, practices, appointments, diagnoses, and treatment plans.</p></section>
     <section><h2>Treatment planning and review</h2><ul><li>Create treatment plans with goals, objectives, interventions, and target dates.</li><li>Track plan status and review dates so follow-up does not disappear.</li><li>Connect diagnoses and clinical context to the right client record.</li><li>Lock documentation when notes are ready for a stronger recordkeeping workflow.</li></ul></section>
     <section><h2>Documentation as part of operations</h2><p>Notes are most useful when they connect with scheduling, billing, documents, and portal workflows. NuviaMy keeps those connections close while maintaining a calm interface for sensitive work.</p></section>

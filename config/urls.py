@@ -87,6 +87,10 @@ urlpatterns = [
     path('tasks/<int:pk>/', TaskDetailView.as_view(), name='tasks_detail'),
     path('tasks/<int:pk>/status/', TaskStatusUpdateView.as_view(), name='tasks_status'),
     path('features/', FeaturesPageView.as_view(), name='features'),
+    path('support-nuviamy/', TemplateView.as_view(
+        template_name='marketing/support_nuviamy.html',
+        extra_context={'fundraiser_url': 'https://www.gofundme.com/f/help-nuviamy-grow-so-therapists-can-focus-on-care'},
+    ), name='support_nuviamy'),
     path('pricing/', PricingPageView.as_view(), name='pricing'),
     path('help/', HelpCenterView.as_view(), name='help_center'),
     path('help/contact/', SupportContactView.as_view(), name='support_contact'),

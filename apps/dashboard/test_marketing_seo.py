@@ -36,7 +36,7 @@ class MarketingSEOTests(SimpleTestCase):
                      'therapy_scheduling_software', 'clinical_notes_software',
                      'client_portal_software', 'mental_health_billing_software',
                      'help_center', 'support_contact', 'privacy_policy',
-                     'cookie_policy', 'terms_of_service', 'legal_notice'):
+                     'cookie_policy', 'terms_of_service', 'legal_notice', 'support_nuviamy'):
             with self.subTest(page=name):
                 path = reverse(name)
                 response = self.client.get(path)

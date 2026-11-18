@@ -1,0 +1,42 @@
+{% extends 'marketing/blog/base.html' %}
+{% load static %}
+{% block seo %}
+  {% include 'marketing/partials/seo.html' with seo_title='Support NuviaMy | Help Build Software for Therapists' seo_description='Support the next stage of NuviaMy through our GoFundMe campaign. See the fundraising goal and proposed budget for equipment, development and reaching therapists.' seo_path='/support-nuviamy/' %}
+  <link rel="stylesheet" href="{% static 'marketing/support-nuviamy.css' %}">
+{% endblock %}
+{% block content %}
+<div class="fundraiser-layout">
+  <section class="article-card fundraiser-story">
+    <p class="eyebrow coral-eyebrow">Support NuviaMy</p>
+    <h1>Help NuviaMy grow.</h1>
+    <p class="lead">I’m Richard, the developer behind NuviaMy. I’m raising funds for the equipment, continued development and outreach that will help me take the project forward.</p>
+    <a class="btn btn-primary" href="{{ fundraiser_url }}" target="_blank" rel="noopener noreferrer">Support on GoFundMe <span aria-hidden="true">↗</span></a>
+    <p class="fundraiser-payment-note">Contributions are handled on GoFundMe.</p>
+    <h2>Already built. Still growing.</h2>
+    <p>NuviaMy is live, bringing together appointments, intake forms, clinical notes, billing, a client portal and video sessions. I build and maintain it independently, with the aim of making the everyday work around therapy sessions easier to manage.</p>
+    <figure class="fundraiser-product">
+      <img src="{% static 'marketing/product-overview.webp' %}" width="1265" height="712" alt="NuviaMy practice dashboard showing fictional demonstration data" loading="lazy">
+      <figcaption>The NuviaMy workspace, shown with fictional demonstration data.</figcaption>
+    </figure>
+    <h2>What your support makes possible</h2>
+    <p>A dedicated computer will support development and testing. A focused marketing budget will help introduce NuviaMy to therapists and private practice owners. The remaining funds will support ongoing improvements, operating costs and processing fees.</p>
+    <p>The campaign supports the development and growth of NuviaMy, a commercial software business operated by Richard Andres Marles Bonilla in Spain.</p>
+    <p>If you know a therapist who might find NuviaMy useful, sharing the project is another way to help. Thank you for supporting the work.</p>
+    <a class="inline-link" href="{% url 'features' %}">Explore what NuviaMy does →</a>
+  </section>
+  <aside class="article-card fundraiser-budget" aria-labelledby="fundraiser-budget-title">
+    <p class="eyebrow">Fundraising goal</p>
+    <p class="fundraiser-goal">€5,000</p>
+    <h2 id="fundraiser-budget-title">The proposed budget</h2>
+    <dl>
+      <div><dt>Development computer</dt><dd>€2,500</dd></div>
+      <div><dt>Focused marketing campaign</dt><dd>€1,500</dd></div>
+      <div><dt>Development and operating costs</dt><dd>€750</dd></div>
+      <div><dt>Processing fees and contingency</dt><dd>€250</dd></div>
+    </dl>
+    <p>The equipment target is a MacBook Pro with an M5 chip, 24 GB of memory and a 1 TB SSD. The final purchase depends on confirmed pricing and availability.</p>
+    <p>These allocations are estimates. Spending and progress updates will be shared on GoFundMe. If less is raised, essential development needs will take priority.</p>
+    <a class="btn btn-primary" href="{{ fundraiser_url }}" target="_blank" rel="noopener noreferrer">View the campaign <span aria-hidden="true">↗</span></a>
+  </aside>
+</div>
+{% endblock %}

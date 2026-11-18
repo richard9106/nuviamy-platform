@@ -1,0 +1,24 @@
+.fundraiser-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+.fundraiser-layout .article-card { min-width: 0; }
+.article-page .fundraiser-layout .fundraiser-story h1 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.12; }
+.fundraiser-story h2 { margin-top: 32px; }
+.fundraiser-payment-note { font-size: .85rem; color: #66748b; }
+.fundraiser-product { margin: 24px 0; }
+.fundraiser-product img { display: block; width: 100%; height: auto; border: 1px solid #e5e2f0; border-radius: 12px; }
+.fundraiser-product figcaption { margin-top: 8px; font-size: .8rem; color: #66748b; line-height: 1.5; }
+.fundraiser-goal { margin: 8px 0 20px; font-size: 3rem; font-weight: 800; color: #6c58d9; line-height: 1.1; }
+.fundraiser-budget { background: linear-gradient(155deg, #f7f4ff, #fff 60%); }
+.article-page .fundraiser-layout .fundraiser-budget h2 { font-size: 1.3rem; }
+.fundraiser-budget dl { margin: 20px 0; }
+.fundraiser-budget dl div { display: flex; justify-content: space-between; gap: 16px; padding: 15px 0; border-bottom: 1px solid #e5e2f0; }
+.fundraiser-budget dd { margin: 0; font-weight: 800; white-space: nowrap; }
+.fundraiser-budget p:not(.eyebrow):not(.fundraiser-goal) { font-size: .9rem; line-height: 1.7; }
+.fundraiser-layout .btn { white-space: normal; text-align: center; }
+@media (max-width: 900px) {
+  .fundraiser-layout { grid-template-columns: minmax(0, 1fr); }
+}

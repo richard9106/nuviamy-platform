@@ -1,0 +1,45 @@
+{% extends 'support/operator_base.html' %}
+{% block support_title %}{{ ticket.get_topic_display }}{% endblock %}
+{% block support_content %}
+<div class="support-operator-layout">
+  <section class="panel support-thread" aria-label="Support conversation">
+    <header class="panel-head"><div><h2>Conversation</h2><p class="support-reference">Reference {{ ticket.pk }}</p></div><span class="badge">{{ ticket.get_status_display }}</span></header>
+    {% for entry in thread_messages %}
+    <article class="support-message {% if entry.is_operator %}support-message-operator{% endif %}">
+      <header><strong>{% if entry.is_operator %}NuviaMy support{% else %}{{ ticket.contact_name|default:'Requester' }}{% endif %}</strong><time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:"M j, Y · H:i" }}</time></header>
+      <div>{{ entry.body|linebreaksbr }}</div>
+    </article>
+    {% empty %}<p>No messages in this request.</p>{% endfor %}
+    <div role="alert">{{ form.non_field_errors }}</div>
+    {% if ticket.status == 'closed' %}
+      <p>This request is closed. Reopen it to continue the conversation.</p>
+    {% elif ticket.requester_id %}
+    <form method="post" class="support-reply">
+      {% csrf_token %}<input type="hidden" name="action" value="reply">
+      <label for="{{ form.message.id_for_label }}">Reply to requester</label>
+      {{ form.message }}{{ form.message.errors }}
+      <p>Your reply appears in the requester's private support conversation. Their email notification contains a prompt to sign in.</p>
+      <button class="btn btn-primary" type="submit">Send reply</button>
+    </form>
+    {% else %}
+      <div class="support-public-notice"><h3>Website enquiry</h3><p>This request was submitted without a linked NuviaMy account. Follow up using the contact email shown here.</p><a class="btn btn-secondary" href="mailto:{{ ticket.contact_email|urlencode }}">Open email</a></div>
+    {% endif %}
+  </section>
+  <aside class="panel support-ticket-details" aria-label="Request details">
+    <h2>Request details</h2>
+    {% if ticket.topic == 'early_access' %}<a class="btn btn-primary" href="{% url 'staff_offers' %}?application={{ ticket.pk }}">Prepare founding offer</a>{% endif %}
+    <dl>
+      <dt>Contact</dt><dd>{{ ticket.contact_name|default:'Website visitor' }}</dd>
+      <dt>Email</dt><dd>{{ ticket.contact_email }}</dd>
+      <dt>Practice</dt><dd>{{ ticket.practice.name|default:'No linked practice' }}</dd>
+      <dt>Submitted</dt><dd>{{ ticket.created_at|date:"M j, Y · H:i" }}</dd>
+      <dt>Source</dt><dd>{% if ticket.requester_id %}Signed-in user{% else %}Public website{% endif %}</dd>
+    </dl>
+    <form method="post" class="support-reply">
+      {% csrf_token %}<input type="hidden" name="action" value="status">
+      {% if ticket.status == 'open' %}<input type="hidden" name="status" value="closed"><button class="btn btn-secondary" type="submit">Close request</button>
+      {% else %}<input type="hidden" name="status" value="open"><button class="btn btn-primary" type="submit">Reopen request</button>{% endif %}
+    </form>
+  </aside>
+</div>
+{% endblock %}

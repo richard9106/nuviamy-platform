@@ -1,0 +1,6 @@
+<form method="get" class="platform-filter">
+<label for="platform-search">{{ search_label|default:'Search practices' }}</label>
+<input type="search" id="platform-search" name="q" value="{{ search }}" maxlength="150" placeholder="{{ search_placeholder|default:'Practice name or email' }}">
+<button class="btn btn-secondary" type="submit">Search</button>
+{% if search %}<a href="{{ request.path }}">Clear</a>{% endif %}
+</form>

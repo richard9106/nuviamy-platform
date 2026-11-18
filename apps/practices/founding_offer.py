@@ -2,10 +2,15 @@
 import calendar
 import hashlib
 import re
+import secrets
+from datetime import timedelta
+from urllib.parse import urlencode
 
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import transaction
 from django.utils import timezone
+from django.urls import reverse
 
 from .models import FoundingTherapistInvitation, Practice
 
@@ -63,3 +68,33 @@ def redeem_existing_offer(user, code):
     invitation = offer_for(code,user.email,lock=True)
     redeem_for_practice(invitation,practice,timezone.now())
     return practice
+
+
+@transaction.atomic
+def issue_founding_offer(email, *, rotate=False):
+    """Reserve one campaign slot and return its code once, without emailing it."""
+    email = email.strip().lower()
+    try:
+        validate_email(email)
+    except ValidationError as error:
+        raise ValidationError('Enter a valid email address.') from error
+    # Lock the fixed fifty slots in a stable order for concurrent issuance.
+    invitations = list(FoundingTherapistInvitation.objects.select_for_update().order_by('slot'))
+    existing = next((item for item in invitations if item.email.casefold() == email.casefold()), None)
+    if existing and (existing.redeemed_at or not rotate):
+        raise ValidationError('This email already has a code. Only an unused code may be explicitly rotated.')
+    invitation = existing or next((item for item in invitations if not item.email and not item.redeemed_at), None)
+    if not invitation:
+        raise ValidationError('All fifty places have been allocated; no code issued.')
+    raw = secrets.token_hex(12).upper()
+    code = 'NUVIA-' + '-'.join(raw[i:i + 4] for i in range(0, 24, 4))
+    invitation.email = email
+    invitation.token_hash = hashlib.sha256(normalize_code(code).encode()).hexdigest()
+    invitation.expires_at = timezone.now() + timedelta(days=30)
+    invitation.save(update_fields=['email', 'token_hash', 'expires_at'])
+    return {
+        'code': code,
+        'signup_url': 'https://nuviamy.com' + reverse('signup') + '?' + urlencode({'offer': code}),
+        'expires_at': invitation.expires_at.isoformat(),
+        'months': 6, 'internal_users': 1, 'slot': invitation.slot,
+    }

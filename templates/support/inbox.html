@@ -1,0 +1,41 @@
+{% extends 'support/operator_base.html' %}
+{% block support_content %}
+<nav class="support-inbox-counts" aria-label="Filter by status">
+  <a href="?status=open&amp;topic={{ selected_topic|urlencode }}" {% if selected_status == 'open' %}aria-current="page"{% endif %}><strong>{{ counts.open }}</strong><span>Open requests</span></a>
+  <a href="?status=closed&amp;topic={{ selected_topic|urlencode }}" {% if selected_status == 'closed' %}aria-current="page"{% endif %}><strong>{{ counts.closed }}</strong><span>Closed requests</span></a>
+  <a href="?status=all&amp;topic={{ selected_topic|urlencode }}" {% if selected_status == 'all' %}aria-current="page"{% endif %}><strong>{{ counts.total }}</strong><span>All requests</span></a>
+</nav>
+<section class="panel support-request-list" aria-label="Support inbox">
+  <form method="get" class="support-inbox-filters">
+    <input type="hidden" name="status" value="{{ selected_status }}">
+    <label for="support-topic">Topic</label>
+    <select id="support-topic" name="topic">
+      <option value="">All topics</option>
+      {% for value,label in topics %}<option value="{{ value }}" {% if selected_topic == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-secondary" type="submit">Apply filter</button>
+  </form>
+  {% for ticket in tickets %}
+  <a class="support-request-row" href="{% url 'staff_support_detail' ticket.pk %}">
+    <div>
+      <strong>{{ ticket.get_topic_display }}</strong>
+      <span>{{ ticket.contact_name|default:'Website visitor' }}{% if ticket.practice %} · {{ ticket.practice.name }}{% endif %}</span>
+      <small>Updated {{ ticket.latest_at|default:ticket.created_at|date:"M j, Y · H:i" }}</small>
+    </div>
+    <div class="support-inbox-status">
+      <span class="badge {% if ticket.status == 'closed' %}success{% endif %}">{% if ticket.status == 'closed' %}Closed{% elif not ticket.requester_id %}Public enquiry{% elif ticket.latest_is_operator %}Replied{% else %}Needs reply{% endif %}</span>
+      <span aria-hidden="true">→</span>
+    </div>
+  </a>
+  {% empty %}
+  <div class="support-empty"><h2>No requests in this view</h2><p>Try another status or topic to find a request.</p><a href="?status=all">View all requests</a></div>
+  {% endfor %}
+</section>
+{% if is_paginated %}
+<nav class="inline-actions" aria-label="Inbox pages">
+  {% if page_obj.has_previous %}<a class="btn btn-secondary" href="?status={{ selected_status|urlencode }}&amp;topic={{ selected_topic|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a class="btn btn-secondary" href="?status={{ selected_status|urlencode }}&amp;topic={{ selected_topic|urlencode }}&amp;page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

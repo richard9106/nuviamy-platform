@@ -208,3 +208,112 @@ class PrivateSupportTests(TestCase):
         response = self.client.get(reverse('admin:dashboard_supportticket_change', args=[self.ticket.pk]))
         self.assertRedirects(response, reverse('mfa_setup'), fetch_redirect_response=False)
         self.assertNotIn(self.original.body.encode(), response.content)
+
+    def login_support_operator(self):
+        operator = get_user_model().objects.create_superuser(
+            'inbox-operator', 'inbox@example.com', 'SyntheticPass123!')
+        self.client.force_login(operator)
+        return operator
+
+    def test_inbox_access_requires_superuser_including_direct_posts(self):
+        inbox = reverse('staff_support')
+        detail = reverse('staff_support_detail', args=[self.ticket.pk])
+        self.assertEqual(self.client.get(inbox).status_code, 302)
+        self.user.is_staff = True
+        self.user.save(update_fields=['is_staff'])
+        self.user.user_permissions.set(Permission.objects.filter(content_type__app_label='dashboard'))
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(inbox).status_code, 403)
+        self.assertEqual(self.client.get(detail).status_code, 403)
+        self.assertEqual(self.client.post(detail, {'action': 'status', 'status': 'closed'}).status_code, 403)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, 'open')
+
+    def test_inbox_filters_and_detail_preserve_private_content(self):
+        self.login_support_operator()
+        public = SupportTicket.objects.create(contact_name='Synthetic applicant',
+            contact_email='applicant@example.com', topic='early_access', status='closed')
+        inbox = reverse('staff_support')
+        page = self.client.get(inbox)
+        self.assertContains(page, str(self.ticket.pk))
+        self.assertNotContains(page, str(public.pk))
+        self.assertNotContains(page, self.original.body)
+        self.assertContains(page, 'Needs reply')
+        self.assertEqual(page.context['counts'], {'open': 1, 'closed': 1, 'total': 2})
+        page = self.client.get(inbox, {'status': 'closed', 'topic': 'early_access'})
+        self.assertContains(page, str(public.pk))
+        self.assertNotContains(page, str(self.ticket.pk))
+        page = self.client.get(inbox, {'status': 'invalid', 'topic': 'invalid'})
+        self.assertEqual(page.context['selected_status'], 'open')
+        self.assertEqual(page.context['selected_topic'], '')
+        detail = reverse('staff_support_detail', args=[self.ticket.pk])
+        page = self.client.get(detail)
+        self.assertContains(page, self.original.body)
+        self.assertContains(page, self.user.email)
+        self.assertContains(page, 'noindex, nofollow')
+        self.assertIn('no-store', page['Cache-Control'])
+        self.assertTrue(AuditLog.objects.filter(object_type='access.staff_support_detail',
+            action=AuditLog.Action.VIEW, object_id=str(self.ticket.pk)).exists())
+        self.assertNotIn(self.original.body, str(list(AuditLog.objects.values_list('metadata', flat=True))))
+
+    def test_inbox_reply_notifies_customer_and_is_visible_in_private_thread(self):
+        operator = self.login_support_operator()
+        detail = reverse('staff_support_detail', args=[self.ticket.pk])
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(detail, {'action': 'reply',
+                'message': '<script>Operator response</script>', 'is_operator': 'false', 'author': self.user.pk})
+        self.assertRedirects(response, detail)
+        reply = self.ticket.messages.last()
+        self.assertTrue(reply.is_operator)
+        self.assertEqual(reply.author, operator)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertNotIn(reply.body, mail.outbox[0].body)
+        self.assertTrue(AuditLog.objects.filter(metadata__event='operator_support_reply').exists())
+        self.client.force_login(self.user)
+        page = self.client.get(self.detail)
+        self.assertContains(page, '&lt;script&gt;Operator response&lt;/script&gt;')
+        self.assertNotContains(page, '<script>Operator response</script>')
+
+    def test_inbox_close_reopen_and_invalid_actions(self):
+        self.login_support_operator()
+        detail = reverse('staff_support_detail', args=[self.ticket.pk])
+        self.assertContains(self.client.post(detail, {'action': 'status', 'status': 'invalid'}),
+                            'Choose a valid request status')
+        self.assertContains(self.client.post(detail, {'action': 'unknown'}), 'Choose an available action')
+        self.assertRedirects(self.client.post(detail, {'action': 'status', 'status': 'closed'}), detail)
+        self.assertContains(self.client.post(detail, {'action': 'reply', 'message': 'Blocked'}),
+                            'Reopen this request')
+        self.assertEqual(self.ticket.messages.count(), 1)
+        self.assertRedirects(self.client.post(detail, {'action': 'status', 'status': 'open'}), detail)
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, 'open')
+        self.assertEqual(AuditLog.objects.filter(metadata__event='operator_support_status').count(), 2)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_inbox_public_enquiry_shows_contact_and_blocks_private_reply(self):
+        self.login_support_operator()
+        ticket = SupportTicket.objects.create(contact_name='Synthetic website visitor',
+            contact_email='visitor@example.com', topic='technical')
+        detail = reverse('staff_support_detail', args=[ticket.pk])
+        self.assertContains(self.client.get(detail), 'visitor@example.com')
+        self.assertContains(self.client.get(detail), 'Open email')
+        self.assertContains(self.client.post(detail, {'action': 'reply', 'message': 'Private response'}),
+                            'no linked account')
+        self.assertEqual(ticket.messages.count(), 0)
+        self.assertRedirects(self.client.post(detail, {'action': 'status', 'status': 'closed'}), detail)
+        self.assertFalse(mail.outbox)
+
+    def test_inbox_posts_require_csrf(self):
+        operator = self.login_support_operator()
+        csrf_client = HttpClient(enforce_csrf_checks=True)
+        csrf_client.force_login(operator)
+        detail = reverse('staff_support_detail', args=[self.ticket.pk])
+        self.assertEqual(csrf_client.post(detail, {'action': 'status', 'status': 'closed'}).status_code, 403)
+        self.assertEqual(csrf_client.post(detail, {'action': 'reply', 'message': 'Blocked'}).status_code, 403)
+        self.assertEqual(self.ticket.messages.count(), 1)
+
+    @override_settings(MFA_PRIVILEGED_REQUIRED=True)
+    def test_inbox_requires_privileged_mfa(self):
+        self.login_support_operator()
+        for url in (reverse('staff_support'), reverse('staff_support_detail', args=[self.ticket.pk])):
+            self.assertRedirects(self.client.get(url), reverse('mfa_setup'), fetch_redirect_response=False)

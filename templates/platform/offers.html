@@ -1,0 +1,17 @@
+{% extends 'platform/base.html' %}
+{% block platform_title %}Founding therapist offers{% endblock %}
+{% block platform_content %}
+{% if issued %}<section class="panel platform-panel platform-issued" role="status"><h2>Six-month offer created</h2><p>Copy this personal code and send it to the applicant. It is shown once and expires in 30 days.</p><label for="issued-code">Offer code</label><input id="issued-code" readonly value="{{ issued.code }}" autocomplete="off"><label for="issued-link">Sign-up link</label><input id="issued-link" readonly value="{{ issued.signup_url }}" autocomplete="off"><p>For an existing standard trial, the practice owner can enter the code in Profile settings. Includes one internal user.</p></section>{% endif %}
+<div class="platform-two-columns">
+<section class="panel platform-panel"><h2>Approve a six-month place</h2><p>{{ available }} of 50 places remain unallocated. Each code is tied to the applicant's email.</p>
+<form method="post" class="platform-form" data-confirm-message="Issue this six-month code? If replacing an unused code, the previous code will stop working.">{% csrf_token %}{{ form.non_field_errors }}<label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>{{ form.email }}{{ form.email.errors }}<label class="platform-checkbox">{{ form.rotate }}<span>{{ form.rotate.label }}</span></label>{{ form.rotate.errors }}<button class="btn btn-primary" type="submit">Generate personal code</button></form>
+</section>
+<section class="panel platform-panel"><h2>Applications to review</h2>
+{% for application in applications %}<div class="platform-summary-row"><div><strong>{{ application.contact_name|default:'Website visitor' }}</strong><small>{{ application.created_at|date:'M j, Y' }}</small><a href="{% url 'staff_support_detail' application.pk %}">Read application</a></div><a class="btn btn-secondary" href="?application={{ application.pk }}">Prepare offer</a></div>{% empty %}<p>No open applications.</p>{% endfor %}
+<a href="{% url 'staff_support' %}?topic=early_access">View all applications</a>
+</section>
+</div>
+<section class="panel platform-panel"><h2>Campaign places</h2><div class="platform-table-wrap"><table class="platform-table"><thead><tr><th>Place</th><th>Applicant email</th><th>Status</th><th>Code expires</th><th>Practice</th></tr></thead><tbody>
+{% for invitation in invitations %}<tr><td>{{ invitation.slot }}</td><td>{{ invitation.email|default:'Available' }}</td><td>{% if invitation.redeemed_at %}Redeemed {{ invitation.redeemed_at|date:'M j, Y' }}{% elif not invitation.email %}Available{% elif invitation.expires_at <= now %}Expired{% else %}Awaiting redemption{% endif %}</td><td>{% if invitation.email %}{{ invitation.expires_at|date:'M j, Y' }}{% else %}—{% endif %}</td><td>{% if invitation.practice_id %}<a href="{% url 'staff_practice_detail' invitation.practice_id %}">{{ invitation.practice.name }}</a>{% else %}—{% endif %}</td></tr>{% empty %}<tr><td colspan="5">No personal codes issued yet.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

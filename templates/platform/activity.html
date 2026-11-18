@@ -1,0 +1,10 @@
+{% extends 'platform/base.html' %}
+{% block platform_title %}Security &amp; activity{% endblock %}
+{% block platform_content %}
+<section class="panel platform-panel">
+<form method="get" class="platform-filter"><label for="audit-action">Action</label><select id="audit-action" name="action"><option value="">All actions</option>{% for value,label in actions %}<option value="{{ value }}" {% if selected_action == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="btn btn-secondary" type="submit">Filter</button><a href="{% url 'staff_users' %}">Manage user sessions</a></form>
+<div class="platform-table-wrap"><table class="platform-table"><thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Resource</th><th>Practice</th></tr></thead><tbody>
+{% for event in events %}<tr><td>{{ event.created_at|date:'M j, Y · H:i' }}</td><td>{{ event.actor_username_snapshot|default:'System' }}</td><td>{{ event.get_action_display }}</td><td>{{ event.object_type }}<small>{{ event.object_id }}</small></td><td>{{ event.practice.name|default:'Platform' }}</td></tr>{% empty %}<tr><td colspan="5">No activity in this view.</td></tr>{% endfor %}
+</tbody></table></div>
+</section>
+{% endblock %}

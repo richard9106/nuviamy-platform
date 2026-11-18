@@ -1,0 +1,12 @@
+{% extends 'platform/base.html' %}
+{% block platform_title %}Subscriptions{% endblock %}
+{% block platform_content %}
+<section class="panel platform-panel">
+<form method="get" class="platform-filter"><label for="subscription-search">Practice</label><input id="subscription-search" type="search" name="q" value="{{ search }}" maxlength="150"><label for="subscription-status">Subscription status</label><select id="subscription-status" name="status"><option value="">All statuses</option>{% for value,label in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="btn btn-secondary" type="submit">Filter</button></form>
+<div class="platform-table-wrap"><table class="platform-table"><thead><tr><th>Practice</th><th>Plan</th><th>Subscription</th><th>Trial / free access ends</th><th>Billing period ends</th><th>App access</th></tr></thead><tbody>
+{% for practice in practices %}<tr><td><a href="{% url 'staff_practice_detail' practice.pk %}">{{ practice.name }}</a></td><td>{{ practice.subscription.get_plan_display|default:'—' }}<small>{{ practice.subscription.get_billing_period_display }}</small></td><td>{{ practice.subscription.get_status_display|default:'No subscription' }}{% if practice.subscription.cancellation_scheduled %}<small>Cancellation scheduled</small>{% endif %}</td><td>{{ practice.free_trial_ends_at|date:'M j, Y'|default:'—' }}<small>{% if practice.subscription_required %}{{ practice.free_access_kind|capfirst }}{% else %}Internal access{% endif %}</small></td><td>{{ practice.subscription.current_period_end|date:'M j, Y'|default:'—' }}</td><td>{{ practice.access_state.mode|capfirst }}{% if practice.access_state.until %}<small>Until {{ practice.access_state.until|date:'M j, Y' }}</small>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6">No matching subscriptions or practice trials.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="platform-hint">Subscription statuses are synchronized from Stripe. Founding offer codes are managed under Founding offers.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'support/private_base.html' %}
+{% block page_title %}Support inbox{% endblock %}
+{% block support_sidebar %}{% include 'partials/sidebar.html' with hide_setup_reminder=True card_title='Platform support' card_text='Review enquiries and follow up with your users.' %}{% endblock %}
+{% block support_boundary %}Review product and account enquiries. Keep client records, passwords and payment card details out of support replies.{% endblock %}
+{% block support_title %}Support inbox{% endblock %}
+{% block support_actions %}
+<a class="btn btn-secondary" href="{% url 'staff_overview' %}">Platform management</a>
+<a class="btn btn-secondary" href="{% url 'staff_support' %}">Back to inbox</a>
+{% include 'partials/account_menu.html' %}
+{% endblock %}

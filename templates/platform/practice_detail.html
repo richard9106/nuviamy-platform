@@ -1,0 +1,20 @@
+{% extends 'platform/base.html' %}
+{% block platform_title %}{{ practice.name }}{% endblock %}
+{% block platform_content %}
+<div class="platform-two-columns">
+<section class="panel platform-panel"><h2>Practice account</h2>
+<dl class="platform-details"><dt>Type</dt><dd>{{ practice.get_practice_type_display }}</dd><dt>Email</dt><dd>{{ practice.email|default:'Not provided' }}</dd><dt>Access</dt><dd>{{ access.mode|capfirst }}{% if access.until %} · until {{ access.until|date:'M j, Y' }}{% endif %}</dd><dt>Free access</dt><dd>{% if not practice.subscription_required %}Internal access{% elif practice.free_access_kind == 'early_access' %}Founding / early access{% else %}Standard trial{% endif %}</dd><dt>Open support requests</dt><dd>{{ support_count }}</dd></dl>
+<a class="btn btn-secondary" href="{% url 'staff_subscriptions' %}?q={{ practice.name|urlencode }}">View subscription</a>
+</section>
+<section class="panel platform-panel"><h2>Agreement history</h2>
+{% for acceptance in acceptances %}<p><strong>{{ acceptance.version }}</strong><small>{{ acceptance.created_at|date:'M j, Y · H:i' }}</small></p>{% empty %}<p>No agreements accepted.</p>{% endfor %}
+<a href="{% url 'staff_contracts' %}?q={{ practice.name|urlencode }}">Review agreement status</a>
+</section>
+</div>
+<section class="panel platform-panel"><h2>Practice team</h2>
+<div class="platform-table-wrap"><table class="platform-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody>
+{% for member in members %}<tr><td>{{ member.get_full_name|default:member.username }}</td><td>{{ member.email }}</td><td>{{ member.nuvia_profile.get_role_display }}</td><td>{% if member.is_active %}Active{% else %}Inactive{% endif %}</td></tr>{% empty %}<tr><td colspan="4">No internal users.</td></tr>{% endfor %}
+</tbody></table></div>
+<a href="{% url 'staff_users' %}">Manage user access</a>
+</section>
+{% endblock %}

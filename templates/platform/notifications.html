@@ -1,0 +1,12 @@
+{% extends 'platform/base.html' %}
+{% block platform_title %}Session email alerts{% endblock %}
+{% block platform_content %}
+<section class="panel platform-panel">
+<form method="get" class="platform-filter"><label for="alert-state">State</label><select id="alert-state" name="state"><option value="">All states</option>{% for value,label in states %}<option value="{{ value }}" {% if selected_state == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="btn btn-secondary" type="submit">Filter</button></form>
+<div class="platform-table-wrap"><table class="platform-table"><thead><tr><th>Practice</th><th>Alert</th><th>Recipient</th><th>State</th><th>Attempts</th><th>Created</th><th>Action</th></tr></thead><tbody>
+{% for notification in notifications %}<tr><td>{{ notification.practice.name }}</td><td>{{ notification.get_kind_display }}</td><td>{{ notification.recipient.email }}</td><td>{{ notification.get_state_display }}</td><td>{{ notification.attempts }}</td><td>{{ notification.created_at|date:'M j, Y · H:i' }}</td><td>{% if notification.state == 'failed' and notification.created_at > retry_cutoff %}<form method="post" data-confirm-message="Retry this session alert? The current recipient preferences and eligibility will be checked.">{% csrf_token %}<input type="hidden" name="action" value="retry"><input type="hidden" name="notification" value="{{ notification.pk }}"><button class="btn btn-secondary" type="submit">Retry alert</button></form>{% else %}—{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7">No session alerts in this view.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="platform-hint">Provider acceptance is the recorded send status. Alerts older than 24 hours expire.</p>
+</section>
+{% endblock %}

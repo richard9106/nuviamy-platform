@@ -1,0 +1,15 @@
+{% extends 'platform/base.html' %}
+{% block platform_content %}
+<div class="platform-metrics">
+  <a href="{% url 'staff_practices' %}"><strong>{{ metrics.practices }}</strong><span>Practices</span></a>
+  <a href="{% url 'staff_users' %}"><strong>{{ metrics.users }}</strong><span>Practice and platform users</span></a>
+  <a href="{% url 'staff_subscriptions' %}"><strong>{{ metrics.trials }}</strong><span>Active standard trials</span></a>
+  <a href="{% url 'staff_subscriptions' %}?status=active"><strong>{{ metrics.paid }}</strong><span>Active subscriptions</span></a>
+  <a href="{% url 'staff_support' %}"><strong>{{ metrics.support }}</strong><span>Open support requests</span></a>
+  <a href="{% url 'staff_offers' %}"><strong>{{ metrics.offers }}</strong><span>Founding offers redeemed</span></a>
+</div>
+<section class="panel platform-panel"><h2>Recently registered practices</h2>
+{% for practice in recent_practices %}<a class="platform-summary-row" href="{% url 'staff_practice_detail' practice.pk %}"><div><strong>{{ practice.name }}</strong><small>{{ practice.get_practice_type_display }} · {{ practice.member_count }} internal user{{ practice.member_count|pluralize }}</small></div><span>{{ practice.created_at|date:'M j, Y' }} →</span></a>
+{% empty %}<p>No practices registered yet.</p>{% endfor %}
+</section>
+{% endblock %}

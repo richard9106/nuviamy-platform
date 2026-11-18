@@ -26,8 +26,15 @@ from apps.dashboard.views import (
     TherapySchedulingPageView,
 )
 from apps.billing.urls import settings_patterns
-from apps.dashboard.support_views import SupportTicketListView, SupportTicketDetailView
+from apps.dashboard.support_views import (
+    SupportTicketListView, SupportTicketDetailView, SupportInboxView, SupportInboxDetailView,
+)
 from apps.dashboard.founding_views import FoundingTherapistApplicationView
+from apps.dashboard.platform_views import (
+    PlatformOverviewView, PlatformPracticesView, PlatformPracticeDetailView,
+    PlatformUsersView, PlatformUserActionView, PlatformOffersView,
+    PlatformSubscriptionsView, PlatformNotificationsView, PlatformContractsView, PlatformActivityView,
+)
 from apps.dashboard.blog import ARTICLES, blog_article, blog_index
 from apps.accounts.views import ConfirmLogoutView, ForcePasswordChangeView, RateLimitedPasswordResetView, RoleAwareLoginView
 from apps.portal.settings_urls import urlpatterns as portal_settings_patterns
@@ -62,6 +69,18 @@ urlpatterns = [
     path('summernote/', include('django_summernote.urls')),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('staff/monitoring/', StaffMonitoringView.as_view(), name='staff_monitoring'),
+    path('staff/', PlatformOverviewView.as_view(), name='staff_overview'),
+    path('staff/practices/', PlatformPracticesView.as_view(), name='staff_practices'),
+    path('staff/practices/<int:pk>/', PlatformPracticeDetailView.as_view(), name='staff_practice_detail'),
+    path('staff/users/', PlatformUsersView.as_view(), name='staff_users'),
+    path('staff/users/<int:pk>/action/', PlatformUserActionView.as_view(), name='staff_user_action'),
+    path('staff/offers/', PlatformOffersView.as_view(), name='staff_offers'),
+    path('staff/subscriptions/', PlatformSubscriptionsView.as_view(), name='staff_subscriptions'),
+    path('staff/notifications/', PlatformNotificationsView.as_view(), name='staff_notifications'),
+    path('staff/contracts/', PlatformContractsView.as_view(), name='staff_contracts'),
+    path('staff/activity/', PlatformActivityView.as_view(), name='staff_activity'),
+    path('staff/support/', SupportInboxView.as_view(), name='staff_support'),
+    path('staff/support/<uuid:pk>/', SupportInboxDetailView.as_view(), name='staff_support_detail'),
     path('health/', HealthCheckView.as_view(), name='health'),
     path('tasks/', TaskListView.as_view(), name='tasks_list'),
     path('tasks/create/', TaskCreateView.as_view(), name='tasks_create'),

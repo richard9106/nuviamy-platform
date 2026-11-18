@@ -23,6 +23,10 @@ class SupportReplyForm(forms.Form):
     message = forms.CharField(max_length=4000, widget=forms.Textarea(attrs={'rows': 4}))
 
 
+class SupportStatusForm(forms.Form):
+    status = forms.ChoiceField(choices=SupportTicket.Status.choices)
+
+
 class FoundingTherapistApplicationForm(SupportContactForm):
     topic = None
     message = None

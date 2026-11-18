@@ -1,0 +1,18 @@
+{% extends 'platform/base.html' %}
+{% block platform_title %}Users{% endblock %}
+{% block platform_content %}
+<section class="panel platform-panel">
+{% include 'platform/search.html' with search_label='Search users' search_placeholder='Name, username or email' %}
+<div class="platform-table-wrap"><table class="platform-table"><thead><tr><th>User</th><th>Practice / role</th><th>Security</th><th>Account actions</th></tr></thead><tbody>
+{% for account in users %}<tr>
+<td><strong>{{ account.get_full_name|default:account.username }}</strong><small>{{ account.email }}</small><small>{% if account.is_active %}Active{% else %}Inactive{% endif %}</small></td>
+<td>{% if account.nuvia_profile %}<a href="{% url 'staff_practice_detail' account.nuvia_profile.practice_id %}">{{ account.nuvia_profile.practice.name }}</a><small>{{ account.nuvia_profile.get_role_display }}</small>{% else %}Platform account{% endif %}</td>
+<td><span>{% if account.mfa_confirmed %}Authenticator configured{% else %}Authenticator not configured{% endif %}</span><small>Last sign-in {{ account.last_login|date:'M j, Y'|default:'Never' }}</small></td>
+<td>{% if account.is_staff or account.is_superuser %}<span>Privileged account</span>{% else %}<div class="platform-actions">
+{% if account.is_active %}<form method="post" action="{% url 'staff_user_action' account.pk %}" data-confirm-message="Send an account access email to {{ account.email }}?">{% csrf_token %}<input type="hidden" name="action" value="resend"><button class="btn btn-secondary" type="submit">Send access email</button></form>{% endif %}
+<form method="post" action="{% url 'staff_user_action' account.pk %}" data-confirm-message="Revoke existing sessions for {{ account.email }}? They will need to sign in again.">{% csrf_token %}<input type="hidden" name="action" value="revoke"><button class="btn btn-soft" type="submit">Revoke sessions</button></form>
+</div>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="4">No users match this search.</td></tr>{% endfor %}
+</tbody></table></div>
+</section>
+{% endblock %}

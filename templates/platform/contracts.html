@@ -1,0 +1,12 @@
+{% extends 'platform/base.html' %}
+{% block platform_title %}Practice agreements{% endblock %}
+{% block platform_content %}
+<section class="panel platform-panel"><p>Current standard agreement version <strong>{{ agreement_version }}</strong></p>
+{% include 'platform/search.html' %}
+<div class="platform-table-wrap"><table class="platform-table"><thead><tr><th>Practice</th><th>Current standard offer</th><th>Latest standard acceptance</th><th>Custom packet</th></tr></thead><tbody>
+{% for practice in practices %}<tr><td><a href="{% url 'staff_practice_detail' practice.pk %}">{{ practice.name }}</a></td><td>{% if practice.current_agreement %}<span class="badge success">Accepted</span>{% else %}<span class="badge">Review pending</span>{% endif %}</td><td>{{ practice.accepted_version|default:'No standard acceptance' }}</td><td>{% if practice.custom_signed %}Signed packet on file{% else %}—{% endif %}</td></tr>
+{% empty %}<tr><td colspan="4">No matching practices.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="platform-hint">This view tracks recorded agreement acceptance. Clinical readiness requires the practice's separate review.</p>
+</section>
+{% endblock %}

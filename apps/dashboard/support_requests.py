@@ -12,7 +12,8 @@ def notify_support(ticket, *, customer=False):
         return
     body = ('There is an update to your NuviaMy support request. '
             'Sign in to NuviaMy and open Help > My support requests.' if customer else
-            'A NuviaMy support request is waiting for review. Sign in to the platform admin.')
+            'A NuviaMy support request is waiting for review. '
+            'Sign in to NuviaMy and open Support inbox: https://nuviamy.com/staff/support/')
     try:
         EmailMessage(subject='NuviaMy support update', body=body,
                      from_email=settings.DEFAULT_FROM_EMAIL, to=[recipient]).send(fail_silently=False)

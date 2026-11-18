@@ -76,7 +76,7 @@ class SubscriptionAccessMiddleware(MiddlewareMixin):
             return None
         if name in self.always_available or name.startswith(('security_', 'mfa_', 'password_reset')):
             return None
-        if name.startswith('admin:') and request.user.is_superuser:
+        if name.startswith(('admin:', 'staff_')) and request.user.is_superuser:
             return None
         if state['mode'] == 'readonly' and request.method in {'GET', 'HEAD', 'OPTIONS'}:
             cls = getattr(view_func, 'view_class', None)

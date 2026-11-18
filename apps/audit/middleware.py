@@ -8,7 +8,7 @@ from .utils import log_audit_event
 
 SENSITIVE_NAMESPACES = {'clients', 'clinical', 'documents', 'appointments', 'billing',
                         'portal', 'portal_requests', 'intake', 'telehealth'}
-SENSITIVE_VIEWS = {'support_requests', 'support_request_detail', 'standard_agreement_download','clinical_contracts', 'clinical_contract_review', 'clinical_contract_sign', 'clinical_contract_download', 'dashboard', 'tasks_list', 'practice_data_export',
+SENSITIVE_VIEWS = {'staff_support', 'staff_support_detail', 'support_requests', 'support_request_detail', 'standard_agreement_download','clinical_contracts', 'clinical_contract_review', 'clinical_contract_sign', 'clinical_contract_download', 'dashboard', 'tasks_list', 'practice_data_export',
                    'team_management', 'team_member_action', 'profile_settings'}
 SENSITIVE_ADMIN_APPS = {'clients', 'clinical', 'documents', 'appointments', 'billing',
                         'portal', 'intake', 'accounts', 'practices', 'audit', 'dashboard', 'telehealth'}
@@ -39,7 +39,8 @@ class AccessAuditMiddleware(MiddlewareMixin):
         namespace = match.namespace
         admin_model = getattr(getattr(match.func, 'model_admin', None), 'model', None)
         admin_sensitive = namespace == 'admin' and admin_model and admin_model._meta.app_label in SENSITIVE_ADMIN_APPS
-        sensitive = namespace in SENSITIVE_NAMESPACES or match.view_name in SENSITIVE_VIEWS or admin_sensitive
+        platform_view = match.view_name.startswith('staff_')
+        sensitive = namespace in SENSITIVE_NAMESPACES or match.view_name in SENSITIVE_VIEWS or admin_sensitive or platform_view
         authentication = match.view_name in {'login', 'admin:login', 'password_reset'}
         reason = getattr(request, '_audit_denied_reason', '')
         denied = bool(reason or response.status_code in {401, 403, 404, 429})
@@ -71,7 +72,7 @@ class AccessAuditMiddleware(MiddlewareMixin):
         log_audit_event(request, action,
                         f'access.admin.{admin_model._meta.label}' if admin_sensitive else f'access.{namespace or match.view_name}',
                         next(iter(identifiers.values()), ''), metadata=metadata, actor=actor,
-                        platform=bool(admin_sensitive or actor is None))
+                        platform=bool(admin_sensitive or actor is None or platform_view))
         return response
 
     @staticmethod

@@ -1,0 +1,25 @@
+{% extends 'support/private_base.html' %}
+{% load static %}
+{% block support_eyebrow %}NuviaMy operations{% endblock %}
+{% block page_title %}{% block platform_page_title %}Platform management{% endblock %}{% endblock %}
+{% block support_title %}{% block platform_title %}Platform management{% endblock %}{% endblock %}
+{% block support_sidebar %}{% include 'partials/sidebar.html' with hide_setup_reminder=True card_title='Platform operations' card_text='Manage practices, offers and account support.' %}{% endblock %}
+{% block support_actions %}{% include 'partials/account_menu.html' %}{% endblock %}
+{% block support_boundary %}Administrative workspace for NuviaMy. Account actions are recorded in the activity log.{% endblock %}
+{% block support_content %}
+<link rel="stylesheet" href="{% static 'platform.css' %}">
+<nav class="platform-tabs" aria-label="Platform management">
+  <a href="{% url 'staff_overview' %}" {% if request.resolver_match.url_name == 'staff_overview' %}aria-current="page"{% endif %}>Overview</a>
+  <a href="{% url 'staff_practices' %}" {% if request.resolver_match.url_name == 'staff_practices' or request.resolver_match.url_name == 'staff_practice_detail' %}aria-current="page"{% endif %}>Practices</a>
+  <a href="{% url 'staff_users' %}" {% if request.resolver_match.url_name == 'staff_users' %}aria-current="page"{% endif %}>Users</a>
+  <a href="{% url 'staff_offers' %}" {% if request.resolver_match.url_name == 'staff_offers' %}aria-current="page"{% endif %}>Founding offers</a>
+  <a href="{% url 'staff_subscriptions' %}" {% if request.resolver_match.url_name == 'staff_subscriptions' %}aria-current="page"{% endif %}>Subscriptions</a>
+  <a href="{% url 'staff_notifications' %}" {% if request.resolver_match.url_name == 'staff_notifications' %}aria-current="page"{% endif %}>Email alerts</a>
+  <a href="{% url 'staff_contracts' %}" {% if request.resolver_match.url_name == 'staff_contracts' %}aria-current="page"{% endif %}>Agreements</a>
+  <a href="{% url 'staff_activity' %}" {% if request.resolver_match.url_name == 'staff_activity' %}aria-current="page"{% endif %}>Activity</a>
+  <a href="{% url 'staff_support' %}">Support</a>
+  <a href="{% url 'staff_monitoring' %}">Monitoring</a>
+</nav>
+{% block platform_content %}{% endblock %}
+{% if is_paginated %}{% include 'platform/pagination.html' %}{% endif %}
+{% endblock %}

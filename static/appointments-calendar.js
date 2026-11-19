@@ -124,7 +124,7 @@
         start.value = `${trigger.dataset.appointmentDate}T09:00`;
         end.value = `${trigger.dataset.appointmentDate}T${dialog.querySelector('[name="session_kind"]')?.value === 'initial_consultation' ? '09:15' : '09:50'}`;
       }
-      if (trigger.dataset.availabilityDate) {
+      if (trigger.dataset.availabilityDate && dialog.id === 'availability-modal') {
         dialog.querySelector('[name="date"]').value = trigger.dataset.availabilityDate;
         dialog.querySelector('[name="starts_at"]').value = '09:00';
         dialog.querySelector('[name="ends_at"]').value = '17:00';

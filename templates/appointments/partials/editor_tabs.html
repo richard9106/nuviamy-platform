@@ -1,0 +1,8 @@
+<div class="appointment-editor-tabs" role="tablist" aria-label="Appointment sections">
+  <button type="button" role="tab" data-editor-tab="appointment" aria-selected="true">Appointment</button>
+  <button type="button" role="tab" data-editor-tab="details" aria-selected="false" tabindex="-1">{% if appointment %}Details{% else %}Details &amp; repeat{% endif %}</button>
+  {% if appointment %}
+  <button type="button" role="tab" data-editor-tab="records" aria-selected="false" tabindex="-1">Notes &amp; billing</button>
+  <button type="button" role="tab" data-editor-tab="actions" aria-selected="false" tabindex="-1">Actions</button>
+  {% endif %}
+</div>

@@ -102,14 +102,14 @@ class SessionDocumentationTests(TestCase):
         note = self.note(signed_session); note.sign(self.owner, note.review_digest())
         future = self.appointment(self.owner, starts_at=timezone.now()+timedelta(hours=1), ends_at=timezone.now()+timedelta(hours=2))
         response = self.listing(self.owner, view='agenda', date=timezone.localdate(start).isoformat())
-        self.assertContains(response, 'class="agenda-session documentation-pending"', count=2)
+        self.assertContains(response, 'class="agenda-session documentation-pending ', count=2)
         self.assertContains(response, 'Note missing', count=1)
         self.assertContains(response, 'Signature pending', count=1)
         self.assertContains(response, '>Signed</span>', count=1)
         flags = {a.pk: a.documentation_pending for a in response.context['appointments']}
         self.assertEqual(flags, {self.own.pk: True, self.other.pk: True, signed_session.pk: False, future.pk: False})
         response = self.listing(self.therapist_user, view='agenda', date=timezone.localdate(start).isoformat())
-        self.assertContains(response, 'class="agenda-session documentation-pending"', count=1)
+        self.assertContains(response, 'class="agenda-session documentation-pending ', count=1)
 
     def test_signing_requires_author_confirmation_and_current_review(self):
         note = self.note()

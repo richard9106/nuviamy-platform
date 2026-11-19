@@ -276,3 +276,33 @@ class SessionEmailNotification(models.Model):
     next_attempt_at = models.DateTimeField(default=timezone.now, db_index=True)
     sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class CalendarEvent(models.Model):
+    """Non-clinical calendar entry, separate from patient sessions and billing."""
+    practice = models.ForeignKey('practices.Practice', on_delete=models.CASCADE, related_name='calendar_events')
+    therapist = models.ForeignKey('practices.TherapistProfile', on_delete=models.CASCADE, related_name='calendar_events')
+    title = models.CharField(max_length=120)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    location = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['starts_at', 'pk']
+        indexes = [models.Index(fields=['practice', 'starts_at'], name='calendar_event_practice_start')]
+        constraints = [models.CheckConstraint(condition=models.Q(ends_at__gt=models.F('starts_at')), name='calendar_event_positive_duration')]
+
+    def clean(self):
+        if self.therapist_id and self.practice_id and self.therapist.practice_id != self.practice_id:
+            raise ValidationError({'therapist': 'Choose a therapist from this practice.'})
+        if self.starts_at and self.ends_at:
+            if self.ends_at <= self.starts_at:
+                raise ValidationError({'ends_at': 'End time must be after start time.'})
+            if timezone.localtime(self.starts_at).date() != timezone.localtime(self.ends_at).date():
+                raise ValidationError({'ends_at': 'Events must start and end on the same day.'})
+
+    @property
+    def status(self):
+        return 'scheduled'

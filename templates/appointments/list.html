@@ -9,8 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'appointment-editor.css' %}">
 </head>
-<body class="app-page">
+<body class="app-page calendar-workspace">
   <div class="app-shell">
     {% include 'partials/sidebar.html' with card_title='Practice calendar' card_text='Appointments are scoped to your practice and validated before save.' %}
 
@@ -59,17 +60,17 @@
           <div class="panel-head calendar-head">
             <div>
               <h2>{{ calendar_period_label }}</h2>
-              <p>Shaded time is outside practice availability. Choose Agenda for a session list.</p>
+              <p>Shaded hours are outside practice availability.</p>
             </div>
             <div class="calendar-actions">
               <div class="calendar-availability-actions" role="group" aria-label="Practice availability">
-              {% if workspace_permissions.appointments.edit %}<button class="btn btn-soft" type="button" title="Set availability" data-modal-target="availability-modal" data-availability-date="{{ calendar_anchor_date|date:'Y-m-d' }}">Set availability</button>{% endif %}
+              {% if workspace_permissions.appointments.edit %}<button class="btn btn-soft" type="button" title="Set availability" data-modal-target="{% if workspace_permissions.appointments.create %}appointment-create-modal{% else %}availability-modal{% endif %}" data-editor-open="availability" data-availability-date="{{ calendar_anchor_date|date:'Y-m-d' }}">Set availability</button>{% endif %}
               <a class="btn btn-soft" href="#availability-changes" data-availability-review>Review availability</a>
               </div>
               <nav class="calendar-period-nav" aria-label="Calendar period">
-              <a class="btn btn-secondary" href="{{ previous_period_url }}">Previous</a>
+              <a class="btn btn-secondary" href="{{ previous_period_url }}" aria-label="Previous period" title="Previous period">‹</a>
               <a class="btn btn-soft" href="{{ today_period_url }}">Today</a>
-              <a class="btn btn-secondary" href="{{ next_period_url }}">Next</a>
+              <a class="btn btn-secondary" href="{{ next_period_url }}" aria-label="Next period" title="Next period">›</a>
               </nav>
             </div>
           </div>
@@ -100,12 +101,20 @@
             </div>
           </div>
 
+          <ul class="calendar-color-legend" aria-label="Appointment color guide">
+            <li><span class="calendar-swatch calendar-timing-past" aria-hidden="true"></span>Past session</li>
+            <li><span class="calendar-swatch calendar-timing-soon" aria-hidden="true"></span>In progress / next 24 hours</li>
+            <li><span class="calendar-swatch calendar-timing-future" aria-hidden="true"></span>More than 24 hours away</li>
+            <li><span class="calendar-swatch calendar-timing-cancelled" aria-hidden="true"></span>Cancelled</li>
+            <li><span class="calendar-swatch calendar-timing-no_show" aria-hidden="true"></span>No show</li>
+          </ul>
           {% if calendar_view == 'agenda' %}
-            <p class="sync-meta">Orange sessions need a note or signature.</p>
+
             <div class="calendar-agenda" aria-label="Appointment agenda">
               {% for day in calendar_agenda_days %}
                 <section class="agenda-day"><div class="agenda-day-head"><h3>{{ day.date|date:"l, M j" }}</h3>{% if workspace_permissions.appointments.create %}<a class="btn btn-soft" href="{% url 'appointments:create' %}?date={{ day.date|date:'Y-m-d' }}&next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-create-modal" data-appointment-date="{{ day.date|date:'Y-m-d' }}">+ Appointment</a>{% endif %}</div>
-                {% for appointment in day.appointments %}<article class="agenda-session{% if appointment.documentation_pending %} documentation-pending{% endif %}">
+                {% for item in day.calendar_events %}<article class="agenda-session"><div class="agenda-time"><strong>{{ item.starts_at|time:'g:i A' }}</strong><span>{{ item.ends_at|time:'g:i A' }}</span></div><div class="agenda-session-info">{% if workspace_permissions.appointments.edit %}<a href="{% url 'appointments:event_edit' item.pk %}?next={{ request.get_full_path|urlencode }}">{{ item.title }}</a>{% else %}<strong>{{ item.title }}</strong>{% endif %}<span>{{ item.therapist }} · Event</span></div></article>{% endfor %}
+                {% for appointment in day.appointments %}<article data-calendar-timing data-starts-at="{{ appointment.starts_at|date:'c' }}" data-ends-at="{{ appointment.ends_at|date:'c' }}" data-session-status="{{ appointment.status }}" class="agenda-session{% if appointment.documentation_pending %} documentation-pending{% endif %} calendar-timing-{{ appointment.calendar_phase }}">
                   <div class="agenda-time"><strong>{{ appointment.starts_at|time:"g:i A" }}</strong><span>{{ appointment.ends_at|time:"g:i A" }}</span></div>
                   <div class="agenda-session-info">{% if appointment.session_kind == "initial_consultation" %}<span class="badge brand">Initial consultation</span>{% endif %}<strong>{% if workspace_permissions.appointments.edit %}<a href="{% url 'appointments:edit' appointment.pk %}?next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-modal-{{ appointment.pk }}">{{ appointment.client }}</a>{% elif workspace_permissions.clients.view %}<a href="{% url 'clients:detail' appointment.client_id %}">{{ appointment.client }}</a>{% else %}{{ appointment.client }}{% endif %}</strong><span>{{ appointment.therapist }} · {{ appointment.get_appointment_type_display }}</span></div>
                   <div class="agenda-session-status">{% include "telehealth/link.html" %}<span class="badge">{{ appointment.get_status_display }}</span>{% if appointment.documentation_pending %}<span class="session-documentation-label">{% if appointment.has_session_note %}Signature pending{% else %}Note missing{% endif %}</span>{% elif appointment.has_signed_note %}<span class="badge success">Signed</span>{% endif %}</div>
@@ -118,12 +127,13 @@
                 {% for hour in calendar_hours %}<span>{{ hour|time:"g A" }}</span>{% endfor %}
               </aside>
               <section class="gcal-day-column" style="--calendar-grid-height: {{ calendar_grid_height }}px;" data-drop-date="{{ calendar_anchor_date|date:'Y-m-d' }}" data-availability-configured="{% if calendar_day_availability_configured %}1{% else %}0{% endif %}" data-availability-ranges="{{ calendar_day_availability_ranges }}">
-                <div class="gcal-day-head"><div class="gcal-date-heading"><strong>{{ calendar_anchor_date|date:"D" }}</strong><span>{{ calendar_anchor_date|date:"j" }}</span></div>{% if workspace_permissions.appointments.edit %}<button class="calendar-add" type="button" title="Set availability" data-modal-target="availability-modal" data-availability-date="{{ calendar_anchor_date|date:'Y-m-d' }}" aria-label="Set availability on {{ calendar_anchor_date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='availability' %}</button>{% endif %}{% if workspace_permissions.appointments.create %}<a class="calendar-add" title="Add appointment" href="{% url 'appointments:create' %}?date={{ calendar_anchor_date|date:'Y-m-d' }}&next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-create-modal" data-appointment-date="{{ calendar_anchor_date|date:'Y-m-d' }}" aria-label="Add appointment on {{ calendar_anchor_date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='add' %}</a>{% endif %}</div>
+                <div class="gcal-day-head"><div class="gcal-date-heading"><strong>{{ calendar_anchor_date|date:"D" }}</strong><span>{{ calendar_anchor_date|date:"j" }}</span></div>{% if workspace_permissions.appointments.edit %}<button class="calendar-add" type="button" title="Set availability" data-modal-target="{% if workspace_permissions.appointments.create %}appointment-create-modal{% else %}availability-modal{% endif %}" data-editor-open="availability" data-availability-date="{{ calendar_anchor_date|date:'Y-m-d' }}" aria-label="Set availability on {{ calendar_anchor_date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='availability' %}</button>{% endif %}{% if workspace_permissions.appointments.create %}<a class="calendar-add" title="Add appointment" href="{% url 'appointments:create' %}?date={{ calendar_anchor_date|date:'Y-m-d' }}&next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-create-modal" data-appointment-date="{{ calendar_anchor_date|date:'Y-m-d' }}" aria-label="Add appointment on {{ calendar_anchor_date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='add' %}</a>{% endif %}</div>
                  <div class="gcal-time-grid">{% for hour in calendar_hours %}<span></span>{% endfor %}</div>{% for block in calendar_day_availability_blocks %}<div class="availability-block" style="{{ block.style }}"><span>Unavailable</span></div>{% endfor %}
                 {% if calendar_show_current_time and calendar_anchor_date == calendar_today %}<div class="gcal-now-line" style="top: calc(64px + {{ calendar_current_time_top }}px);"><span>Now</span></div>{% endif %}
+                {% for event in calendar_day_nonclinical_events %}{% include 'appointments/partials/calendar_event.html' with item=event.appointment timed=True %}{% endfor %}
                 {% for event in calendar_day_timed_events %}
                   {% with appointment=event.appointment %}
-                    <a class="gcal-event{% if event.compact %} gcal-event-compact{% endif %}" style="{{ event.style }}" title="{{ appointment.client }} · {{ appointment.get_session_kind_display }} · {{ appointment.starts_at|time:'g:i A' }}–{{ appointment.ends_at|time:'g:i A' }} · {{ appointment.get_appointment_type_display }}" aria-label="{{ appointment.client }} · {{ appointment.get_session_kind_display }} · {{ appointment.starts_at|time:'g:i A' }}–{{ appointment.ends_at|time:'g:i A' }} · {{ appointment.get_appointment_type_display }}" {% if workspace_permissions.appointments.edit %}href="{% url 'appointments:edit' appointment.pk %}?next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-modal-{{ appointment.pk }}" draggable="true"{% elif workspace_permissions.clients.view %}href="{% url 'clients:detail' appointment.client_id %}"{% endif %} {% if workspace_permissions.appointments.edit %}data-draggable-appointment data-appointment-title="{{ appointment.client }}" data-appointment-time="{{ appointment.starts_at|date:'H:i' }}" data-appointment-duration="{{ appointment.duration_minutes }}" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}"{% endif %}>
+                    <a data-calendar-timing data-starts-at="{{ appointment.starts_at|date:'c' }}" data-ends-at="{{ appointment.ends_at|date:'c' }}" data-session-status="{{ appointment.status }}" class="gcal-event calendar-timing-{{ appointment.calendar_phase }}{% if event.compact %} gcal-event-compact{% endif %}" style="{{ event.style }}" title="{{ appointment.client }} · {{ appointment.get_session_kind_display }} · {{ appointment.starts_at|time:'g:i A' }}–{{ appointment.ends_at|time:'g:i A' }} · {{ appointment.get_appointment_type_display }} · {{ appointment.get_status_display }}" aria-label="{{ appointment.client }} · {{ appointment.get_session_kind_display }} · {{ appointment.starts_at|time:'g:i A' }}–{{ appointment.ends_at|time:'g:i A' }} · {{ appointment.get_appointment_type_display }} · {{ appointment.get_status_display }}" {% if workspace_permissions.appointments.edit %}href="{% url 'appointments:edit' appointment.pk %}?next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-modal-{{ appointment.pk }}" draggable="true"{% elif workspace_permissions.clients.view %}href="{% url 'clients:detail' appointment.client_id %}"{% endif %} {% if workspace_permissions.appointments.edit %}data-draggable-appointment data-appointment-title="{{ appointment.client }}" data-appointment-time="{{ appointment.starts_at|date:'H:i' }}" data-appointment-duration="{{ appointment.duration_minutes }}" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}"{% endif %}>
                       {% if event.compact %}<strong>{{ appointment.client }}</strong><span>{{ appointment.starts_at|time:"g:i A" }}</span>{% else %}<strong>{{ appointment.client }}</strong>{% if appointment.session_kind == "initial_consultation" %}<small>Initial consultation</small>{% endif %}<span>{{ appointment.starts_at|time:"g:i A" }} - {{ appointment.ends_at|time:"g:i A" }}</span><small>{{ appointment.get_appointment_type_display }}</small>{% endif %}
                     </a>
                   {% endwith %}
@@ -140,12 +150,13 @@
               <div class="gcal-week-columns" style="--calendar-grid-height: {{ calendar_grid_height }}px;">
                 {% for day in calendar_week_days %}
                   <section class="gcal-day-column{% if day.is_today %} today{% endif %}" data-drop-date="{{ day.date|date:'Y-m-d' }}" data-availability-configured="{% if day.availability_configured %}1{% else %}0{% endif %}" data-availability-ranges="{{ day.availability_ranges }}">
-                    <div class="gcal-day-head"><div class="gcal-date-heading"><strong>{{ day.date|date:"D" }}</strong><span>{{ day.date|date:"j" }}</span></div>{% if workspace_permissions.appointments.edit %}<button class="calendar-add" type="button" title="Set availability" data-modal-target="availability-modal" data-availability-date="{{ day.date|date:'Y-m-d' }}" aria-label="Set availability on {{ day.date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='availability' %}</button>{% endif %}{% if workspace_permissions.appointments.create %}<a class="calendar-add" title="Add appointment" href="{% url 'appointments:create' %}?date={{ day.date|date:'Y-m-d' }}&next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-create-modal" data-appointment-date="{{ day.date|date:'Y-m-d' }}" aria-label="Add appointment on {{ day.date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='add' %}</a>{% endif %}</div>
+                    <div class="gcal-day-head"><div class="gcal-date-heading"><strong>{{ day.date|date:"D" }}</strong><span>{{ day.date|date:"j" }}</span></div>{% if workspace_permissions.appointments.edit %}<button class="calendar-add" type="button" title="Set availability" data-modal-target="{% if workspace_permissions.appointments.create %}appointment-create-modal{% else %}availability-modal{% endif %}" data-editor-open="availability" data-availability-date="{{ day.date|date:'Y-m-d' }}" aria-label="Set availability on {{ day.date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='availability' %}</button>{% endif %}{% if workspace_permissions.appointments.create %}<a class="calendar-add" title="Add appointment" href="{% url 'appointments:create' %}?date={{ day.date|date:'Y-m-d' }}&next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-create-modal" data-appointment-date="{{ day.date|date:'Y-m-d' }}" aria-label="Add appointment on {{ day.date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='add' %}</a>{% endif %}</div>
                      <div class="gcal-time-grid">{% for hour in calendar_hours %}<span></span>{% endfor %}</div>{% for block in day.availability_blocks %}<div class="availability-block" style="{{ block.style }}"><span>Unavailable</span></div>{% endfor %}
                     {% if calendar_show_current_time and day.date == calendar_today %}<div class="gcal-now-line" style="top: calc(64px + {{ calendar_current_time_top }}px);"><span>Now</span></div>{% endif %}
+                    {% for event in day.nonclinical_timed_events %}{% include 'appointments/partials/calendar_event.html' with item=event.appointment timed=True %}{% endfor %}
                     {% for event in day.timed_events %}
                       {% with appointment=event.appointment %}
-                        <a class="gcal-event{% if event.compact %} gcal-event-compact{% endif %}" style="{{ event.style }}" title="{{ appointment.client }} · {{ appointment.get_session_kind_display }} · {{ appointment.starts_at|time:'g:i A' }}–{{ appointment.ends_at|time:'g:i A' }} · {{ appointment.get_appointment_type_display }}" aria-label="{{ appointment.client }} · {{ appointment.get_session_kind_display }} · {{ appointment.starts_at|time:'g:i A' }}–{{ appointment.ends_at|time:'g:i A' }} · {{ appointment.get_appointment_type_display }}" {% if workspace_permissions.appointments.edit %}href="{% url 'appointments:edit' appointment.pk %}?next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-modal-{{ appointment.pk }}" draggable="true"{% elif workspace_permissions.clients.view %}href="{% url 'clients:detail' appointment.client_id %}"{% endif %} {% if workspace_permissions.appointments.edit %}data-draggable-appointment data-appointment-title="{{ appointment.client }}" data-appointment-time="{{ appointment.starts_at|date:'H:i' }}" data-appointment-duration="{{ appointment.duration_minutes }}" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}"{% endif %}>
+                        <a data-calendar-timing data-starts-at="{{ appointment.starts_at|date:'c' }}" data-ends-at="{{ appointment.ends_at|date:'c' }}" data-session-status="{{ appointment.status }}" class="gcal-event calendar-timing-{{ appointment.calendar_phase }}{% if event.compact %} gcal-event-compact{% endif %}" style="{{ event.style }}" title="{{ appointment.client }} · {{ appointment.get_session_kind_display }} · {{ appointment.starts_at|time:'g:i A' }}–{{ appointment.ends_at|time:'g:i A' }} · {{ appointment.get_appointment_type_display }} · {{ appointment.get_status_display }}" aria-label="{{ appointment.client }} · {{ appointment.get_session_kind_display }} · {{ appointment.starts_at|time:'g:i A' }}–{{ appointment.ends_at|time:'g:i A' }} · {{ appointment.get_appointment_type_display }} · {{ appointment.get_status_display }}" {% if workspace_permissions.appointments.edit %}href="{% url 'appointments:edit' appointment.pk %}?next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-modal-{{ appointment.pk }}" draggable="true"{% elif workspace_permissions.clients.view %}href="{% url 'clients:detail' appointment.client_id %}"{% endif %} {% if workspace_permissions.appointments.edit %}data-draggable-appointment data-appointment-title="{{ appointment.client }}" data-appointment-time="{{ appointment.starts_at|date:'H:i' }}" data-appointment-duration="{{ appointment.duration_minutes }}" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}"{% endif %}>
                           <strong>{{ appointment.client }}</strong>{% if appointment.session_kind == "initial_consultation" %}<small>Initial consultation</small>{% endif %}<span>{{ appointment.starts_at|time:"g:i A" }}</span>
                         </a>
                       {% endwith %}
@@ -166,12 +177,13 @@
                     <div class="calendar-day-head">
                       <span class="calendar-date">{{ day.date|date:"j" }}</span>
                       <span class="calendar-day-name">{{ day.date|date:"D, M j" }}</span>
-                      {% if workspace_permissions.appointments.edit %}<button class="calendar-add" type="button" title="Set availability" data-modal-target="availability-modal" data-availability-date="{{ day.date|date:'Y-m-d' }}" aria-label="Set availability on {{ day.date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='availability' %}</button>{% endif %}{% if workspace_permissions.appointments.create %}<a class="calendar-add" title="Add appointment" href="{% url 'appointments:create' %}?date={{ day.date|date:'Y-m-d' }}&next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-create-modal" data-appointment-date="{{ day.date|date:'Y-m-d' }}" aria-label="Add appointment on {{ day.date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='add' %}</a>{% endif %}
+                      {% if workspace_permissions.appointments.edit %}<button class="calendar-add" type="button" title="Set availability" data-modal-target="{% if workspace_permissions.appointments.create %}appointment-create-modal{% else %}availability-modal{% endif %}" data-editor-open="availability" data-availability-date="{{ day.date|date:'Y-m-d' }}" aria-label="Set availability on {{ day.date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='availability' %}</button>{% endif %}{% if workspace_permissions.appointments.create %}<a class="calendar-add" title="Add appointment" href="{% url 'appointments:create' %}?date={{ day.date|date:'Y-m-d' }}&next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-create-modal" data-appointment-date="{{ day.date|date:'Y-m-d' }}" aria-label="Add appointment on {{ day.date|date:'F j' }}">{% include 'partials/calendar_action_icon.html' with icon='add' %}</a>{% endif %}
                     </div>
                     {% if day.availability_overrides %}<p class="sync-meta">Availability adjusted</p>{% endif %}
                     <div class="calendar-events">
+                      {% for item in day.calendar_events %}{% include 'appointments/partials/calendar_event.html' with timed=False %}{% endfor %}
                       {% for appointment in day.appointments %}
-                        <a class="calendar-event" {% if workspace_permissions.appointments.edit %}href="{% url 'appointments:edit' appointment.pk %}?next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-modal-{{ appointment.pk }}" draggable="true"{% elif workspace_permissions.clients.view %}href="{% url 'clients:detail' appointment.client_id %}"{% endif %} {% if workspace_permissions.appointments.edit %}data-draggable-appointment data-appointment-title="{{ appointment.client }}" data-appointment-time="{{ appointment.starts_at|date:'H:i' }}" data-appointment-duration="{{ appointment.duration_minutes }}" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}"{% endif %}>
+                        <a data-calendar-timing data-starts-at="{{ appointment.starts_at|date:'c' }}" data-ends-at="{{ appointment.ends_at|date:'c' }}" data-session-status="{{ appointment.status }}" class="calendar-event calendar-timing-{{ appointment.calendar_phase }}" title="{{ appointment.get_status_display }}" {% if workspace_permissions.appointments.edit %}href="{% url 'appointments:edit' appointment.pk %}?next={{ request.get_full_path|urlencode }}" data-modal-target="appointment-modal-{{ appointment.pk }}" draggable="true"{% elif workspace_permissions.clients.view %}href="{% url 'clients:detail' appointment.client_id %}"{% endif %} {% if workspace_permissions.appointments.edit %}data-draggable-appointment data-appointment-title="{{ appointment.client }}" data-appointment-time="{{ appointment.starts_at|date:'H:i' }}" data-appointment-duration="{{ appointment.duration_minutes }}" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}"{% endif %}>
                           <span>{{ appointment.starts_at|time:"g:i A" }}</span>
                           {{ appointment.client }}{% if appointment.session_kind == "initial_consultation" %} · Initial consultation{% endif %}
                         </a>
@@ -240,7 +252,7 @@
         </div>
       </dialog>
 
-      {% endif %}{% if workspace_permissions.appointments.create %}<dialog class="modal-dialog" id="appointment-create-modal">
+      {% endif %}{% if workspace_permissions.appointments.create %}<dialog class="modal-dialog appointment-drawer" id="appointment-create-modal" data-appointment-drawer>
         <div class="modal-card">
           <div class="modal-head">
             <div>
@@ -250,85 +262,39 @@
             <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
           </div>
 
-          <form class="appointment-form" method="post" action="{% url 'appointments:create' %}">
+          <div class="appointment-editor-tabs calendar-operation-tabs" role="tablist" aria-label="Calendar entry type">
+            <button type="button" role="tab" data-editor-tab="appointment" aria-selected="true">Appointment</button>
+            <button type="button" role="tab" data-editor-tab="event" aria-selected="false" tabindex="-1">Event</button>
+            {% if workspace_permissions.appointments.edit %}<button type="button" role="tab" data-editor-tab="out-of-office" aria-selected="false" tabindex="-1">Out of office</button><button type="button" role="tab" data-editor-tab="availability" aria-selected="false" tabindex="-1">Availability</button>{% endif %}
+          </div>
+          <form class="appointment-form appointment-tab-panel" data-editor-panel="appointment" data-progressive-appointment method="post" action="{% url 'appointments:create' %}">
             <p class="form-error" data-scheduling-feedback role="status" hidden>This time is outside practice availability. Choose another time or review availability.</p>
             {% if not appointment_clients %}<p class="form-error">Add a client before scheduling a session.</p>{% endif %}{% if not appointment_therapists %}<p class="form-error">Add a therapist to your team before scheduling a session.</p>{% endif %}
             {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <div class="field-grid two">
-              <div class="field">
-                <label for="appointment-create-client">Client</label>
-                <select id="appointment-create-client" name="client" required><option value="">Select a client</option>
-                  {% for client in appointment_clients %}
-                    <option value="{{ client.pk }}">{{ client }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="field">
-                <label for="appointment-create-therapist">Therapist</label>
-                <select id="appointment-create-therapist" name="therapist" required><option value="">Select a therapist</option>
-                  {% for therapist in appointment_therapists %}
-                    <option value="{{ therapist.pk }}" {% if appointment_therapists|length == 1 %}selected{% endif %}>{{ therapist }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="field">
-                <label for="appointment-create-start">Starts at</label>
-                <input id="appointment-create-start" name="starts_at" type="datetime-local" required>
-              </div>
-              <div class="field">
-                <label for="appointment-create-end">Ends at</label>
-                <input id="appointment-create-end" name="ends_at" type="datetime-local" required>
-              </div>
-              <div class="field"><label for="session-kind-create">Session</label><select id="session-kind-create" name="session_kind">{% for value,label in session_kind_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
-<div class="field">
-                <label for="appointment-create-type">Format</label>
-                <select id="appointment-create-type" name="appointment_type" required>
-                  <option value="video">Video Call</option>
-                  <option value="in_person">In Person</option>
-                  <option value="phone">Phone Call</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="appointment-create-status">Status</label>
-                <select id="appointment-create-status" name="status" required>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="no_show">No Show</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="appointment-create-location">Location</label>
-                <input id="appointment-create-location" name="location">
-              </div>
-              <div class="field">
-                <label for="appointment-create-url">Meeting URL</label>
-                <input id="appointment-create-url" name="meeting_url" type="url">
-              </div>
-              <div class="field full">
-                <label for="appointment-create-notes">Notes</label>
-                <textarea id="appointment-create-notes" name="notes" rows="4"></textarea>
-              </div>
-              <div class="field">
-                <label for="appointment-create-repeat">Repeat weekly</label>
-                <input id="appointment-create-repeat" name="repeat_weekly_count" type="number" min="1" max="52" placeholder="1">
-                <small>Total appointments, including this one.</small>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="btn btn-secondary" type="button" data-modal-close>Cancel</button>
+            {% include 'appointments/partials/editor_fields.html' with editor_id='appointment-create' appointment=None progressive=True %}
+            <div class="form-actions appointment-editor-footer">
+              <button class="btn btn-secondary" type="button" data-modal-close>Close</button>
               <button class="btn btn-primary" type="submit">Create appointment</button>
             </div>
           </form>
+          <form class="appointment-form appointment-tab-panel" data-editor-panel="event" data-calendar-operation="event" method="post" action="{% url 'appointments:event_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='event' %}</form>
+          {% if workspace_permissions.appointments.edit %}
+          <form class="appointment-form appointment-tab-panel" data-editor-panel="out-of-office" data-calendar-operation="out-of-office" method="post" action="{% url 'appointments:availability_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='out-of-office' %}</form>
+          <form class="appointment-form appointment-tab-panel" data-editor-panel="availability" data-calendar-operation="availability" method="post" action="{% url 'appointments:availability_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='availability' %}</form>
+          {% endif %}
         </div>
       </dialog>
 
-      {% endif %}{% if workspace_permissions.appointments.edit %}<dialog class="modal-dialog" id="availability-modal">
+      {% endif %}{% if workspace_permissions.appointments.edit %}<dialog class="modal-dialog appointment-drawer availability-editor" id="availability-modal">
         <div class="modal-card">
           <div class="modal-head"><div><p class="eyebrow">Availability</p><h2>Set calendar availability</h2></div><button class="modal-close" type="button" data-modal-close aria-label="Close">×</button></div>
           <form class="appointment-form" method="post" action="{% url 'appointments:availability_create' %}">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="appointment-editor-tabs" role="tablist" aria-label="Availability mode">
+              <button type="button" role="tab" data-availability-mode="available" aria-selected="true">Availability</button>
+              <button type="button" role="tab" data-availability-mode="unavailable" aria-selected="false" tabindex="-1">Out of office</button>
+            </div>
             <p class="form-error" data-availability-prompt hidden>This time is outside your availability. Enable this range first, then schedule the appointment.</p>
             <div class="field-grid two">
               <div class="field"><label for="availability-date">Start date</label><input id="availability-date" name="date" type="date" required></div>
@@ -341,13 +307,13 @@
               <div class="field full"><label for="availability-note">Note</label><input id="availability-note" name="note" maxlength="160" placeholder="Optional, for example: conference day"></div>
             </div>
             <p class="empty-state">Uncheck availability and leave times blank to mark the whole day unavailable. Uncheck with times to block only that time range.</p>
-            <div class="form-actions"><button class="btn btn-secondary" type="button" data-modal-close>Cancel</button><button class="btn btn-primary" type="submit">Save availability</button></div>
+            <div class="form-actions appointment-editor-footer"><button class="btn btn-secondary" type="button" data-modal-close>Close</button><button class="btn btn-primary" type="submit">Save availability</button></div>
           </form>
         </div>
       </dialog>
 
       {% endif %}{% if workspace_permissions.appointments.edit %}{% for appointment in appointments %}
-        <dialog class="modal-dialog" id="appointment-modal-{{ appointment.pk }}">
+        <dialog class="modal-dialog appointment-drawer" id="appointment-modal-{{ appointment.pk }}" data-appointment-drawer>
           <div class="modal-card">
             <div class="modal-head">
               <div>
@@ -357,78 +323,25 @@
               <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
             </div>
 
-            {% include 'appointments/partials/session_workflow.html' with session=appointment %}{% include 'telehealth/link.html' %}
             <form class="appointment-form" method="post" action="{% url 'appointments:edit' appointment.pk %}">
               {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-              <div class="field-grid two">
-                <div class="field">
-                  <label for="appointment-client-{{ appointment.pk }}">Client</label>
-                  <select id="appointment-client-{{ appointment.pk }}" name="client" required>
-                    {% for client in appointment_clients %}
-                      <option value="{{ client.pk }}" {% if client.pk == appointment.client_id %}selected{% endif %}>{{ client }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="appointment-therapist-{{ appointment.pk }}">Therapist</label>
-                  <select id="appointment-therapist-{{ appointment.pk }}" name="therapist" required>
-                    {% for therapist in appointment_therapists %}
-                      <option value="{{ therapist.pk }}" {% if therapist.pk == appointment.therapist_id %}selected{% endif %}>{{ therapist }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="appointment-start-{{ appointment.pk }}">Starts at</label>
-                  <input id="appointment-start-{{ appointment.pk }}" name="starts_at" type="datetime-local" value="{{ appointment.starts_at|date:'Y-m-d\TH:i' }}" required>
-                </div>
-                <div class="field">
-                  <label for="appointment-end-{{ appointment.pk }}">Ends at</label>
-                  <input id="appointment-end-{{ appointment.pk }}" name="ends_at" type="datetime-local" value="{{ appointment.ends_at|date:'Y-m-d\TH:i' }}" required>
-                </div>
-                <div class="field"><label for="session-kind-{{ appointment.pk }}">Session</label><select id="session-kind-{{ appointment.pk }}" name="session_kind">{% for value,label in session_kind_choices %}<option value="{{ value }}" {% if value == appointment.session_kind %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-<div class="field">
-                  <label for="appointment-type-{{ appointment.pk }}">Format</label>
-                  <select id="appointment-type-{{ appointment.pk }}" name="appointment_type" required>
-                    <option value="in_person" {% if appointment.appointment_type == 'in_person' %}selected{% endif %}>In Person</option>
-                    <option value="video" {% if appointment.appointment_type == 'video' %}selected{% endif %}>Video Call</option>
-                    <option value="phone" {% if appointment.appointment_type == 'phone' %}selected{% endif %}>Phone Call</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="appointment-status-{{ appointment.pk }}">Status</label>
-                  <select id="appointment-status-{{ appointment.pk }}" name="status" required>
-                    <option value="scheduled" {% if appointment.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
-                    <option value="completed" {% if appointment.status == 'completed' %}selected{% endif %}>Completed</option>
-                    <option value="cancelled" {% if appointment.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                    <option value="no_show" {% if appointment.status == 'no_show' %}selected{% endif %}>No Show</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="appointment-location-{{ appointment.pk }}">Location</label>
-                  <input id="appointment-location-{{ appointment.pk }}" name="location" value="{{ appointment.location }}">
-                </div>
-                <div class="field">
-                  <label for="appointment-url-{{ appointment.pk }}">Meeting URL</label>
-                  <input id="appointment-url-{{ appointment.pk }}" name="meeting_url" type="url" value="{{ appointment.meeting_url }}">
-                </div>
-                <div class="field full">
-                  <label for="appointment-notes-{{ appointment.pk }}">Notes</label>
-                  <textarea id="appointment-notes-{{ appointment.pk }}" name="notes" rows="4">{{ appointment.notes }}</textarea>
-                </div>
-              </div>
+              {% include 'appointments/partials/editor_tabs.html' %}
+              {% with appointment.pk|stringformat:'s' as editor_id %}{% include 'appointments/partials/editor_fields.html' %}{% endwith %}
+              <section class="appointment-tab-panel session-records" data-editor-panel="records" hidden><h3 class="sr-only">Session notes &amp; billing</h3><div class="appointment-editor-section-body">{% include 'appointments/partials/session_workflow.html' with session=appointment %}{% include 'telehealth/link.html' %}</div></section>
+              <section class="appointment-tab-panel appointment-more-actions" data-editor-panel="actions" hidden><h3 class="sr-only">More actions</h3>
               {% if google_calendar_connected or appointment.external_event_id %}<div class="sync-panel">
                 <strong>Google Calendar sync: {{ appointment.get_sync_status_display }}</strong>
                 {% if appointment.external_event_url %}<a class="inline-link" href="{{ appointment.external_event_url }}" target="_blank" rel="noopener">Open Google event</a>{% endif %}
                 {% if appointment.sync_error %}<p class="form-error">Google Calendar could not sync this appointment. Try again or reconnect Google.</p>{% endif %}
               </div>{% endif %}
-              <div class="form-actions split-actions">
+              <div class="appointment-editor-section-body">
+                {% if appointment.status == 'scheduled' %}<button class="btn btn-secondary" type="button" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}" data-reschedule-date="{{ appointment.starts_at|date:'Y-m-d' }}" data-reschedule-time="{{ appointment.starts_at|date:'H:i' }}" data-reschedule-title="{{ appointment.client }}" data-reschedule-duration="{{ appointment.duration_minutes }}">Reschedule</button><button class="btn btn-danger" type="submit" formnovalidate formaction="{% url 'appointments:cancel' appointment.pk %}" data-confirm-message="Cancel this appointment? Its record, notes, and invoices will be kept.">Cancel appointment</button>{% endif %}
+                {% if google_calendar_connected %}<button class="btn btn-soft" type="submit" formaction="{% url 'appointments:google_sync' appointment.pk %}">Sync to Google</button>{% endif %}
                 {% if workspace_permissions.appointments.delete %}<button class="btn btn-danger" type="submit" formnovalidate formaction="{% url 'appointments:delete' appointment.pk %}" data-confirm-message="Delete this appointment? Its calendar record will be removed.">Delete appointment</button>{% endif %}
-                <div class="form-actions">
-                  {% if appointment.status == 'scheduled' %}<button class="btn btn-secondary" type="button" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}" data-reschedule-date="{{ appointment.starts_at|date:'Y-m-d' }}" data-reschedule-time="{{ appointment.starts_at|date:'H:i' }}" data-reschedule-title="{{ appointment.client }}" data-reschedule-duration="{{ appointment.duration_minutes }}">Reschedule</button><button class="btn btn-danger" type="submit" formnovalidate formaction="{% url 'appointments:cancel' appointment.pk %}" data-confirm-message="Cancel this appointment? Its record, notes, and invoices will be kept.">Cancel appointment</button>{% endif %}
-                  {% if google_calendar_connected %}<button class="btn btn-soft" type="submit" formaction="{% url 'appointments:google_sync' appointment.pk %}">Sync to Google</button>{% endif %}
-                  <button class="btn btn-secondary" type="button" data-modal-close>Close</button>
-                  <button class="btn btn-primary" type="submit">Save changes</button>
-                </div>
+              </div></section>
+              <div class="form-actions appointment-editor-footer">
+                <button class="btn btn-secondary" type="button" data-modal-close>Close</button>
+                <button class="btn btn-primary" type="submit">Save changes</button>
               </div>
             </form>
           </div>
@@ -464,6 +377,8 @@
   {{ calendar_grid_config|json_script:"calendar-grid-config" }}
   <script src="{% static 'appointments-calendar.js' %}" defer></script>
   <script src="{% static 'session-duration.js' %}" defer></script>
+  <script src="{% static 'appointment-editor.js' %}" defer></script>
+  <script src="{% static 'calendar-timing.js' %}" defer></script>
   <script src="{% static 'session-note-popup.js' %}" defer></script>
 </body>
 </html>

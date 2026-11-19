@@ -21,6 +21,14 @@
     end.addEventListener('input', keepDuration);
     end.addEventListener('change', keepDuration);
     const dialog = form.closest('dialog');
+    if (dialog?.hasAttribute('data-appointment-drawer')) {
+      new MutationObserver(() => {
+        if (!dialog.open) return;
+        const minutes = currentDuration();
+        manual = minutes > 0 && minutes !== duration();
+        customDuration = manual ? minutes : null;
+      }).observe(dialog, { attributes: true, attributeFilter: ['open'] });
+    }
     if (dialog?.id === 'appointment-create-modal') {
       document.addEventListener('click', event => {
         if (event.target.closest('[data-modal-target="appointment-create-modal"]') || (event.target.closest('.gcal-day-column[data-drop-date]') && !event.target.closest('a, button, input, select, textarea'))) { manual = false; queueMicrotask(propose); }

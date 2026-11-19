@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 function field(value) { return {value, handlers:{}, addEventListener(name, handler) { this.handlers[name]=handler; }}; }
 const kind=field('standard'), start=field('2026-10-13T10:00'), end=field('2026-10-13T10:50');
-const form={querySelector: selector=>({'[name="session_kind"]':kind,'[name="starts_at"]':start,'[name="ends_at"]':end}[selector]), closest:()=>({id:'appointment-create-modal'})};
+const form={querySelector: selector=>({'[name="session_kind"]':kind,'[name="starts_at"]':start,'[name="ends_at"]':end}[selector]), closest:()=>({id:'appointment-create-modal',hasAttribute:()=>false})};
 const clicks=[];
 vm.runInNewContext(fs.readFileSync('static/session-duration.js','utf8'), {document:{querySelectorAll:()=>[form],addEventListener:(name,handler)=>clicks.push(handler)}, Date, Number, String, queueMicrotask:handler=>handler()});
 kind.value='initial_consultation'; kind.handlers.change();

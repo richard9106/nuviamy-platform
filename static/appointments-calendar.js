@@ -124,7 +124,7 @@
         start.value = `${trigger.dataset.appointmentDate}T09:00`;
         end.value = `${trigger.dataset.appointmentDate}T${dialog.querySelector('[name="session_kind"]')?.value === 'initial_consultation' ? '09:15' : '09:50'}`;
       }
-      if (trigger.dataset.availabilityDate) {
+      if (trigger.dataset.availabilityDate && dialog.id === 'availability-modal') {
         dialog.querySelector('[name="date"]').value = trigger.dataset.availabilityDate;
         dialog.querySelector('[name="starts_at"]').value = '09:00';
         dialog.querySelector('[name="ends_at"]').value = '17:00';
@@ -162,7 +162,7 @@
       if (form.querySelector('[name="session_kind"]')) return;
       const start = form.querySelector('[name="starts_at"]');
       const end = form.querySelector('[name="ends_at"]');
-      if (!start || !end) return;
+      if (!start || !end || start.type === 'time' || end.type === 'time') return;
       const duration = () => (new Date(end.value) - new Date(start.value)) / 60000;
       let minutes = duration() > 0 ? duration() : calendarGridConfig.defaultDurationMinutes;
       start.addEventListener('focus', () => { if (duration() > 0) minutes = duration(); });

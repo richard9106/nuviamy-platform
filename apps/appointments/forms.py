@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Appointment, PracticeAvailabilityOverride, PracticeWorkingHour
+from .models import Appointment, CalendarEvent, PracticeAvailabilityOverride, PracticeWorkingHour
 
 
 class AppointmentForm(forms.ModelForm):
@@ -178,3 +178,25 @@ class PracticeAvailabilityOverrideForm(forms.ModelForm):
             override.save()
             self.save_m2m()
         return override
+
+
+class CalendarEventForm(forms.ModelForm):
+    class Meta:
+        model = CalendarEvent
+        fields = ['title', 'therapist', 'starts_at', 'ends_at', 'location']
+        widgets = {
+            'starts_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+            'ends_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+        }
+
+    def __init__(self, *args, practice=None, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .access import manages_sessions
+        self.instance.practice = practice
+        self.fields['therapist'].queryset = practice.therapists.select_related('user') if practice else self.fields['therapist'].queryset.none()
+        if user and not manages_sessions(user):
+            self.fields['therapist'].queryset = self.fields['therapist'].queryset.filter(user=user)
+        if self.fields['therapist'].queryset.count() == 1:
+            self.initial.setdefault('therapist', self.fields['therapist'].queryset.first().pk)
+        for name in ('starts_at', 'ends_at'):
+            self.fields[name].input_formats = ['%Y-%m-%dT%H:%M']

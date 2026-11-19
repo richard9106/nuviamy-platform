@@ -59,6 +59,15 @@ See [Initial consultations](docs/initial-consultation.md).
 
 ## Workspace behavior
 
+### Calendar appointment editor
+
+- Calendar creation uses a compact floating card with Appointment, Event, Out of office and Availability tabs. Selecting a client expands the appointment details. Editing uses Appointment, Details, Notes & billing and Actions tabs. The card stays within the viewport on mobile, with scrollable fields and accessible save actions.
+- Client choices can be filtered by name without replacing the current selection. Quick durations (15, 30, 45, 50 and 60 minutes) update the end time while preserving custom durations and the initial-consultation default.
+- Repetition, external meeting links and administrative notes are grouped under additional details. Existing session-note, invoice and video actions are grouped separately from scheduling fields; cancellation and deletion remain confirmed secondary actions. Non-clinical events have a title, therapist, same-day start/end and optional location, with scoped create/edit/delete and audit records. They do not generate patient records, invoices, notifications, Google events or availability blocks. Overlapping calendar entries occupy separate lanes. Out-of-office entries apply practice-wide and preserve other date-specific hours and blocks; Availability replaces only available-hour overrides and preserves blocks. Existing appointments are never moved or cancelled by these operations.
+- Closing a changed appointment asks before discarding edits and restores the values from when the panel opened. Form contents are kept in memory only; optional session storage records only viewport position for the return to the calendar.
+- Calendar timing uses soft green after the end time, orange for ongoing sessions or starts within 24 hours, and pale blue beyond 24 hours. Cancelled sessions and no-shows retain separate styles. Colors refresh every 30 seconds and on tab return, without changing attendance, billing or documentation status.
+- Availability checks, practice permissions, series behavior and Google synchronization remain server-side. This UI does not introduce new cancellation statuses, CPT/service pricing or automatic charges.
+
 ### Overview
 
 - An Activities icon beside the account menu groups permitted setup actions and owner agreement acceptance into a compact dropdown. Its badge counts pending setup items and clears as they are completed; trial status remains in the toolbar.

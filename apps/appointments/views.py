@@ -21,6 +21,7 @@ from apps.clients.models import Client
 from apps.audit.models import AuditLog
 from apps.audit.utils import log_audit_event
 from .google_calendar import delete_google_event_for_appointment, sync_appointment_to_google
+from .calendar_display import calendar_phase
 from .models import Appointment, PracticeAvailabilityOverride, PracticeWorkingHour
 from .access import scope_sessions, manages_sessions
 from .forms import AppointmentForm, CalendarAvailabilityEditForm, PracticeAvailabilityOverrideForm, PracticeWorkingHourForm
@@ -183,6 +184,31 @@ class AppointmentListView(LoginRequiredMixin, PracticePermissionMixin, PracticeC
             'style': (f'top: {top}px; height: {max(12, height)}px; min-height: {max(12, height)}px;' if duration_minutes <= 20 else f'top: {top}px; min-height: {max(34, height)}px;'),
         }
 
+    def get_day_timed_entries(self, appointments, calendar_events):
+        # Allocate side-by-side lanes so an event never hides a patient session.
+        tagged = sorted([(item, False) for item in appointments] + [(item, True) for item in calendar_events], key=lambda pair: (pair[0].starts_at, pair[0].ends_at))
+        groups = []
+        for item, nonclinical in tagged:
+            if not groups or item.starts_at >= max(entry[0].ends_at for entry in groups[-1]):
+                groups.append([])
+            groups[-1].append((item, nonclinical))
+        result = {'appointments': [], 'events': []}
+        for group in groups:
+            lanes, placed = [], []
+            for item, nonclinical in group:
+                lane = next((index for index, end in enumerate(lanes) if end <= item.starts_at), len(lanes))
+                if lane == len(lanes):
+                    lanes.append(item.ends_at)
+                else:
+                    lanes[lane] = item.ends_at
+                placed.append((item, nonclinical, lane))
+            for item, nonclinical, lane in placed:
+                rendered = self.get_timed_event(item)
+                if len(lanes) > 1:
+                    rendered['style'] += f' left: calc(8px + (100% - 16px) * {lane} / {len(lanes)}); width: calc((100% - 16px) / {len(lanes)} - 3px); right: auto;'
+                result['events' if nonclinical else 'appointments'].append(rendered)
+        return result
+
     def get_calendar_context(self, appointments):
         selected_view = self.get_calendar_view()
         anchor = self.get_anchor_date()
@@ -257,11 +283,26 @@ class AppointmentListView(LoginRequiredMixin, PracticePermissionMixin, PracticeC
         def has_availability(current_day):
             return bool(availability_for_day(current_day)['configured'])
 
+        from .models import CalendarEvent
+        nonclinical_events = scope_sessions(CalendarEvent.objects.select_related('therapist__user'), self.request.user).filter(
+            starts_at__date__gte=period_start, starts_at__date__lte=period_end)
+        filters = self.get_calendar_filters()
+        if filters['therapist'].isascii() and filters['therapist'].isdigit() and len(filters['therapist']) <= 18:
+            nonclinical_events = nonclinical_events.filter(therapist_id=filters['therapist'])
+        if filters['q'] or filters['status'] or filters['appointment_type'] or filters['sync_status'] or filters['session_kind']:
+            nonclinical_events = nonclinical_events.none()
+        events_by_date = {}
+        for event in nonclinical_events:
+            event.calendar_phase = calendar_phase(event, timezone.now())
+            events_by_date.setdefault(timezone.localdate(event.starts_at), []).append(event)
         appointments_by_date = {}
+        calendar_now = timezone.now()
         for appointment in appointments:
+            appointment.calendar_phase = calendar_phase(appointment, calendar_now)
             local_date = timezone.localtime(appointment.starts_at).date()
             appointments_by_date.setdefault(local_date, []).append(appointment)
 
+        timed_by_date = {day: self.get_day_timed_entries(appointments_by_date.get(day, []), events_by_date.get(day, [])) for day in set(appointments_by_date) | set(events_by_date)}
         weeks = []
         for week in month_dates:
             weeks.append([
@@ -270,6 +311,7 @@ class AppointmentListView(LoginRequiredMixin, PracticePermissionMixin, PracticeC
                     'in_month': day.month == month_start.month,
                     'is_today': day == today,
                     'appointments': appointments_by_date.get(day, []),
+                    'calendar_events': events_by_date.get(day, []),
                     'outside_availability': has_availability(day) and not availability_for_day(day)['blocks'],
                     'availability_overrides': overrides_by_date.get(day, []),
                 }
@@ -284,14 +326,16 @@ class AppointmentListView(LoginRequiredMixin, PracticePermissionMixin, PracticeC
                 'date': current_day,
                 'is_today': current_day == today,
                 'appointments': appointments_by_date.get(current_day, []),
-                'timed_events': [self.get_timed_event(appointment) for appointment in appointments_by_date.get(current_day, [])],
+                'calendar_events': events_by_date.get(current_day, []),
+                'nonclinical_timed_events': timed_by_date.get(current_day, {}).get('events', []),
+                'timed_events': timed_by_date.get(current_day, {}).get('appointments', []),
                 'availability_blocks': availability_for_day(current_day)['blocks'],
                 'availability_configured': availability_for_day(current_day)['configured'],
                 'availability_ranges': availability_for_day(current_day)['ranges'],
                 'availability_overrides': overrides_by_date.get(current_day, []),
             })
 
-        day_timed_events = [self.get_timed_event(appointment) for appointment in appointments_by_date.get(anchor, [])]
+        day_timed_events = timed_by_date.get(anchor, {}).get('appointments', [])
         day_availability = availability_for_day(anchor)
 
         year_months = []
@@ -329,6 +373,7 @@ class AppointmentListView(LoginRequiredMixin, PracticePermissionMixin, PracticeC
             'calendar_agenda_days': week_days,
             'calendar_day_appointments': appointments_by_date.get(anchor, []),
             'calendar_day_timed_events': day_timed_events,
+            'calendar_day_nonclinical_events': timed_by_date.get(anchor, {}).get('events', []),
             'calendar_day_availability_blocks': day_availability['blocks'],
             'calendar_day_availability_ranges': day_availability['ranges'],
             'calendar_availability_configured': bool(configured_hours),
@@ -749,7 +794,12 @@ class CalendarAvailabilityCreateView(LoginRequiredMixin, PracticePermissionMixin
                         else:
                             override_date = base.date
                         target_dates.append(override_date)
-                PracticeAvailabilityOverride.objects.filter(practice=practice, date__in=target_dates).delete()
+                existing = PracticeAvailabilityOverride.objects.filter(practice=practice, date__in=target_dates)
+                mode = request.POST.get('calendar_entry_mode')
+                if mode == 'availability':
+                    existing.filter(is_available=True).delete()
+                elif mode != 'out-of-office':
+                    existing.delete()
                 for override_date in target_dates:
                     override = PracticeAvailabilityOverride(
                         practice=practice,
@@ -895,3 +945,56 @@ class WorkingHourDeleteView(LoginRequiredMixin, PracticePermissionMixin, Practic
     def get_queryset(self):
         practice = self.get_practice()
         return PracticeWorkingHour.objects.filter(practice=practice) if practice else PracticeWorkingHour.objects.none()
+
+
+class CalendarEventFormMixin(CalendarReturnMixin, PracticeContextMixin):
+    permission_resource = 'appointments'
+    permission_action = 'create'
+    template_name = 'appointments/calendar_event_form.html'
+
+    def get_form_class(self):
+        from .forms import CalendarEventForm
+        return CalendarEventForm
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'practice': self.get_practice(), 'user': self.request.user}
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            self.object = form.save()
+            log_audit_event(self.request, AuditLog.Action.UPDATE if self.object_was_existing else AuditLog.Action.CREATE,
+                'CalendarEvent', self.object.pk, practice=self.get_practice())
+        messages.success(self.request, 'Calendar event saved. It does not block appointment availability.')
+        return redirect(self.get_success_url())
+
+    @property
+    def object_was_existing(self):
+        return 'pk' in self.kwargs
+
+
+class CalendarEventCreateView(LoginRequiredMixin, PracticePermissionMixin, CalendarEventFormMixin, CreateView):
+    permission_resource = 'appointments'
+    permission_action = 'create'
+
+
+class CalendarEventUpdateView(LoginRequiredMixin, PracticePermissionMixin, CalendarEventFormMixin, UpdateView):
+    permission_resource = 'appointments'
+    permission_action = 'edit'
+
+    def get_queryset(self):
+        from .models import CalendarEvent
+        return scope_sessions(CalendarEvent.objects.all(), self.request.user)
+
+
+class CalendarEventDeleteView(CalendarReturnMixin, LoginRequiredMixin, PracticePermissionMixin, PracticeContextMixin, View):
+    permission_resource = 'appointments'
+    permission_action = 'delete'
+
+    def post(self, request, pk):
+        from .models import CalendarEvent
+        event = get_object_or_404(scope_sessions(CalendarEvent.objects.all(), request.user), pk=pk)
+        with transaction.atomic():
+            log_audit_event(request, AuditLog.Action.DELETE, 'CalendarEvent', event.pk, practice=self.get_practice())
+            event.delete()
+        messages.success(request, 'Calendar event deleted.')
+        return redirect(self.get_success_url())

@@ -47,3 +47,12 @@ assert.equal(rescheduleForm.action,'/appointments/7/reschedule/');
 assert.equal(rescheduleForm.elements.date.value,'2026-10-09');
 assert.equal(rescheduleForm.elements.next.value,'/appointments/?view=agenda');
 console.log('Explicit rescheduling button preserves calendar return context.');
+
+// Availability uses time-only inputs: session datetime auto-duration must not clear them.
+const timeFields = {starts_at: input('09:00'), ends_at: input('17:00')};
+timeFields.starts_at.type = 'time'; timeFields.ends_at.type = 'time';
+const timeForm = {querySelector: selector => {const match = selector.match(/name="([^\"]+)"/); return match ? timeFields[match[1]] : null;}};
+vm.runInNewContext(fs.readFileSync('static/appointments-calendar.js', 'utf8'), {document: {...document, querySelectorAll: selector => selector === 'form.appointment-form' ? [timeForm] : []}, Date, window: context.window, console});
+assert.equal(timeFields.starts_at.listeners.change, undefined);
+assert.equal(timeFields.ends_at.value, '17:00');
+console.log('Time-only availability fields are independent of session datetime duration.');

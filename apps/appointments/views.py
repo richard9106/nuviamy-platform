@@ -741,14 +741,13 @@ class AppointmentRescheduleView(CalendarReturnMixin, LoginRequiredMixin, Practic
             messages.error(request, message)
             return redirect(self.get_success_url())
 
-        try:
-            selected_date = date.fromisoformat(request.POST.get('date', ''))
-            selected_time = datetime.strptime(request.POST.get('time', ''), '%H:%M').time()
-        except ValueError:
-            return failure('Choose a valid date and time to move the appointment.')
-
         with transaction.atomic():
             appointment = get_object_or_404(scope_sessions(Appointment.objects.select_for_update().filter(practice=self.get_practice()), request.user), pk=pk)
+            try:
+                selected_date = date.fromisoformat(request.POST.get('date', ''))
+                selected_time = datetime.strptime(request.POST.get('time', ''), '%H:%M').time()
+            except ValueError:
+                return failure('Choose a valid date and time to move the appointment.')
             if inline:
                 try:
                     expected_start = parse_datetime(request.POST.get('expected_starts_at', ''))

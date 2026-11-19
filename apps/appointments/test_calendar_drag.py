@@ -66,6 +66,7 @@ class CalendarDragTests(TestCase):
         other, _, _, _ = AppointmentViewTests.create_practice_user(self, username='other-drag')
         self.client.force_login(other)
         self.assertEqual(self.client.post(self.url, self.data, **self.headers).status_code, 404)
+        self.assertEqual(self.client.post(self.url, {'date': 'invalid', 'time': 'invalid'}, **self.headers).status_code, 404)
         profile = self.user.nuvia_profile
         profile.role = UserProfile.Role.THERAPIST
         profile.permissions = {'appointments': {'view': True}}

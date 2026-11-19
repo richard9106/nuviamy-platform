@@ -56,6 +56,8 @@
     dialog.addEventListener('invalid', event => {
       const panel = event.target.closest('[data-editor-panel]');
       if (panel) selectTab(panel.dataset.editorPanel);
+      const progressive = event.target.closest('[data-appointment-details]');
+      if (progressive) progressive.hidden = false;
       const details = event.target.closest('details');
       if (details) details.open = true;
     }, true);

@@ -162,7 +162,7 @@
       if (form.querySelector('[name="session_kind"]')) return;
       const start = form.querySelector('[name="starts_at"]');
       const end = form.querySelector('[name="ends_at"]');
-      if (!start || !end) return;
+      if (!start || !end || start.type === 'time' || end.type === 'time') return;
       const duration = () => (new Date(end.value) - new Date(start.value)) / 60000;
       let minutes = duration() > 0 ? duration() : calendarGridConfig.defaultDurationMinutes;
       start.addEventListener('focus', () => { if (duration() > 0) minutes = duration(); });

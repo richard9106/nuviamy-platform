@@ -9,6 +9,8 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q, Exists, OuterRef, Prefetch
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse
+from django.utils.dateparse import parse_datetime
 from django.urls import reverse, reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
@@ -731,26 +733,46 @@ class AppointmentRescheduleView(CalendarReturnMixin, LoginRequiredMixin, Practic
     permission_resource = 'appointments'
     permission_action = 'edit'
     def post(self, request, pk):
-        appointment = get_object_or_404(scope_sessions(Appointment.objects.filter(practice=self.get_practice()), self.request.user), pk=pk)
-        date_value = request.POST.get('date', '')
-        time_value = request.POST.get('time', '')
-        try:
-            selected_date = date.fromisoformat(date_value)
-            selected_time = datetime.strptime(time_value, '%H:%M').time()
-        except ValueError:
-            messages.error(request, 'Choose a valid date and time to move the appointment.')
+        inline = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+        def failure(message, status=400):
+            if inline:
+                return JsonResponse({'ok': False, 'message': message}, status=status)
+            messages.error(request, message)
             return redirect(self.get_success_url())
 
-        duration = appointment.ends_at - appointment.starts_at
-        appointment.starts_at = timezone.make_aware(datetime.combine(selected_date, selected_time))
-        appointment.ends_at = appointment.starts_at + duration
-        try:
-            appointment.full_clean()
-        except ValidationError as exc:
-            messages.error(request, 'Appointment could not be moved: ' + ' '.join(exc.messages))
-            return redirect(self.get_success_url())
-        appointment.save()
+        with transaction.atomic():
+            appointment = get_object_or_404(scope_sessions(Appointment.objects.select_for_update().filter(practice=self.get_practice()), request.user), pk=pk)
+            try:
+                selected_date = date.fromisoformat(request.POST.get('date', ''))
+                selected_time = datetime.strptime(request.POST.get('time', ''), '%H:%M').time()
+            except ValueError:
+                return failure('Choose a valid date and time to move the appointment.')
+            if inline:
+                try:
+                    expected_start = parse_datetime(request.POST.get('expected_starts_at', ''))
+                    expected_end = parse_datetime(request.POST.get('expected_ends_at', ''))
+                except ValueError:
+                    expected_start = expected_end = None
+                if expected_start != appointment.starts_at or expected_end != appointment.ends_at:
+                    return failure('This appointment changed since the calendar opened. Refresh before moving it.', status=409)
+            duration = appointment.ends_at - appointment.starts_at
+            appointment.starts_at = timezone.make_aware(datetime.combine(selected_date, selected_time))
+            appointment.ends_at = appointment.starts_at + duration
+            try:
+                appointment.full_clean()
+            except ValidationError as exc:
+                return failure('Appointment could not be moved: ' + ' '.join(exc.messages))
+            appointment.save()
+            if inline:
+                log_audit_event(request, AuditLog.Action.UPDATE, 'appointments.Appointment', appointment.pk,
+                    practice=appointment.practice, metadata={'calendar_drag': True})
         sync_appointment_to_google(appointment)
+        if inline:
+            return JsonResponse({'ok': True, 'message': 'Appointment moved successfully.',
+                'starts_at': timezone.localtime(appointment.starts_at).isoformat(),
+                'ends_at': timezone.localtime(appointment.ends_at).isoformat(),
+                'sync_failed': appointment.sync_status == Appointment.SyncStatus.FAILED})
         messages.success(request, 'Appointment moved successfully.')
         return redirect(self.get_success_url())
 

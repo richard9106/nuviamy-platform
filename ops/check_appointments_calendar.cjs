@@ -56,3 +56,24 @@ vm.runInNewContext(fs.readFileSync('static/appointments-calendar.js', 'utf8'), {
 assert.equal(timeFields.starts_at.listeners.change, undefined);
 assert.equal(timeFields.ends_at.value, '17:00');
 console.log('Time-only availability fields are independent of session datetime duration.');
+
+(async () => {
+  // Dragging posts directly and handles validation failure without opening a form.
+  const classes = new Set();
+  const card = {dataset:{appointmentTitle:'Demo',appointmentTime:'09:00',appointmentDuration:'80',rescheduleUrl:'/appointments/7/reschedule/',startsAt:'2026-10-09T09:00:00+00:00',endsAt:'2026-10-09T10:20:00+00:00'},classList:{add:v=>classes.add(v),remove:v=>classes.delete(v)}};
+  const monthDay = {dataset:{dropDate:'2026-10-10'},classList:{contains:()=>false,remove(){}}};
+  document.querySelector = selector => selector === '[name="csrfmiddlewaretoken"]' ? {value:'csrf-fixture'} : null;
+  let submitted;
+  context.URLSearchParams = URLSearchParams;
+  context.fetch = async (url, options) => { submitted={url,options}; return {ok:false,status:400,headers:{get:()=> 'application/json'},json:async()=>({ok:false,message:'Time unavailable'})}; };
+  opened = false;
+  listeners.find(item=>item.type==='dragstart').callback({target:{closest:()=>card},dataTransfer:{setData(){}},preventDefault(){}});
+  await listeners.find(item=>item.type==='drop').callback({target:{closest:()=>monthDay},preventDefault(){}});
+  assert.equal(submitted.url, '/appointments/7/reschedule/');
+  assert.equal(submitted.options.method, 'POST');
+  assert.equal(submitted.options.body.get('date'), '2026-10-10');
+  assert.equal(submitted.options.body.get('expected_starts_at'), card.dataset.startsAt);
+  assert.equal(opened, false, 'Direct drop must not open the reschedule form');
+  assert.equal(classes.size, 0, 'Failed move restores the original card appearance');
+  console.log('Direct drag submits with CSRF/stale checks, opens no form, and resets after validation failure.');
+})().catch(error => {console.error(error); process.exitCode=1;});

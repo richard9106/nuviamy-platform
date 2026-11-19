@@ -37,7 +37,8 @@
       });
     }
 
-    document.querySelector('[data-availability-review]')?.addEventListener('click', (event) => {
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('[data-availability-review]')) return;
       event.preventDefault();
       const panel = document.getElementById('availability-changes');
       panel.open = true;
@@ -45,52 +46,127 @@
       panel.scrollIntoView({ block: 'start' });
     });
 
-    document.addEventListener('dragstart', (event) => {
+    let movePending = false;
+    let dragPreview = null;
+    const moveNotice = (message, needsRefresh = false) => {
+      const feedback = document.querySelector('[data-calendar-move-feedback]');
+      if (!feedback) return;
+      feedback.hidden = false;
+      feedback.querySelector('[data-calendar-move-message]').textContent = message;
+      feedback.querySelector('[data-calendar-refresh]').hidden = !needsRefresh;
+    };
+    const clearDragPreview = () => {
+      dragPreview?.remove(); dragPreview = null;
+      document.querySelectorAll('.drop-ready').forEach(column => column.classList.remove('drop-ready'));
+    };
+    const showDragPreview = (event, target) => {
+      if (!draggedAppointment || !target.classList.contains('gcal-day-column')) return;
+      const time = timeFromPointer({clientY: event.clientY - draggedAppointment.pointerOffset}, target);
+      if (!dragPreview) {
+        dragPreview = document.createElement('div');
+        dragPreview.className = 'gcal-event calendar-drag-preview';
+        dragPreview.setAttribute('aria-hidden', 'true');
+        const title = document.createElement('strong'); title.textContent = draggedAppointment.title;
+        dragPreview.append(title, document.createElement('span'));
+      }
+      target.append(dragPreview);
+      const top = (minutesFor(time) - calendarGridConfig.startHour * 60) * calendarGridConfig.hourHeight / 60;
+      dragPreview.style.top = `${top}px`;
+      dragPreview.style.height = `${Math.max(20, draggedAppointment.duration * calendarGridConfig.hourHeight / 60)}px`;
+      dragPreview.querySelector('span').textContent = `${time} · ${draggedAppointment.duration} min`;
+      dragPreview.classList.toggle('drop-unavailable', !isAvailable(target, time, draggedAppointment.duration));
+    };
+    document.addEventListener('dragstart', event => {
       const item = event.target.closest('[data-draggable-appointment]');
       if (!item) return;
+      if (movePending) { event.preventDefault(); return; }
       draggedAppointment = {
         title: item.dataset.appointmentTitle,
         time: item.dataset.appointmentTime,
         duration: Number(item.dataset.appointmentDuration) || calendarGridConfig.defaultDurationMinutes,
         url: item.dataset.rescheduleUrl,
+        pointerOffset: item.getBoundingClientRect ? Math.max(0, event.clientY - item.getBoundingClientRect().top) : 0,
+        expectedStart: item.dataset.startsAt,
+        expectedEnd: item.dataset.endsAt,
         trigger: item,
       };
+      item.classList.add('calendar-drag-source');
       event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', draggedAppointment.title || 'Appointment');
+      event.dataTransfer.setData('text/plain', 'NuviaMy appointment');
     });
-
-    document.addEventListener('dragover', (event) => {
+    document.addEventListener('dragover', event => {
       const target = event.target.closest('[data-drop-date]');
       if (!target || !draggedAppointment) return;
-      event.preventDefault();
+      event.preventDefault(); event.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.drop-ready').forEach(column => { if (column !== target) column.classList.remove('drop-ready'); });
       target.classList.add('drop-ready');
+      showDragPreview(event, target);
     });
-
-    document.addEventListener('dragleave', (event) => {
+    document.addEventListener('dragleave', event => {
       const target = event.target.closest('[data-drop-date]');
-      if (target) target.classList.remove('drop-ready');
+      if (target && !target.contains(event.relatedTarget)) target.classList.remove('drop-ready');
     });
-
-    document.addEventListener('drop', (event) => {
+    document.addEventListener('dragend', () => {
+      draggedAppointment?.trigger.classList.remove('calendar-drag-source');
+      draggedAppointment = null;
+      if (!movePending) clearDragPreview();
+    });
+    document.addEventListener('drop', async event => {
       const target = event.target.closest('[data-drop-date]');
       if (!target || !draggedAppointment) return;
       event.preventDefault();
-      target.classList.remove('drop-ready');
-      const dialog = document.getElementById('reschedule-modal');
-      const form = dialog?.querySelector('[data-reschedule-form]');
-      if (!dialog || !form) return;
-      const newTime = target.classList.contains('gcal-day-column') ? timeFromPointer(event, target) : draggedAppointment.time || '09:00';
-      const feedback = dialog.querySelector('[data-scheduling-feedback]');
-      if (feedback) feedback.hidden = !target.classList.contains('gcal-day-column') || isAvailable(target, newTime, draggedAppointment.duration);
-      form.action = draggedAppointment.url;
-      form.elements.date.value = target.dataset.dropDate;
-      form.elements.time.value = newTime;
-      form.elements.next.value = `${window.location.pathname}${window.location.search}`;
-      dialog.querySelector('[data-reschedule-title]').textContent = `Move ${draggedAppointment.title || 'appointment'}`;
-      dialog._returnFocus = draggedAppointment.trigger;
-      dialog.showModal();
-      form.elements.date.focus();
-      draggedAppointment = null;
+      const moving = draggedAppointment; draggedAppointment = null;
+      const time = target.classList.contains('gcal-day-column') ? timeFromPointer({clientY: event.clientY - moving.pointerOffset}, target) : moving.time || '09:00';
+      if (target.classList.contains('gcal-day-column') && !isAvailable(target, time, moving.duration)) {
+        moving.trigger.classList.remove('calendar-drag-source'); clearDragPreview();
+        moveNotice('This time is outside practice availability. The appointment has not moved.'); return;
+      }
+      if (target.dataset.dropDate === moving.expectedStart?.slice(0, 10) && time === moving.time) {
+        moving.trigger.classList.remove('calendar-drag-source'); clearDragPreview(); return;
+      }
+      movePending = true;
+      document.querySelector('.calendar-panel')?.setAttribute('aria-busy', 'true');
+      moveNotice('Saving appointment…');
+      let saved = false;
+      try {
+        const response = await fetch(moving.url, {
+          method: 'POST', credentials: 'same-origin', redirect: 'error',
+          headers: {'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'},
+          body: new URLSearchParams({date: target.dataset.dropDate, time, expected_starts_at: moving.expectedStart, expected_ends_at: moving.expectedEnd}),
+        });
+        if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('unconfirmed');
+        const result = await response.json();
+        if (!response.ok || !result.ok) { moveNotice(result.message || 'The appointment could not be moved.', response.status === 409); return; }
+        saved = true;
+        const editor = document.getElementById(moving.trigger.dataset.modalTarget);
+        if (editor) {
+          editor.querySelector('[name="starts_at"]').value = result.starts_at.slice(0, 16);
+          editor.querySelector('[name="ends_at"]').value = result.ends_at.slice(0, 16);
+          editor.querySelector('[data-reschedule-date]')?.setAttribute('data-reschedule-date', result.starts_at.slice(0, 10));
+          editor.querySelector('[data-reschedule-time]')?.setAttribute('data-reschedule-time', result.starts_at.slice(11, 16));
+        }
+        const page = await fetch(window.location.href, {credentials: 'same-origin', cache: 'no-store', redirect: 'error'});
+        if (!page.ok) throw new Error('refresh');
+        const updated = new DOMParser().parseFromString(await page.text(), 'text/html');
+        const panel = updated.querySelector('.calendar-panel');
+        if (!panel) throw new Error('refresh');
+        document.querySelector('.calendar-panel').replaceWith(panel);
+        const updatedEditor = editor && updated.getElementById(editor.id);
+        if (updatedEditor) ['.session-records .panel', '.sync-panel'].forEach(selector => {
+          const fresh = updatedEditor.querySelector(selector), old = editor.querySelector(selector);
+          if (fresh && old) old.replaceWith(fresh);
+        });
+        document.dispatchEvent(new Event('calendar:updated'));
+        moveNotice(result.sync_failed ? 'Appointment moved. Google Calendar sync needs attention.' : 'Appointment moved successfully.');
+      } catch (_) {
+        moveNotice(saved ? 'Appointment saved. Refresh the calendar to see its latest position.' : 'Could not confirm the move. Refresh the calendar before trying again.', true);
+      } finally {
+        movePending = false; moving.trigger.classList.remove('calendar-drag-source'); clearDragPreview();
+        document.querySelector('.calendar-panel')?.removeAttribute('aria-busy');
+      }
+    });
+    document.addEventListener('click', event => {
+      if (event.target.closest('[data-calendar-refresh]')) window.location.reload();
     });
 
     document.addEventListener('click', (event) => {

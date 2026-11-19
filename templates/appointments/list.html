@@ -55,6 +55,7 @@
       {% if calendar_view == 'list' %}
       {% include 'appointments/session_list.html' %}
       {% else %}
+      <div class="calendar-move-feedback" data-calendar-move-feedback role="status" hidden><span data-calendar-move-message></span><button type="button" class="btn btn-soft" data-calendar-refresh hidden>Refresh calendar</button></div>
       <section class="calendar-layout">
         <article class="panel calendar-panel">
           <div class="panel-head calendar-head">

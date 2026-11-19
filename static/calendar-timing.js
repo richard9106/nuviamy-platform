@@ -1,10 +1,11 @@
 (() => {
-  const items = [...document.querySelectorAll('[data-calendar-timing]')];
+  const items = () => [...document.querySelectorAll('[data-calendar-timing]')];
   const labels = { past: 'Past session', soon: 'In progress or starts within 24 hours', future: 'More than 24 hours away', cancelled: 'Cancelled', no_show: 'No show' };
-  const originals = new WeakMap(items.map(item => [item, { title: item.getAttribute('title') || '', aria: item.getAttribute('aria-label') || '' }]));
+  const originals = new WeakMap();
   const refresh = () => {
     const now = Date.now();
-    items.forEach(item => {
+    items().forEach(item => {
+      if (!originals.has(item)) originals.set(item, {title: item.getAttribute('title') || '', aria: item.getAttribute('aria-label') || ''});
       const start = Date.parse(item.dataset.startsAt);
       const end = Date.parse(item.dataset.endsAt);
       if (!Number.isFinite(start) || !Number.isFinite(end)) return;
@@ -17,7 +18,8 @@
     });
   };
   refresh();
-  if (items.length) {
+  document.addEventListener('calendar:updated', refresh);
+  if (items().length) {
     window.setInterval(refresh, 30000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   }

@@ -108,3 +108,9 @@ body:has(.appointment-drawer[open]) { overflow: hidden; }
 }
 
 .calendar-workspace .nonclinical-calendar-event { border-left-style: dashed; }
+
+.calendar-drag-source { opacity: .25; }
+.calendar-workspace .calendar-drag-preview { pointer-events: none; z-index: 5; background: #e7e0fb; color: #49328f; border: 2px dashed #7052d9; border-radius: 6px; box-shadow: 0 5px 16px #49328f24; }
+.calendar-workspace .calendar-drag-preview.drop-unavailable { background: #fbe8ed; color: #85344c; border-color: #bb5d76; }
+.calendar-move-feedback { display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 12px; background: var(--brand-50); color: var(--brand-700); border-radius: 8px; font-size: 13px; }
+.calendar-move-feedback[hidden], .calendar-move-feedback [hidden] { display: none; }

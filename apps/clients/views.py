@@ -115,6 +115,8 @@ class ClientDetailView(LoginRequiredMixin, PracticePermissionMixin, PracticeCont
             context['appointment_therapists'] = client.practice.therapists.select_related('user')
             if not manages_sessions(self.request.user):
                 context['appointment_therapists'] = context['appointment_therapists'].filter(user=self.request.user)
+            from apps.appointments.forms import RecurrenceForm
+            context['recurrence_form'] = RecurrenceForm(auto_id='appointment-create-%s')
             context['session_kind_choices'] = Appointment.SessionKind.choices
             context['calendar_anchor_date'] = timezone.localdate()
             context['google_calendar_connected'] = ExternalIntegration.objects.filter(practice=client.practice,

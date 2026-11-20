@@ -10,6 +10,7 @@
     if (!saved) return;
     saved.client.replaceChildren(...saved.options);
     saved.values.forEach(([el, value, checked]) => { el.value = value; if (typeof checked === 'boolean') el.checked = checked; });
+    dialog.dispatchEvent(new Event('appointment:restored'));
   };
   drawers.forEach(dialog => {
     const form = dialog.querySelector('form');

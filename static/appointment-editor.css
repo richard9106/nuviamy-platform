@@ -121,3 +121,18 @@ body:has(.appointment-drawer[open]) { overflow: hidden; }
 .session-record-summary > div { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
 .session-summary-label { min-width: 100px; color: var(--slate-500); font-size: 11px; font-weight: 700; }
 .session-record-summary .badge { margin: 2px; font-size: 10px; }
+.appointment-recurrence { display: grid; gap: 12px; }
+.appointment-recurrence [data-recurrence-settings] { display: grid; gap: 14px; }
+.appointment-recurrence [hidden] { display: none !important; }
+.recurrence-weekdays { min-width: 0; margin: 0; padding: 0; border: 0; }
+.recurrence-weekdays legend { margin-bottom: 8px; font-size: 12px; font-weight: 800; }
+.recurrence-weekdays > div { display: flex; gap: 5px; flex-wrap: wrap; }
+.recurrence-weekdays label { position: relative; cursor: pointer; }
+.recurrence-weekdays input { position: absolute; opacity: 0; width: 1px !important; height: 1px; }
+.recurrence-weekdays label > span { display: block; padding: 9px 8px; border: 1px solid var(--slate-200); border-radius: 7px; font-size: 11px; font-weight: 700; }
+.recurrence-weekdays input:checked + span { background: var(--brand-50); color: var(--brand-700); border-color: var(--brand-600); }
+.recurrence-weekdays input:focus-visible + span { outline: 2px solid var(--brand-600); outline-offset: 2px; }
+.recurrence-preview { padding: 12px; border: 1px solid var(--slate-200); border-radius: 9px; background: var(--slate-50); font-size: 12px; }
+.recurrence-preview ol { margin: 8px 0 0; padding-left: 20px; line-height: 1.8; }
+.recurrence-preview ol:empty { display: none; }
+@media(max-width:720px){.recurrence-weekdays label > span { padding: 13px 9px; }}

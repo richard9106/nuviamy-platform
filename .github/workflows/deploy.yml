@@ -91,6 +91,8 @@ jobs:
         run: node ops/check_insurance_suggestions.cjs
       - name: Check client session picker
         run: node ops/check_client_session_picker.cjs
+      - name: Check appointment recurrence preview
+        run: node ops/check_appointment_recurrence.cjs
       - name: Check appointment calendar interactions
         run: node ops/check_appointments_calendar.cjs
       - name: Build static asset manifest

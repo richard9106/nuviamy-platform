@@ -69,6 +69,13 @@ See [Initial consultations](docs/initial-consultation.md).
 - Dragging a calendar appointment shows a snapped duration-preserving preview and saves directly without opening a form. The server checks permissions, availability, overlaps and the previously displayed start/end times; stale edits are rejected. The calendar refreshes in place after save, and errors keep the original card with a readable status. The explicit Reschedule dialog remains available for keyboard/touch use.
 - Availability checks, practice permissions, series behavior and Google synchronization remain server-side. This UI does not introduce new cancellation statuses, CPT/service pricing or automatic charges.
 
+### Recurring appointments
+
+- Creation supports selected weekdays every 1–12 weeks, ending after a total number of sessions or on an inclusive date. Plans are finite and capped at 52 sessions. The first date must match a selected weekday.
+- A live preview lists upcoming dates and the last session before saving. The server independently generates and validates the plan. One availability or overlap failure rolls back the whole new series before Google sync.
+- Weekly start times follow the scheduling timezone across daylight-saving changes. Ambiguous or missing clock-change hours are rejected for review; session duration is preserved as elapsed time.
+- Legacy integrations posting only `repeat_weekly_count` keep weekly-by-count behavior. Editing an individual appointment does not silently regenerate its series. Scheduling does not generate invoices or payment charges.
+
 ### Client session workspace
 
 - Client profiles reuse the calendar's appointment card for scheduling and editing. Client and initial-consultation defaults are preserved; saving, cancelling or rescheduling can return to the same authorized client profile and tab.

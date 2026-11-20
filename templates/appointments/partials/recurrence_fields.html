@@ -1,0 +1,12 @@
+<section class="appointment-recurrence" data-recurrence-editor aria-label="Appointment repetition">
+  <div class="field"><label for="{{ recurrence_form.recurrence_rule.id_for_label }}">Repeat</label>{{ recurrence_form.recurrence_rule }}{{ recurrence_form.recurrence_rule.errors }}</div>
+  <div data-recurrence-settings>
+    <div class="field"><label for="{{ recurrence_form.recurrence_interval.id_for_label }}">Every (weeks)</label>{{ recurrence_form.recurrence_interval }}{{ recurrence_form.recurrence_interval.errors }}</div>
+    <fieldset class="recurrence-weekdays"><legend>On these days</legend><div>{% for choice in recurrence_form.recurrence_weekdays %}<label>{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>{% endfor %}</div>{{ recurrence_form.recurrence_weekdays.errors }}</fieldset>
+    <div class="field"><label for="{{ recurrence_form.recurrence_ends.id_for_label }}">Ends</label>{{ recurrence_form.recurrence_ends }}{{ recurrence_form.recurrence_ends.errors }}</div>
+    <div class="field" data-recurrence-count><label for="{{ recurrence_form.repeat_weekly_count.id_for_label }}">Total sessions</label>{{ recurrence_form.repeat_weekly_count }}<small>Includes the first appointment. Maximum 52 sessions.</small>{{ recurrence_form.repeat_weekly_count.errors }}</div>
+    <div class="field" data-recurrence-date><label for="{{ recurrence_form.recurrence_until.id_for_label }}">Last date (inclusive)</label>{{ recurrence_form.recurrence_until }}{{ recurrence_form.recurrence_until.errors }}</div>
+    <div class="recurrence-preview" role="status" aria-live="polite"><strong data-recurrence-preview-title>Choose the schedule to preview your sessions.</strong><ol data-recurrence-preview-dates></ol></div>
+    <small>Every date will be checked against availability and overlapping sessions. If one date fails, none of this new series will be saved. Scheduling does not create invoices or charge the client.</small>
+  </div>
+</section>

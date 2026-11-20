@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/dashboard.css">
+  <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'appointment-editor.css' %}">
 </head>
 <body class="app-page">
   <div class="app-shell">
@@ -92,16 +93,17 @@
           {% endif %}
 
           <div class="field-grid two">
-            {% for field in form %}
+            {% for field in form %}{% if object.pk or field.name not in recurrence_field_names %}
               <div class="field {% if field.name == 'notes' %}full{% endif %}">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
                 {% if field.errors %}{{ field.errors }}{% endif %}
               </div>
-            {% endfor %}
+            {% endif %}{% endfor %}
           </div>
 
+          {% if not object.pk %}{% include 'appointments/partials/recurrence_fields.html' with recurrence_form=form %}{% endif %}
           {% if object.pk %}
             {% if google_calendar_connected or object.external_event_id %}<div class="sync-panel">
               <strong>Google Calendar sync: {{ object.get_sync_status_display }}</strong>
@@ -142,5 +144,6 @@
   <script src="{% static 'appointments-calendar.js' %}" defer></script>
   <script src="{% static 'session-duration.js' %}" defer></script>
 
+<script src="{% static 'appointment-recurrence.js' %}" defer></script>
 </body>
 </html>

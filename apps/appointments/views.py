@@ -1,7 +1,7 @@
 import calendar
 import uuid
 from urllib.parse import urlsplit
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone as datetime_timezone
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -440,6 +440,8 @@ class AppointmentListView(LoginRequiredMixin, PracticePermissionMixin, PracticeC
             context['appointment_therapists'] = context['appointment_therapists'].filter(user=self.request.user)
         from .session_summary import prepare_session_summaries
         prepare_session_summaries(context['appointments'], self.request.user)
+        from .forms import RecurrenceForm
+        context['recurrence_form'] = RecurrenceForm(auto_id='appointment-create-%s')
         context['availability_form'] = PracticeAvailabilityOverrideForm(practice=practice)
         return context
 
@@ -496,24 +498,28 @@ class AppointmentCreateView(CalendarReturnMixin, LoginRequiredMixin, PracticePer
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from .forms import RECURRENCE_FIELDS
+        context['recurrence_field_names'] = RECURRENCE_FIELDS
         context['form_title'] = 'New Appointment'
         context['form_heading'] = 'Schedule a session'
         context['submit_label'] = 'Create appointment'
         return context
 
     def form_valid(self, form):
-        repeat_count = form.cleaned_data.get('repeat_weekly_count') or 1
+        starts = form.planned_starts
+        repeat_count = len(starts)
         series_id = uuid.uuid4() if repeat_count > 1 else None
         first = form.save(commit=False)
         first.series_id = series_id
+        duration = first.ends_at.astimezone(datetime_timezone.utc) - first.starts_at.astimezone(datetime_timezone.utc)
         occurrences = [first]
         fields = ('practice', 'client', 'therapist', 'status', 'session_kind', 'appointment_type',
                   'location', 'meeting_url', 'notes', 'series_id')
-        for index in range(1, repeat_count):
+        for occurrence_start in starts[1:]:
             occurrences.append(Appointment(
                 **{field: getattr(first, field) for field in fields},
-                starts_at=first.starts_at + timedelta(weeks=index),
-                ends_at=first.ends_at + timedelta(weeks=index),
+                starts_at=occurrence_start,
+                ends_at=occurrence_start.astimezone(datetime_timezone.utc) + duration,
             ))
         try:
             with transaction.atomic():

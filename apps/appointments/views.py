@@ -1,7 +1,7 @@
 import calendar
 import uuid
 from urllib.parse import urlsplit
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone as datetime_timezone
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -438,6 +438,10 @@ class AppointmentListView(LoginRequiredMixin, PracticePermissionMixin, PracticeC
         context['appointment_therapists'] = practice.therapists.select_related('user') if practice else []
         if practice and not manages_sessions(self.request.user):
             context['appointment_therapists'] = context['appointment_therapists'].filter(user=self.request.user)
+        from .session_summary import prepare_session_summaries
+        prepare_session_summaries(context['appointments'], self.request.user)
+        from .forms import RecurrenceForm
+        context['recurrence_form'] = RecurrenceForm(auto_id='appointment-create-%s')
         context['availability_form'] = PracticeAvailabilityOverrideForm(practice=practice)
         return context
 
@@ -446,12 +450,8 @@ class CalendarReturnMixin:
     """Keep scheduling actions in the selected calendar, without arbitrary redirects."""
 
     def get_success_url(self):
-        value = self.request.POST.get('next') or self.request.GET.get('next') or ''
-        if value.startswith('/') and not value.startswith('//') and not any(char in value for char in ('\r', '\n', '\\')):
-            parsed = urlsplit(value)
-            if not parsed.netloc and parsed.path == reverse('appointments:list'):
-                return value
-        return reverse('appointments:list')
+        from .navigation import session_origin
+        return session_origin(self.request) or reverse('appointments:list')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -498,24 +498,28 @@ class AppointmentCreateView(CalendarReturnMixin, LoginRequiredMixin, PracticePer
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from .forms import RECURRENCE_FIELDS
+        context['recurrence_field_names'] = RECURRENCE_FIELDS
         context['form_title'] = 'New Appointment'
         context['form_heading'] = 'Schedule a session'
         context['submit_label'] = 'Create appointment'
         return context
 
     def form_valid(self, form):
-        repeat_count = form.cleaned_data.get('repeat_weekly_count') or 1
+        starts = form.planned_starts
+        repeat_count = len(starts)
         series_id = uuid.uuid4() if repeat_count > 1 else None
         first = form.save(commit=False)
         first.series_id = series_id
+        duration = first.ends_at.astimezone(datetime_timezone.utc) - first.starts_at.astimezone(datetime_timezone.utc)
         occurrences = [first]
         fields = ('practice', 'client', 'therapist', 'status', 'session_kind', 'appointment_type',
                   'location', 'meeting_url', 'notes', 'series_id')
-        for index in range(1, repeat_count):
+        for occurrence_start in starts[1:]:
             occurrences.append(Appointment(
                 **{field: getattr(first, field) for field in fields},
-                starts_at=first.starts_at + timedelta(weeks=index),
-                ends_at=first.ends_at + timedelta(weeks=index),
+                starts_at=occurrence_start,
+                ends_at=occurrence_start.astimezone(datetime_timezone.utc) + duration,
             ))
         try:
             with transaction.atomic():
@@ -566,6 +570,8 @@ class AppointmentUpdateView(CalendarReturnMixin, LoginRequiredMixin, PracticePer
         context['form_title'] = 'Edit Appointment'
         context['form_heading'] = 'Edit session details'
         context['submit_label'] = 'Save changes'
+        from .session_summary import prepare_session_summaries
+        prepare_session_summaries([self.object], self.request.user)
         context['show_delete_action'] = True
         return context
 

@@ -1,0 +1,23 @@
+{% if workspace_permissions.clinical.create %}<dialog class="modal-dialog" id="session-note-popup" aria-labelledby="session-note-popup-title"><div class="modal-card"><div class="modal-head"><h2 id="session-note-popup-title">Create session note</h2><button class="modal-close" type="button" data-modal-close aria-label="Close">×</button></div><div data-note-popup-content aria-live="polite"></div></div></dialog>{% endif %}
+      <dialog class="modal-dialog" id="reschedule-modal">
+        <div class="modal-card">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow">Move Appointment</p>
+              <h2 data-reschedule-title>Reschedule session</h2>
+            </div>
+            <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <form class="appointment-form" method="post" data-reschedule-form>
+            <p class="form-error" data-scheduling-feedback role="status" hidden>This time is outside practice availability. Choose another time or review availability.</p>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="" data-reschedule-next>
+            <div class="field-grid two">
+              <div class="field"><label for="reschedule-date">New date</label><input id="reschedule-date" name="date" type="date" required></div>
+              <div class="field"><label for="reschedule-time">New start time</label><input id="reschedule-time" name="time" type="time" required></div>
+            </div>
+            <p class="empty-state">Duration, client, therapist, and appointment type stay the same. NuviaMy will still check working hours and overlapping sessions.</p>
+            <div class="form-actions"><button class="btn btn-secondary" type="button" data-modal-close>Cancel</button><button class="btn btn-primary" type="submit">Move appointment</button></div>
+          </form>
+        </div>
+      </dialog>

@@ -1,5 +1,6 @@
 <section class="panel" aria-label="Session documentation and billing">
   <div class="panel-head"><div><h2>Continue this session</h2><p>{{ session.client }} · {{ session.starts_at|date:"M j, Y, g:i A" }}</p></div></div>
+  {% include 'appointments/partials/session_summary.html' %}
   <div class="quick-actions">
     {% if workspace_permissions.clients.view %}<a class="btn btn-secondary" href="{% url 'clients:detail' session.client_id %}">View client</a>{% endif %}
     {% if workspace_permissions.clinical.create %}<a class="btn btn-secondary" href="{% url 'clinical:create' %}?appointment={{ session.pk }}&amp;session_list=1&amp;next={{ calendar_return_url|default:request.get_full_path|urlencode }}" data-note-popup>Create note</a>{% endif %}

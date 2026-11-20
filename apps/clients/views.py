@@ -98,6 +98,30 @@ class ClientDetailView(LoginRequiredMixin, PracticePermissionMixin, PracticeCont
             now = timezone.now()
             context['recent_appointments'] = appointments.filter(starts_at__lt=now).order_by('-starts_at')[:8]
             context['upcoming_appointments'] = appointments.filter(starts_at__gte=now, status=Appointment.Status.SCHEDULED).order_by('starts_at')[:5]
+            from apps.appointments.session_summary import prepare_session_summaries
+            recent = list(context['recent_appointments'])
+            upcoming = list(context['upcoming_appointments'])
+            sessions = {session.pk: session for session in recent + upcoming + ([consultation] if consultation else [])}
+            prepare_session_summaries(sessions.values(), self.request.user)
+            context['recent_appointments'] = [sessions[session.pk] for session in recent]
+            context['upcoming_appointments'] = [sessions[session.pk] for session in upcoming]
+            context['initial_consultation'] = sessions.get(consultation.pk) if consultation else None
+            if has_practice_permission(self.request.user, 'appointments', 'edit'):
+                context['session_editor_appointments'] = list(sessions.values())
+        if has_practice_permission(self.request.user, 'appointments', 'create') or context.get('session_editor_appointments'):
+            from apps.appointments.access import manages_sessions
+            from apps.practices.models import ExternalIntegration
+            context['appointment_clients'] = [client]
+            context['appointment_therapists'] = client.practice.therapists.select_related('user')
+            if not manages_sessions(self.request.user):
+                context['appointment_therapists'] = context['appointment_therapists'].filter(user=self.request.user)
+            from apps.appointments.forms import RecurrenceForm
+            context['recurrence_form'] = RecurrenceForm(auto_id='appointment-create-%s')
+            context['session_kind_choices'] = Appointment.SessionKind.choices
+            context['calendar_anchor_date'] = timezone.localdate()
+            context['google_calendar_connected'] = ExternalIntegration.objects.filter(practice=client.practice,
+                provider=ExternalIntegration.Provider.GOOGLE, status=ExternalIntegration.Status.CONNECTED, calendar_enabled=True).exists()
+
         if permissions['intake']:
             context['portal_access'] = ClientPortalAccess.objects.filter(client=client, practice=client.practice).first()
         if active_tab == 'billing':

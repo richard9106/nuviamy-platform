@@ -1,0 +1,33 @@
+<dialog class="modal-dialog appointment-drawer" id="appointment-create-modal" data-appointment-drawer>
+        <div class="modal-card">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow">New Appointment</p>
+              <h2>Schedule a session</h2>
+            </div>
+            <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+
+          <div class="appointment-editor-tabs calendar-operation-tabs" role="tablist" aria-label="Calendar entry type">
+            <button type="button" role="tab" data-editor-tab="appointment" aria-selected="true">Appointment</button>
+            {% if not appointment_only %}<button type="button" role="tab" data-editor-tab="event" aria-selected="false" tabindex="-1">Event</button>
+            {% if workspace_permissions.appointments.edit %}<button type="button" role="tab" data-editor-tab="out-of-office" aria-selected="false" tabindex="-1">Out of office</button><button type="button" role="tab" data-editor-tab="availability" aria-selected="false" tabindex="-1">Availability</button>{% endif %}
+            {% endif %}
+          </div>
+          <form class="appointment-form appointment-tab-panel" data-editor-panel="appointment" data-progressive-appointment method="post" action="{% url 'appointments:create' %}">
+            <p class="form-error" data-scheduling-feedback role="status" hidden>This time is outside practice availability. Choose another time or review availability.</p>
+            {% if not appointment_clients %}<p class="form-error">Add a client before scheduling a session.</p>{% endif %}{% if not appointment_therapists %}<p class="form-error">Add a therapist to your team before scheduling a session.</p>{% endif %}
+            {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+            {% include 'appointments/partials/editor_fields.html' with editor_id='appointment-create' appointment=None progressive=True %}
+            <div class="form-actions appointment-editor-footer">
+              <button class="btn btn-secondary" type="button" data-modal-close>Close</button>
+              <button class="btn btn-primary" type="submit">Create appointment</button>
+            </div>
+          </form>
+          {% if not appointment_only %}<form class="appointment-form appointment-tab-panel" data-editor-panel="event" data-calendar-operation="event" method="post" action="{% url 'appointments:event_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='event' %}</form>
+          {% if workspace_permissions.appointments.edit %}
+          <form class="appointment-form appointment-tab-panel" data-editor-panel="out-of-office" data-calendar-operation="out-of-office" method="post" action="{% url 'appointments:availability_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='out-of-office' %}</form>
+          <form class="appointment-form appointment-tab-panel" data-editor-panel="availability" data-calendar-operation="availability" method="post" action="{% url 'appointments:availability_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='availability' %}</form>
+          {% endif %}{% endif %}
+        </div>
+      </dialog>

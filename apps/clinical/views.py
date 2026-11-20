@@ -28,14 +28,8 @@ from .models import Diagnosis, SessionNote, TreatmentPlan
 
 
 def session_origin_url(request):
-    value = request.POST.get('next') or request.GET.get('next') or ''
-    try:
-        parsed = urlsplit(value)
-    except ValueError:
-        return None
-    if not parsed.scheme and not parsed.netloc and parsed.path == reverse('appointments:list') and not any(c in value for c in ('\\', '\r', '\n')):
-        return value
-    return None
+    from apps.appointments.navigation import session_origin
+    return session_origin(request)
 
 
 def session_return_url(request):

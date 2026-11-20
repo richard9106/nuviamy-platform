@@ -769,7 +769,8 @@ class TreatmentPlanViewTests(TestCase):
         self.assertTrue(response.context['diagnosis_create_form'].errors)
         self.assertContains(response, 'Keep these notes')
         self.assertContains(response, 'data-diagnosis-errors')
-        self.assertNotContains(response, 'name="client"')
+        diagnosis_dialog = response.content.decode().split('id="diagnosis-create-modal"', 1)[1].split('</dialog>', 1)[0]
+        self.assertNotIn('name="client"', diagnosis_dialog)
         self.assertEqual(Diagnosis.objects.count(), 0)
 
     def test_patient_diagnosis_edit_dialog_keeps_errors_and_preserves_record(self):

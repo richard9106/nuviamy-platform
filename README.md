@@ -69,6 +69,12 @@ See [Initial consultations](docs/initial-consultation.md).
 - Dragging a calendar appointment shows a snapped duration-preserving preview and saves directly without opening a form. The server checks permissions, availability, overlaps and the previously displayed start/end times; stale edits are rejected. The calendar refreshes in place after save, and errors keep the original card with a readable status. The explicit Reschedule dialog remains available for keyboard/touch use.
 - Availability checks, practice permissions, series behavior and Google synchronization remain server-side. This UI does not introduce new cancellation statuses, CPT/service pricing or automatic charges.
 
+### Client session workspace
+
+- Client profiles reuse the calendar's appointment card for scheduling and editing. Client and initial-consultation defaults are preserved; saving, cancelling or rescheduling can return to the same authorized client profile and tab.
+- Shared session summaries show signed/unsigned note counts and draft/sent/overdue/paid/void invoice counts in the profile and session editor. They load only metadata, respect clinical/billing permissions and practice/therapist scope, and use batched queries. They do not sign notes, publish invoices or charge clients.
+- Note creation retains the profile as its return destination while still requiring review and explicit signature. External origins, other routes and foreign-practice client URLs are rejected.
+
 ### Overview
 
 - An Activities icon beside the account menu groups permitted setup actions and owner agreement acceptance into a compact dropdown. Its badge counts pending setup items and clears as they are completed; trial status remains in the toolbar.

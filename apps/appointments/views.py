@@ -438,6 +438,8 @@ class AppointmentListView(LoginRequiredMixin, PracticePermissionMixin, PracticeC
         context['appointment_therapists'] = practice.therapists.select_related('user') if practice else []
         if practice and not manages_sessions(self.request.user):
             context['appointment_therapists'] = context['appointment_therapists'].filter(user=self.request.user)
+        from .session_summary import prepare_session_summaries
+        prepare_session_summaries(context['appointments'], self.request.user)
         context['availability_form'] = PracticeAvailabilityOverrideForm(practice=practice)
         return context
 
@@ -446,12 +448,8 @@ class CalendarReturnMixin:
     """Keep scheduling actions in the selected calendar, without arbitrary redirects."""
 
     def get_success_url(self):
-        value = self.request.POST.get('next') or self.request.GET.get('next') or ''
-        if value.startswith('/') and not value.startswith('//') and not any(char in value for char in ('\r', '\n', '\\')):
-            parsed = urlsplit(value)
-            if not parsed.netloc and parsed.path == reverse('appointments:list'):
-                return value
-        return reverse('appointments:list')
+        from .navigation import session_origin
+        return session_origin(self.request) or reverse('appointments:list')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -566,6 +564,8 @@ class AppointmentUpdateView(CalendarReturnMixin, LoginRequiredMixin, PracticePer
         context['form_title'] = 'Edit Appointment'
         context['form_heading'] = 'Edit session details'
         context['submit_label'] = 'Save changes'
+        from .session_summary import prepare_session_summaries
+        prepare_session_summaries([self.object], self.request.user)
         context['show_delete_action'] = True
         return context
 

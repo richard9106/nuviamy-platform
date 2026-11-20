@@ -253,38 +253,7 @@
         </div>
       </dialog>
 
-      {% endif %}{% if workspace_permissions.appointments.create %}<dialog class="modal-dialog appointment-drawer" id="appointment-create-modal" data-appointment-drawer>
-        <div class="modal-card">
-          <div class="modal-head">
-            <div>
-              <p class="eyebrow">New Appointment</p>
-              <h2>Schedule a session</h2>
-            </div>
-            <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
-          </div>
-
-          <div class="appointment-editor-tabs calendar-operation-tabs" role="tablist" aria-label="Calendar entry type">
-            <button type="button" role="tab" data-editor-tab="appointment" aria-selected="true">Appointment</button>
-            <button type="button" role="tab" data-editor-tab="event" aria-selected="false" tabindex="-1">Event</button>
-            {% if workspace_permissions.appointments.edit %}<button type="button" role="tab" data-editor-tab="out-of-office" aria-selected="false" tabindex="-1">Out of office</button><button type="button" role="tab" data-editor-tab="availability" aria-selected="false" tabindex="-1">Availability</button>{% endif %}
-          </div>
-          <form class="appointment-form appointment-tab-panel" data-editor-panel="appointment" data-progressive-appointment method="post" action="{% url 'appointments:create' %}">
-            <p class="form-error" data-scheduling-feedback role="status" hidden>This time is outside practice availability. Choose another time or review availability.</p>
-            {% if not appointment_clients %}<p class="form-error">Add a client before scheduling a session.</p>{% endif %}{% if not appointment_therapists %}<p class="form-error">Add a therapist to your team before scheduling a session.</p>{% endif %}
-            {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-            {% include 'appointments/partials/editor_fields.html' with editor_id='appointment-create' appointment=None progressive=True %}
-            <div class="form-actions appointment-editor-footer">
-              <button class="btn btn-secondary" type="button" data-modal-close>Close</button>
-              <button class="btn btn-primary" type="submit">Create appointment</button>
-            </div>
-          </form>
-          <form class="appointment-form appointment-tab-panel" data-editor-panel="event" data-calendar-operation="event" method="post" action="{% url 'appointments:event_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='event' %}</form>
-          {% if workspace_permissions.appointments.edit %}
-          <form class="appointment-form appointment-tab-panel" data-editor-panel="out-of-office" data-calendar-operation="out-of-office" method="post" action="{% url 'appointments:availability_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='out-of-office' %}</form>
-          <form class="appointment-form appointment-tab-panel" data-editor-panel="availability" data-calendar-operation="availability" method="post" action="{% url 'appointments:availability_create' %}" hidden>{% include 'appointments/partials/calendar_operation_fields.html' with operation='availability' %}</form>
-          {% endif %}
-        </div>
-      </dialog>
+      {% endif %}{% if workspace_permissions.appointments.create %}{% include 'appointments/partials/create_dialog.html' %}
 
       {% endif %}{% if workspace_permissions.appointments.edit %}<dialog class="modal-dialog appointment-drawer availability-editor" id="availability-modal">
         <div class="modal-card">
@@ -314,64 +283,10 @@
       </dialog>
 
       {% endif %}{% if workspace_permissions.appointments.edit %}{% for appointment in appointments %}
-        <dialog class="modal-dialog appointment-drawer" id="appointment-modal-{{ appointment.pk }}" data-appointment-drawer>
-          <div class="modal-card">
-            <div class="modal-head">
-              <div>
-                <p class="eyebrow">Edit Appointment</p>
-                <h2>{{ appointment.client }}</h2>
-              </div>
-              <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
-            </div>
-
-            <form class="appointment-form" method="post" action="{% url 'appointments:edit' appointment.pk %}">
-              {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-              {% include 'appointments/partials/editor_tabs.html' %}
-              {% with appointment.pk|stringformat:'s' as editor_id %}{% include 'appointments/partials/editor_fields.html' %}{% endwith %}
-              <section class="appointment-tab-panel session-records" data-editor-panel="records" hidden><h3 class="sr-only">Session notes &amp; billing</h3><div class="appointment-editor-section-body">{% include 'appointments/partials/session_workflow.html' with session=appointment %}{% include 'telehealth/link.html' %}</div></section>
-              <section class="appointment-tab-panel appointment-more-actions" data-editor-panel="actions" hidden><h3 class="sr-only">More actions</h3>
-              {% if google_calendar_connected or appointment.external_event_id %}<div class="sync-panel">
-                <strong>Google Calendar sync: {{ appointment.get_sync_status_display }}</strong>
-                {% if appointment.external_event_url %}<a class="inline-link" href="{{ appointment.external_event_url }}" target="_blank" rel="noopener">Open Google event</a>{% endif %}
-                {% if appointment.sync_error %}<p class="form-error">Google Calendar could not sync this appointment. Try again or reconnect Google.</p>{% endif %}
-              </div>{% endif %}
-              <div class="appointment-editor-section-body">
-                {% if appointment.status == 'scheduled' %}<button class="btn btn-secondary" type="button" data-reschedule-url="{% url 'appointments:reschedule' appointment.pk %}" data-reschedule-date="{{ appointment.starts_at|date:'Y-m-d' }}" data-reschedule-time="{{ appointment.starts_at|date:'H:i' }}" data-reschedule-title="{{ appointment.client }}" data-reschedule-duration="{{ appointment.duration_minutes }}">Reschedule</button><button class="btn btn-danger" type="submit" formnovalidate formaction="{% url 'appointments:cancel' appointment.pk %}" data-confirm-message="Cancel this appointment? Its record, notes, and invoices will be kept.">Cancel appointment</button>{% endif %}
-                {% if google_calendar_connected %}<button class="btn btn-soft" type="submit" formaction="{% url 'appointments:google_sync' appointment.pk %}">Sync to Google</button>{% endif %}
-                {% if workspace_permissions.appointments.delete %}<button class="btn btn-danger" type="submit" formnovalidate formaction="{% url 'appointments:delete' appointment.pk %}" data-confirm-message="Delete this appointment? Its calendar record will be removed.">Delete appointment</button>{% endif %}
-              </div></section>
-              <div class="form-actions appointment-editor-footer">
-                <button class="btn btn-secondary" type="button" data-modal-close>Close</button>
-                <button class="btn btn-primary" type="submit">Save changes</button>
-              </div>
-            </form>
-          </div>
-        </dialog>
+        {% include 'appointments/partials/editor_dialog.html' %}
       {% endfor %}
 
-      {% if workspace_permissions.clinical.create %}<dialog class="modal-dialog" id="session-note-popup" aria-labelledby="session-note-popup-title"><div class="modal-card"><div class="modal-head"><h2 id="session-note-popup-title">Create session note</h2><button class="modal-close" type="button" data-modal-close aria-label="Close">×</button></div><div data-note-popup-content aria-live="polite"></div></div></dialog>{% endif %}
-      <dialog class="modal-dialog" id="reschedule-modal">
-        <div class="modal-card">
-          <div class="modal-head">
-            <div>
-              <p class="eyebrow">Move Appointment</p>
-              <h2 data-reschedule-title>Reschedule session</h2>
-            </div>
-            <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
-          </div>
-          <form class="appointment-form" method="post" data-reschedule-form>
-            <p class="form-error" data-scheduling-feedback role="status" hidden>This time is outside practice availability. Choose another time or review availability.</p>
-            {% csrf_token %}
-            <input type="hidden" name="next" value="" data-reschedule-next>
-            <div class="field-grid two">
-              <div class="field"><label for="reschedule-date">New date</label><input id="reschedule-date" name="date" type="date" required></div>
-              <div class="field"><label for="reschedule-time">New start time</label><input id="reschedule-time" name="time" type="time" required></div>
-            </div>
-            <p class="empty-state">Duration, client, therapist, and appointment type stay the same. NuviaMy will still check working hours and overlapping sessions.</p>
-            <div class="form-actions"><button class="btn btn-secondary" type="button" data-modal-close>Cancel</button><button class="btn btn-primary" type="submit">Move appointment</button></div>
-          </form>
-        </div>
-      </dialog>
+      {% include 'appointments/partials/session_auxiliary_dialogs.html' %}
       {% endif %}
     </main>
   </div>

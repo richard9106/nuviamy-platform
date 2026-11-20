@@ -194,6 +194,9 @@
       event.preventDefault();
       const feedback = dialog.querySelector('[data-scheduling-feedback]');
       if (feedback) feedback.hidden = true;
+      if (dialog.querySelector('[name="session_kind"]') && trigger.dataset.appointmentDate) {
+        dialog.querySelector('[name="session_kind"]').value = trigger.dataset.sessionKind || 'standard';
+      }
       if (trigger.dataset.appointmentDate) {
         const start = dialog.querySelector('[name="starts_at"]');
         const end = dialog.querySelector('[name="ends_at"]');

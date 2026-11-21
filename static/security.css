@@ -8,10 +8,72 @@
 .recovery-codes code { overflow-wrap: anywhere; font-size: 14px; }
 .security-card a, .security-card input, .security-card button { outline-offset: 4px; }
 
+.security-flow-card { display: grid; gap: 24px; width: min(480px, 100%); padding: 36px; }
+.security-flow-card h2 { margin: 0 0 10px; font-size: 29px; line-height: 1.2; }
+.security-flow-card .security-flow-form { margin: 0; gap: 24px; }
+.security-flow-field { display: grid; gap: 10px; min-width: 0; }
+.security-flow-field label { font-size: 13px; }
+.security-flow-card .errorlist { margin: 0; font-size: 13px; line-height: 1.5; }
+.security-flow-card .security-flow-form > button { margin: 0; }
+.security-flow-card .verification-help { margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--slate-50); font-size: 13px; line-height: 1.6; color: var(--slate-600); }
+.security-flow-hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--slate-500); }
+.security-setup-instructions { padding: 18px; border: 1px solid var(--slate-200); border-radius: 14px; min-width: 0; }
+.security-setup-instructions .security-qr { margin: 0 auto 18px; }
+.security-setup-instructions details { margin: 0 0 14px; font-size: 13px; line-height: 1.6; }
+.security-flow-card .login-form .password-toggle { margin: 0; padding: 0; min-height: 44px; background: transparent; color: var(--slate-600); }
+.security-flow-card .login-form .password-toggle:hover { background: var(--brand-50); color: var(--brand-700); }
+.login-page:has(.security-flow-card) .login-brand-panel .brand { display: flex; width: fit-content; }
+.login-page:has(.security-flow-card) .login-brand-panel .eyebrow { display: table; margin: 18px 0; }
+@media (max-width: 640px) {
+  .security-flow-card { gap: 22px; padding: 24px; }
+  .security-flow-card h2 { font-size: 27px; }
+  .login-page:has(.security-flow-card) .login-brand-panel .brand { margin-inline: auto; }
+  .login-page:has(.security-flow-card) .login-brand-panel .eyebrow,
+  .login-page:has(.security-flow-card) .login-brand-panel > p,
+  .login-page:has(.security-flow-card) .login-brand-panel > h1 { display: none; }
+}
+
 .email-challenge-card { max-width: 440px; }
 .email-challenge-card input[name="code"] { font-size: 24px; letter-spacing: .2em; }
 .email-challenge-card button { min-height: 44px; }
 @media (max-width: 640px) {
   .email-challenge-card { padding: 20px; }
   .email-challenge-card .login-form button { width: 100%; }
+}
+
+/* Keep the verification step focused on the code and its primary action. */
+.email-challenge-card { display: grid; gap: 24px; width: min(440px, 100%); padding: 36px; }
+.verification-heading .verification-icon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin-bottom: 20px; border-radius: 14px; color: var(--brand-700); background: var(--brand-50); }
+.email-challenge-card h2 { margin: 0 0 10px; font-size: 29px; line-height: 1.2; }
+.verification-heading p { margin: 0; color: var(--slate-500); line-height: 1.65; font-size: 14px; }
+.verification-heading strong { color: var(--slate-800); overflow-wrap: anywhere; }
+.email-challenge-card .verification-form { gap: 22px; margin: 0; }
+.verification-code-field { display: grid; gap: 10px; }
+.verification-code-field label { font-size: 13px; }
+.email-challenge-card input[name="code"] { min-height: 58px; text-align: center; font-size: 28px; letter-spacing: .3em; font-variant-numeric: tabular-nums; }
+.email-challenge-card .verification-form > button { margin: 0; }
+.verification-expiry { margin: 0; color: var(--slate-500); font-size: 12px; }
+.verification-resend { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; padding-top: 20px; border-top: 1px solid var(--slate-200); font-size: 13px; color: var(--slate-600); }
+.verification-resend form { margin: 0; }
+.verification-text-button { min-height: 44px; border: 0; padding: 6px 0; background: none; color: var(--brand-700); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.verification-text-button:hover { text-decoration: underline; text-underline-offset: 3px; }
+.email-challenge-card .verification-help { margin: 0; padding: 12px 14px; background: var(--slate-50); border-radius: 10px; font-size: 13px; line-height: 1.6; color: var(--slate-600); }
+.verification-help summary { font-weight: 700; }
+.verification-help p { margin: 10px 0 0; }
+.verification-switch { margin: -4px 0 -8px; text-align: center; }
+.verification-switch .verification-text-button { color: var(--slate-500); font-weight: 600; }
+.verification-notice { margin: 0; padding: 12px; border-radius: 10px; background: var(--brand-50); color: var(--brand-700); font-size: 13px; line-height: 1.5; }
+.email-challenge-card .errorlist { margin: 0; font-size: 13px; line-height: 1.5; }
+@media (max-width: 640px) {
+  .email-challenge-card { gap: 22px; padding: 24px; }
+  .email-challenge-card h2 { font-size: 27px; }
+  .verification-heading .verification-icon { margin-bottom: 16px; }
+}
+.login-page:has(.email-challenge-card) .login-brand-panel .brand { display: flex; width: fit-content; }
+.login-page:has(.email-challenge-card) .login-brand-panel .eyebrow { display: table; margin: 18px 0; }
+@media (max-width: 640px) {
+  .login-page:has(.email-challenge-card) .login-brand-panel .brand { margin-inline: auto; }
+  .login-page:has(.email-challenge-card) .login-brand-panel .eyebrow,
+  .login-page:has(.email-challenge-card) .login-brand-panel > p,
+  .login-page:has(.email-challenge-card) .login-brand-panel > h1 { display: none; }
 }

@@ -1,5 +1,10 @@
 {% extends 'accounts/security_base.html' %}
 {% block title %}Confirm your identity{% endblock %}
-{% block content %}<h2>Confirm your identity</h2><p>Confirm your credentials to continue with this sensitive action. Then submit the action again.</p>
-<form method="post" class="login-form">{% csrf_token %}{{ form.as_p }}<button type="submit">Confirm and continue</button></form>
+{% block workspace_notice %}{% endblock %}
+{% block card_class %}security-flow-card{% endblock %}
+{% block content %}
+{% include 'partials/password_tools_assets.html' %}
+<header class="verification-heading"><h2>Confirm your identity</h2><p>{% if form.code %}Enter your password and an authenticator or recovery code.{% else %}Enter your password to continue.{% endif %}</p></header>
+<form method="post" class="login-form security-flow-form">{% csrf_token %}{% include 'accounts/partials/security_fields.html' %}<button type="submit">Confirm and continue</button></form>
+<p class="security-flow-hint">After confirming, submit your original action again.</p>
 {% endblock %}

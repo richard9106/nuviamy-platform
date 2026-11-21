@@ -1,17 +1,34 @@
 {% extends 'accounts/security_base.html' %}
 {% block brand_logout %}{% endblock %}
+{% block workspace_notice %}{% endblock %}
+{% block brand_heading %}Welcome back.{% endblock %}
+{% block brand_copy %}One quick step to securely sign in.{% endblock %}
 {% block card_class %}email-challenge-card{% endblock %}
 {% block title %}Check your email{% endblock %}
 {% block content %}
-<h2>Check your email</h2>
-<p>Enter the 6-digit code sent to <strong>{{ masked_email }}</strong>.</p>
-<p>The code expires in 10 minutes. Do not share it with anyone.</p>
-{% if notice %}<p role="status">{{ notice }}</p>{% endif %}
-<form method="post" class="login-form">{% csrf_token %}
-{{ form.as_p }}<button type="submit">Verify and continue</button>
+<header class="verification-heading">
+  <span class="verification-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg></span>
+  <h2>Check your email</h2>
+  <p>Enter the code sent to<br><strong>{{ masked_email }}</strong></p>
+</header>
+{% if notice and notice != 'A code was sent. Use the most recent code.' %}<p class="verification-notice" role="status">{{ notice }}</p>{% endif %}
+<form method="post" class="login-form verification-form">{% csrf_token %}
+  {% if form.non_field_errors %}<div role="alert">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="verification-code-field">
+    <label for="{{ form.code.id_for_label }}">Verification code</label>
+    {{ form.code }}
+    {% if form.code.errors %}<div role="alert">{{ form.code.errors }}</div>{% endif %}
+    <p class="verification-expiry">Valid for 10 minutes.</p>
+  </div>
+  <button type="submit">Verify and continue</button>
 </form>
-<p>Didn't receive it? Check your spam folder or request another code.</p>
-<form method="post">{% csrf_token %}<input type="hidden" name="action" value="resend"><button type="submit" class="btn btn-secondary">Resend code</button></form>
-<p>You can request another code after 60 seconds. Sending a new code replaces the previous one.</p>
-<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="btn btn-secondary">Use a different account</button></form>
+<div class="verification-resend">
+  <span>Didn't receive a code?</span>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="resend"><button type="submit" class="verification-text-button">Resend code</button></form>
+</div>
+<details class="verification-help">
+  <summary>Having trouble?</summary>
+  <p>Check your spam folder. You can request a new code every 60 seconds. Only the latest code works. Keep it private.</p>
+</details>
+<form method="post" action="{% url 'logout' %}" class="verification-switch">{% csrf_token %}<button type="submit" class="verification-text-button">Use a different account</button></form>
 {% endblock %}

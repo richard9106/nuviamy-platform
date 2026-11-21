@@ -1,6 +1,8 @@
 {% extends 'accounts/security_base.html' %}
 {% block title %}Verify your sign-in{% endblock %}
-{% block content %}<h2>Verify your sign-in</h2><p>Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
-<form method="post" class="login-form">{% csrf_token %}{{ form.as_p }}<button type="submit">Verify and continue</button></form>
-<p>Codes can only be used once. After five failed attempts, wait 15 minutes before trying again.</p>
+{% block workspace_notice %}{% endblock %}
+{% block card_class %}security-flow-card{% endblock %}
+{% block content %}<header class="verification-heading"><h2>Verify your sign-in</h2><p>Enter a code from your authenticator app.</p></header>
+<form method="post" class="login-form security-flow-form">{% csrf_token %}{% include 'accounts/partials/security_fields.html' %}<button type="submit">Verify and continue</button></form>
+<details class="verification-help"><summary>Need help with your code?</summary><p>Use the current 6-digit code, or enter one of your saved recovery codes in the same field. Codes can only be used once. After five failed attempts, wait 15 minutes before trying again.</p></details>
 {% endblock %}

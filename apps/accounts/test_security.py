@@ -210,6 +210,17 @@ class AccountSecurityTests(TestCase):
         response = self.client.post(url, {'password': self.password, 'code': self.codes[0]})
         self.assertRedirects(response, '/accounts/export/', fetch_redirect_response=False)
 
+    @override_settings(MFA_REQUIRED=False, MFA_PRIVILEGED_REQUIRED=False)
+    def test_password_only_confirmation_has_no_authenticator_prompt(self):
+        response = self.client.get(reverse('security_reauthenticate'))
+        self.assertContains(response, 'Enter your password to continue.')
+        self.assertContains(response, 'data-password-toggle')
+        self.assertNotContains(response, 'name="code"')
+        self.assertNotContains(response, 'Enter your password and an authenticator')
+        response = self.client.post(reverse('security_reauthenticate'), {'password': 'wrong'})
+        self.assertContains(response, 'role="alert"')
+        self.assertContains(response, 'Credentials are invalid')
+
     def test_revocation_preserves_current_session_rejects_other_session(self):
         self.enrolled()
         other = Client()

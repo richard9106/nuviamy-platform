@@ -134,3 +134,19 @@ class EmailSecurityTests(TestCase):
         self.user.save(update_fields=['email'])
         self.assertContains(self.client.get(self.url), 'could not send')
         self.assertFalse(mail.outbox)
+
+    def test_verification_stays_focused_for_expired_practice_and_keeps_errors(self):
+        from apps.practices.models import Practice
+        from .models import UserProfile
+        from apps.billing.access import subscription_access
+        practice = Practice.objects.create(name='Expired verification demo', subscription_required=True,
+            free_trial_ends_at=timezone.now()-timedelta(days=1))
+        UserProfile.objects.create(user=self.user, practice=practice, role=UserProfile.Role.OWNER)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'autocomplete="one-time-code"')
+        self.assertContains(response, '<summary>Having trouble?</summary>', html=True)
+        self.assertNotContains(response, 'Your practice is in read-only mode')
+        self.assertNotContains(response, 'A code was sent. Use the most recent code.')
+        wrong = '999999' if self.code() != '999999' else '000000'
+        self.assertContains(self.client.post(self.url, {'code': wrong}), 'incorrect or expired')
+        self.assertEqual(subscription_access(practice)['mode'], 'readonly')

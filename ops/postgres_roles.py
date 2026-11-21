@@ -9,12 +9,12 @@ from dotenv import dotenv_values
 
 
 CRUD = 'SELECT, INSERT, UPDATE, DELETE'
+PORTAL_SIGNATURE_GUARDS = {'portal_signature_reject_mutation', 'portal_signature_reject_truncate',
+                          'portal_form_protect_signed', 'portal_form_reject_truncate'}
 GUARDS = {'audit_capture_actor', 'audit_reject_mutation', 'audit_reject_truncate',
           'clinical_protect_finalized', 'clinical_reject_truncate',
           'clinical_protect_signature', 'clinical_signature_reject_truncate',
-          'clinical_protect_addendum', 'clinical_addendum_reject_truncate',
-          'portal_signature_reject_mutation','portal_signature_reject_truncate',
-          'portal_form_protect_signed','portal_form_reject_truncate'}
+          'clinical_protect_addendum', 'clinical_addendum_reject_truncate'} | PORTAL_SIGNATURE_GUARDS
 
 
 CONTRACT_TABLES = ('accounts_clinicalcontractrequest', 'accounts_clinicalcontractbundle',

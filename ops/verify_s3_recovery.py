@@ -52,11 +52,13 @@ from apps.dashboard.fields import SupportEncryptedTextField
 from django.core.management import call_command
 from django.db.migrations.executor import MigrationExecutor
 from apps.clinical.models import SessionNote
-from ops.postgres_roles import GUARDS, verify_contract_guards
+from ops.postgres_roles import GUARDS, PORTAL_SIGNATURE_GUARDS, verify_contract_guards
 with connection.cursor() as cursor:
+    cursor.execute("SELECT 1 FROM django_migrations WHERE app='portal' AND name='0015_protect_signed_client_forms'")
+    baseline_guards = GUARDS if cursor.fetchone() else GUARDS - PORTAL_SIGNATURE_GUARDS
     cursor.execute("SELECT tgname, tgenabled FROM pg_trigger WHERE tgname = ANY(%s)", [list(GUARDS)])
     guards = dict(cursor.fetchall())
-    assert set(guards) == GUARDS and all(v == 'O' for v in guards.values()), 'Guard validation failed'
+    assert baseline_guards <= set(guards) and all(v == 'O' for v in guards.values()), 'Baseline guard validation failed'
 # A valid older backup can precede the candidate release's migrations. Upgrade
 # only the disposable copy, after checking its baseline protections.
 executor = MigrationExecutor(connection)
@@ -64,6 +66,10 @@ plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
 applied = [migration.app_label + '.' + migration.name for migration, backward in plan]
 assert not any(backward for _, backward in plan), 'Unexpected reverse migration'
 call_command('migrate', interactive=False, verbosity=0)
+with connection.cursor() as cursor:
+    cursor.execute("SELECT tgname, tgenabled FROM pg_trigger WHERE tgname = ANY(%s)", [list(GUARDS)])
+    guards = dict(cursor.fetchall())
+    assert set(guards) == GUARDS and all(v == 'O' for v in guards.values()), 'Migrated guard validation failed'
 connection.ensure_connection()
 contracts = verify_contract_guards(connection.connection)
 with connection.cursor() as cursor:
@@ -83,6 +89,7 @@ for note in SessionNote.objects.select_related('signature').filter(signature__is
     signed += 1
 assert migrations > 0 and counts, 'Restored schema is empty'
 print(json.dumps(dict(model_counts=counts, enabled_guards=len(guards)+contracts, migrations=migrations,
+                     enabled_guard_names=sorted(guards), contract_guards=contracts,
                      migrations_applied_to_isolated_copy=applied,
                      encrypted_values_read=encrypted, signed_note_digests_verified=signed)))
 '''

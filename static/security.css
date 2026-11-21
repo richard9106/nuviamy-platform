@@ -8,6 +8,31 @@
 .recovery-codes code { overflow-wrap: anywhere; font-size: 14px; }
 .security-card a, .security-card input, .security-card button { outline-offset: 4px; }
 
+.security-flow-card { display: grid; gap: 24px; width: min(480px, 100%); padding: 36px; }
+.security-flow-card h2 { margin: 0 0 10px; font-size: 29px; line-height: 1.2; }
+.security-flow-card .security-flow-form { margin: 0; gap: 24px; }
+.security-flow-field { display: grid; gap: 10px; min-width: 0; }
+.security-flow-field label { font-size: 13px; }
+.security-flow-card .errorlist { margin: 0; font-size: 13px; line-height: 1.5; }
+.security-flow-card .security-flow-form > button { margin: 0; }
+.security-flow-card .verification-help { margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--slate-50); font-size: 13px; line-height: 1.6; color: var(--slate-600); }
+.security-flow-hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--slate-500); }
+.security-setup-instructions { padding: 18px; border: 1px solid var(--slate-200); border-radius: 14px; min-width: 0; }
+.security-setup-instructions .security-qr { margin: 0 auto 18px; }
+.security-setup-instructions details { margin: 0 0 14px; font-size: 13px; line-height: 1.6; }
+.security-flow-card .login-form .password-toggle { margin: 0; padding: 0; min-height: 44px; background: transparent; color: var(--slate-600); }
+.security-flow-card .login-form .password-toggle:hover { background: var(--brand-50); color: var(--brand-700); }
+.login-page:has(.security-flow-card) .login-brand-panel .brand { display: flex; width: fit-content; }
+.login-page:has(.security-flow-card) .login-brand-panel .eyebrow { display: table; margin: 18px 0; }
+@media (max-width: 640px) {
+  .security-flow-card { gap: 22px; padding: 24px; }
+  .security-flow-card h2 { font-size: 27px; }
+  .login-page:has(.security-flow-card) .login-brand-panel .brand { margin-inline: auto; }
+  .login-page:has(.security-flow-card) .login-brand-panel .eyebrow,
+  .login-page:has(.security-flow-card) .login-brand-panel > p,
+  .login-page:has(.security-flow-card) .login-brand-panel > h1 { display: none; }
+}
+
 .email-challenge-card { max-width: 440px; }
 .email-challenge-card input[name="code"] { font-size: 24px; letter-spacing: .2em; }
 .email-challenge-card button { min-height: 44px; }

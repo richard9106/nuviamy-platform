@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <title>Review session note | NuviaMy</title>
   <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+  {% include 'partials/signature_assets.html' %}
 </head>
 <body class="app-page note-review-page">
   <div class="app-shell">
@@ -33,11 +34,12 @@
         <section class="note-review-content"><h2>Clinical note</h2><div class="note-review-text">{% if note.content %}{{ note.content|linebreaks }}{% else %}<p class="sync-meta">No note content yet.</p>{% endif %}</div></section>
         {% if note.treatment_progress %}<section class="note-review-content"><h2>Treatment progress</h2><div class="note-review-text">{{ note.treatment_progress|linebreaks }}</div></section>{% endif %}
         {% if note.signed_at %}
-          <section class="note-review-signature note-review-signed" aria-label="Signature"><h2>Signed note</h2><p>Signed by <strong>{{ note.signer_name }}</strong> · {{ note.signed_at|date:"M j, Y g:i A" }}.</p><p class="sync-meta">The original note is read-only. Corrections and additional information must be recorded as signed addenda.</p>{% if can_add_addendum %}<a class="btn btn-secondary" href="{% url 'clinical:addendum' note.pk %}{% if navigation_next %}?next={{ navigation_next|urlencode }}{% endif %}">Add addendum</a>{% endif %}</section>
+          <section class="note-review-signature note-review-signed" aria-label="Signature"><h2>Signed note</h2>{% include 'partials/signature_card.html' with signer_name=note.signer_name signed_at=note.signed_at signer_role='Responsible therapist' %}<p class="sync-meta">The original note is read-only. Corrections and additional information must be recorded as signed addenda.</p>{% if can_add_addendum %}<a class="btn btn-secondary" href="{% url 'clinical:addendum' note.pk %}{% if navigation_next %}?next={{ navigation_next|urlencode }}{% endif %}">Add addendum</a>{% endif %}</section>
         {% elif can_sign %}
           <form method="post" class="note-sign-form note-review-signature">
             {% csrf_token %}<input type="hidden" name="review_digest" value="{{ review_digest }}">{% if navigation_next %}<input type="hidden" name="next" value="{{ navigation_next }}">{% endif %}
             <h2>Review and sign</h2>
+            {% include 'partials/signature_card.html' with signer_name=request.user.get_full_name|default:request.user.username signer_role='Responsible therapist' %}
             <label><input type="checkbox" name="confirm_signature" required> <span>I reviewed this note and attest that it accurately documents this session.</span></label>
             <p class="sync-meta">Signing records your identity and the signing time, and makes the content read-only.</p>
             <div class="form-actions">{% if not note.is_locked %}{% include 'clinical/partials/review_edit_link.html' %}{% endif %}<button class="btn btn-primary" type="submit">Sign note</button></div>
@@ -46,7 +48,7 @@
           <section class="note-review-signature"><h2>Signature pending</h2><p>{% if signature_blocked_reason %}{{ signature_blocked_reason }}{% else %}The responsible therapist must review and sign this note.{% endif %}</p>{% if can_edit_draft %}<div class="form-actions">{% include 'clinical/partials/review_edit_link.html' %}</div>{% endif %}</section>
         {% endif %}
         {% if note.signed_at %}<section class="note-review-content" id="addenda"><h2>Addenda · {{ addenda|length }}</h2>
-          {% for entry in addenda %}<details class="note-review-content" {% if entry.pk|stringformat:"s" == new_addendum_id %}open{% endif %}><summary style="overflow-wrap:anywhere"><strong>{{ entry.reason }}</strong> · {{ entry.signer_name }} · {{ entry.signed_at|date:"M j, Y g:i A" }}</summary><p class="sync-meta">Signed addendum · Original note unchanged</p><div class="note-review-text">{{ entry.content|linebreaks }}</div></details>{% empty %}<p class="sync-meta">No addenda.</p>{% endfor %}
+          {% for entry in addenda %}<details class="note-review-content" {% if entry.pk|stringformat:"s" == new_addendum_id %}open{% endif %}><summary style="overflow-wrap:anywhere"><strong>{{ entry.reason }}</strong> · {{ entry.signer_name }} · {{ entry.signed_at|date:"M j, Y g:i A" }}</summary><p class="sync-meta">Signed addendum · Original note unchanged</p><div class="note-review-text">{{ entry.content|linebreaks }}</div>{% include 'partials/signature_card.html' with signer_name=entry.signer_name signed_at=entry.signed_at signer_role='Responsible therapist' %}</details>{% empty %}<p class="sync-meta">No addenda.</p>{% endfor %}
         </section>{% endif %}
       </article>
     </main>

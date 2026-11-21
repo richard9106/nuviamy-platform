@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Addendum | NuviaMy</title>
 <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+{% include 'partials/signature_assets.html' %}
 </head>
 <body class="app-page note-review-page">
 <div class="app-shell">{% include 'partials/sidebar.html' %}<main class="app-main">{% include 'partials/workspace_status.html' %}<article class="panel note-review">
@@ -34,7 +35,9 @@
 <form method="post" class="note-sign-form note-review-signature">{% csrf_token %}<input type="hidden" name="action" value="sign">
 <input type="hidden" name="review_token" value="{{ review_token }}">
 <input type="hidden" name="reason" value="{{ review.reason }}">
-<input type="hidden" name="content" value="{{ review.content }}">{% if navigation_next %}<input type="hidden" name="next" value="{{ navigation_next }}">{% endif %}<label>
+<input type="hidden" name="content" value="{{ review.content }}">{% if navigation_next %}<input type="hidden" name="next" value="{{ navigation_next }}">{% endif %}
+{% include 'partials/signature_card.html' with signer_name=request.user.get_full_name|default:request.user.username signer_role='Responsible therapist' %}
+<label>
 <input type="checkbox" name="confirm_signature" required> <span>I reviewed this addendum and attest that it accurately records the correction or additional information.</span>
 </label>
 <p class="sync-meta">Signing records your identity and time. The addendum will be read-only.</p>

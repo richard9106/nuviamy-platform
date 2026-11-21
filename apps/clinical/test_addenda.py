@@ -44,6 +44,16 @@ class AddendumWorkflowTests(TestCase):
         self.assertEqual(response.status_code,200)
         return response.context['review_token']
 
+    def test_signature_card_preserves_original_identity_after_profile_rename(self):
+        self.user.first_name = 'Updated'
+        self.user.last_name = 'Profile'
+        self.user.save(update_fields=['first_name', 'last_name'])
+        response = self.client.get(reverse('clinical:sign', args=[self.note.pk]))
+        self.assertContains(response, 'aria-label="Electronic signature"')
+        self.assertContains(response, 'class="signature-name" data-signature-name>author</span>')
+        self.assertContains(response, 'datetime="' + self.note.signed_at.isoformat() + '"')
+        self.assertNotContains(response, 'data-signature-preview=')
+
     def test_review_sign_history_export_and_duplicate_submission(self):
         original=self.note.review_digest()
         token=self.review()

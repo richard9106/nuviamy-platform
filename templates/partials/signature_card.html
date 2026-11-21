@@ -1,0 +1,9 @@
+<div class="signature-card" {% if input_id %}data-signature-preview="{{ input_id }}"{% endif %} aria-label="{% if signed_at %}Electronic signature{% else %}Signature preview{% endif %}">
+  <p class="signature-caption">{% if signed_at %}Electronic signature{% else %}Signature preview · Not yet signed{% endif %}</p>
+  <p class="signature-script" aria-hidden="true" data-signature-name>{{ signer_name|default:'Your full name' }}</p>
+  <div class="signature-identity">
+    <p>{% if signed_at %}Signed by{% else %}Name{% endif %} <span class="signature-name" data-signature-name>{{ signer_name|default:'Your full name' }}</span></p>
+    {% if signer_role %}<p class="signature-role">{{ signer_role }}</p>{% endif %}
+    {% if signed_at %}<p class="signature-time"><time datetime="{{ signed_at|date:'c' }}">{{ signed_at|date:'M j, Y g:i A T' }}</time></p>{% else %}<p class="signature-time">The date and time will be recorded when you sign.</p>{% endif %}
+  </div>
+</div>

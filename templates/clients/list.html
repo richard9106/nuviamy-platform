@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/dashboard.css">
+  <link rel="stylesheet" href="{% static 'dashboard.css' %}"><link rel="stylesheet" href="{% static 'client-workspace.css' %}">
 </head>
 <body class="app-page">
   <div class="app-shell">
@@ -49,9 +50,10 @@
             <h2 id="client-directory-heading">My patients</h2>
             <p>Manage demographics, contact details, status, and therapist assignment.</p>
           </div>
-          <span class="badge brand">{{ clients|length }} clients</span>
+          <span class="badge brand">{{ paginator.count }} clients</span>
         </div>
 
+        <form method="get" class="client-activity-filters" role="search"><label>Search clients<input type="search" name="q" value="{{ client_search }}" placeholder="Name, email or phone" maxlength="160"></label><label>Status<select name="status"><option value="">All statuses</option><option value="active" {% if client_status == 'active' %}selected{% endif %}>Active</option><option value="inactive" {% if client_status == 'inactive' %}selected{% endif %}>Inactive</option><option value="archived" {% if client_status == 'archived' %}selected{% endif %}>Archived</option></select></label><button class="btn btn-secondary" type="submit">Search</button>{% if client_search or client_status %}<a class="inline-link" href="{% url 'clients:list' %}">Clear filters</a>{% endif %}</form>
         <div class="client-tree-wrap" role="region" aria-labelledby="client-directory-heading" aria-describedby="client-directory-scroll-help" tabindex="0">
           <p class="sr-only" id="client-directory-scroll-help">Scroll horizontally to view all client directory columns.</p>
           <table class="client-tree">
@@ -74,94 +76,16 @@
                  <td><div class="tree-actions"><a class="inline-link" href="{% url 'clients:detail' client.pk %}">Open</a>{% if workspace_permissions.clients.edit %}<a class="inline-link" href="{% url 'clients:edit' client.pk %}" data-modal-target="client-modal-{{ client.pk }}">Edit</a>{% endif %}</div></td>
                 </tr>
               {% empty %}
-                <tr><td colspan="6" class="empty-state">No clients have been created yet.</td></tr>
+                <tr><td colspan="6" class="empty-state">No clients match this view. Clear the filters or create a client.</td></tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       </section>
 
-      <dialog class="modal-dialog" id="client-create-modal">
-        <div class="modal-card">
-          <div class="modal-head">
-            <div>
-              <p class="eyebrow">New Client</p>
-              <h2>Create a client profile</h2>
-            </div>
-            <button class="modal-close" type="button" data-modal-close aria-label="Close">×</button>
-          </div>
+      {% if workspace_permissions.clients.create %}<dialog class="modal-dialog client-drawer" id="client-create-modal"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">New client</p><h2>Create client</h2></div><button class="modal-close" type="button" data-modal-close aria-label="Close">×</button></div><form class="appointment-form" method="post" enctype="multipart/form-data" action="{% url 'clients:create' %}">{% csrf_token %}<div class="client-drawer-fields">{% include 'clients/partials/profile_fields.html' with form=client_create_form %}</div><div class="form-actions"><button class="btn btn-secondary" type="button" data-modal-close>Cancel</button><button class="btn btn-primary" type="submit">Create &amp; open client</button></div></form></div></dialog>{% endif %}
 
-          <form class="appointment-form" method="post" enctype="multipart/form-data" action="{% url 'clients:create' %}">
-            {% csrf_token %}
-            <div class="field-grid two">
-              <div class="field">
-                <label for="client-create-first-name">First name</label>
-                <input id="client-create-first-name" name="first_name" required>
-              </div>
-              <div class="field">
-                <label for="client-create-last-name">Last name</label>
-                <input id="client-create-last-name" name="last_name" required>
-              </div>
-              <div class="field"><label for="client-create-photo">Profile photo</label><input id="client-create-photo" name="profile_photo" type="file" accept="image/*"></div>
-              <div class="field">
-                <label for="client-create-email">Email</label>
-                <input id="client-create-email" name="email" type="email">
-              </div>
-              <div class="field">
-                <label for="client-create-phone">Phone</label>
-                <input id="client-create-phone" name="phone">
-              </div>
-              <div class="field">
-                <label for="client-create-dob">Date of birth</label>
-                <input id="client-create-dob" name="date_of_birth" type="date">
-              </div>
-              <div class="field">
-                <label for="client-create-status">Status</label>
-                <select id="client-create-status" name="status" required>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="archived">Archive</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="client-create-therapist">Primary therapist</label>
-                <select id="client-create-therapist" name="primary_therapist">
-                  <option value="">Unassigned</option>
-                  {% for therapist in client_therapists %}
-                    <option value="{{ therapist.pk }}">{{ therapist }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              {% include 'clients/partials/insurance_fields.html' with insurance_client=None uid='create' %}
-              <div class="field">
-                <label for="client-create-member">Insurance member ID</label>
-                <input id="client-create-member" name="insurance_member_id">
-              </div>
-              <div class="field">
-                <label for="client-create-emergency-name">Emergency contact name</label>
-                <input id="client-create-emergency-name" name="emergency_contact_name">
-              </div>
-              <div class="field">
-                <label for="client-create-emergency-phone">Emergency contact phone</label>
-                <input id="client-create-emergency-phone" name="emergency_contact_phone">
-              </div>
-              <div class="field full">
-                <label for="client-create-address-1">Address line 1</label>
-                <input id="client-create-address-1" name="address_line1">
-              </div>
-              <div class="field full">
-                <label for="client-create-address-2">Address line 2</label>
-                <input id="client-create-address-2" name="address_line2">
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="btn btn-secondary" type="button" data-modal-close>Cancel</button>
-              <button class="btn btn-primary" type="submit">Create client</button>
-            </div>
-          </form>
-        </div>
-      </dialog>
-
+      {% if page_obj.has_other_pages %}<nav class="client-directory-pagination" aria-label="Client directory pages">{% if page_obj.has_previous %}<a class="btn btn-secondary" href="?page={{ page_obj.previous_page_number }}&amp;q={{ client_search|urlencode }}&amp;status={{ client_status|urlencode }}">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="btn btn-secondary" href="?page={{ page_obj.next_page_number }}&amp;q={{ client_search|urlencode }}&amp;status={{ client_status|urlencode }}">Next</a>{% endif %}</nav>{% endif %}
       <dialog class="modal-dialog" id="appointment-create-modal">
         <div class="modal-card">
           <div class="modal-head">

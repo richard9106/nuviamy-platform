@@ -2,7 +2,8 @@ from apps.appointments.access import scope_sessions
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
-from django.db.models import Sum
+from django.db.models import Q, Sum, Value
+from django.db.models.functions import Concat
 from decimal import Decimal
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
@@ -37,17 +38,26 @@ class ClientListView(LoginRequiredMixin, PracticePermissionMixin, PracticeContex
     model = Client
     template_name = 'clients/list.html'
     context_object_name = 'clients'
+    paginate_by = 25
 
     def get_queryset(self):
         practice = self.get_practice()
         if not practice:
             return Client.objects.none()
 
-        return (
+        queryset = (
             Client.objects.filter(practice=practice)
             .select_related('primary_therapist__user', 'insurance_payer')
             .order_by('last_name', 'first_name')
         )
+        query = self.request.GET.get('q', '').strip()[:160]
+        if query:
+            queryset = queryset.annotate(search_name=Concat('first_name', Value(' '), 'last_name')).filter(
+                Q(search_name__icontains=query) | Q(email__icontains=query) | Q(phone__icontains=query))
+        status = self.request.GET.get('status', '')
+        if status in Client.Status.values:
+            queryset = queryset.filter(status=status)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -56,6 +66,9 @@ class ClientListView(LoginRequiredMixin, PracticePermissionMixin, PracticeContex
         context['note_appointments'] = scope_sessions(practice.appointments.select_related('client', 'therapist__user'), self.request.user) if practice else []
         context['billing_templates'] = practice.session_package_templates.filter(active=True) if practice else []
         context['billing_today'] = timezone.localdate()
+        context['client_create_form'] = ClientForm(practice=practice, auto_id='client-create-%s')
+        context['client_search'] = self.request.GET.get('q', '').strip()[:160]
+        context['client_status'] = self.request.GET.get('status', '')
         return context
 
 
@@ -77,6 +90,8 @@ class ClientDetailView(LoginRequiredMixin, PracticePermissionMixin, PracticeCont
         permissions = {resource: has_practice_permission(self.request.user, resource, 'view')
                        for resource in ('appointments', 'clinical', 'billing', 'documents', 'intake')}
         allowed_tabs = {'overview'} | {tab for tab in ('clinical', 'billing', 'documents') if permissions[tab]}
+        if permissions['intake']:
+            allowed_tabs.add('forms')
         requested_tab = self.request.GET.get('tab', 'overview')
         if self.request.method == 'POST' and self.request.POST.get('return_to_patient') == '1':
             requested_tab = 'clinical'
@@ -147,6 +162,9 @@ class ClientDetailView(LoginRequiredMixin, PracticePermissionMixin, PracticeCont
                         patient=client, auto_id=f'diagnosis-edit-{diagnosis.pk}-%s'))
                     for diagnosis in diagnoses
                 ]
+        from .chart_context import add_chart_context
+        permissions['appointments_edit'] = has_practice_permission(self.request.user, 'appointments', 'edit')
+        add_chart_context(context, self.request, client, permissions)
         return context
 
 
@@ -157,6 +175,11 @@ class ClientCreateView(LoginRequiredMixin, PracticePermissionMixin, PracticeCont
     form_class = ClientForm
     template_name = 'clients/form.html'
     success_url = reverse_lazy('clients:list')
+
+    def get_success_url(self):
+        if self.request.POST.get('open_workspace') == '1':
+            return reverse('clients:detail', args=[self.object.pk])
+        return super().get_success_url()
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -178,6 +201,11 @@ class ClientUpdateView(LoginRequiredMixin, PracticePermissionMixin, PracticeCont
     form_class = ClientForm
     template_name = 'clients/form.html'
     success_url = reverse_lazy('clients:list')
+
+    def get_success_url(self):
+        if self.request.POST.get('open_workspace') == '1':
+            return reverse('clients:detail', args=[self.object.pk])
+        return super().get_success_url()
 
     def get_queryset(self):
         practice = self.get_practice()

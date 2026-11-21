@@ -21,7 +21,7 @@ from apps.appointments.models import PracticeWorkingHour, PracticeAvailabilityOv
 from apps.appointments.models import Appointment
 from apps.audit.models import AuditLog
 from apps.billing.models import Invoice, Payment, ServicePackage, InsurancePayer, InsuranceRate, PracticeInsurancePayer, SessionPackageTemplate, PackageUsage
-from apps.clients.models import Client
+from apps.clients.models import Client, ClientAdministrativeNote, ClientFormDelivery
 from apps.clinical.models import Diagnosis, SessionNote, SessionNoteSignature, SessionNoteAddendum, TreatmentPlan
 from apps.dashboard.models import Task
 from apps.documents.models import ClientDocument
@@ -55,6 +55,8 @@ def build_export_data(practice, scope):
     if scope in {'all', 'clinical'}:
         sections.update({
             'clients': Client.objects.filter(practice=practice),
+            'administrative_notes': ClientAdministrativeNote.objects.filter(practice=practice, client__practice=practice),
+            'client_form_deliveries': ClientFormDelivery.objects.filter(practice=practice, client__practice=practice),
             'appointments': Appointment.objects.filter(practice=practice),
             'diagnoses': Diagnosis.objects.filter(practice=practice),
             'treatment_plans': TreatmentPlan.objects.filter(practice=practice),

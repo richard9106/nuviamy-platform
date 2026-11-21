@@ -2,6 +2,7 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from apps.practices.fields import EncryptedTextField
 
 
 class Client(models.Model):
@@ -74,3 +75,27 @@ class Client(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+
+class ClientAdministrativeNote(models.Model):
+    """Internal chart correspondence; separate from clinical session documentation."""
+    practice = models.ForeignKey('practices.Practice', on_delete=models.PROTECT)
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='administrative_notes')
+    author = models.ForeignKey('auth.User', on_delete=models.PROTECT)
+    content = EncryptedTextField(max_length=4000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+
+    def clean(self):
+        if self.client_id and self.client.practice_id != self.practice_id:
+            raise ValidationError('Client must belong to the same practice.')
+
+
+class ClientFormDelivery(models.Model):
+    practice = models.ForeignKey('practices.Practice', on_delete=models.PROTECT)
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='form_deliveries')
+    token_digest = models.CharField(max_length=64, unique=True)
+    delivery_status = models.CharField(max_length=20, default='not_requested')
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -41,6 +41,13 @@ def add_chart_context(context, request, client, permissions):
         context['pending_forms_count'] = assignments.filter(status=ClientIntakeAssignment.Status.ASSIGNED).count()
         context['latest_form_delivery'] = client.form_deliveries.filter(practice=client.practice).order_by('-created_at').first()
     if context['workspace_tab'] != 'overview':
+        if context['workspace_tab'] == 'measures' and permissions['clinical'] and permissions['intake']:
+            from apps.portal.measures import chart_series
+            records = list(assignments.filter(template_snapshot__measure_code__in=['phq9_en_v1', 'gad7_en_v1'])
+                           .exclude(status=ClientIntakeAssignment.Status.ASSIGNED).defer(None)
+                           .order_by('-submitted_at', '-pk')[:50])
+            context['measure_series'] = chart_series(records)
+            context['measure_history_count'] = len(records)
         return
     kind = request.GET.get('items', 'all')
     if kind not in ('all', 'administrative', 'appointments', 'forms'):

@@ -20,7 +20,7 @@ EXPORT_FIELDS = {
     'portal.PortalConversation': ('id', 'public_id', 'practice_id', 'client_id', 'subject', 'status', 'created_by_id', 'resolved_at', 'resolved_by_id', 'created_at', 'updated_at'),
     'portal.PortalMessage': ('id', 'conversation_id', 'practice_id', 'author_id', 'author_kind', 'body', 'created_at', 'read_at'),
     'portal.PublicBookingRequest': ('id', 'practice_id', 'client_id', 'appointment_id', 'approved_by_id', 'first_name', 'last_name', 'email', 'phone', 'requested_starts_at', 'requested_ends_at', 'appointment_type', 'reason', 'status', 'created_at', 'updated_at'),
-    'portal.IntakePacketTemplate': ('id', 'practice_id', 'name', 'description', 'questions', 'active', 'requires_signature', 'created_at', 'updated_at'),
+    'portal.IntakePacketTemplate': ('id', 'practice_id', 'name', 'description', 'questions', 'active', 'requires_signature', 'measure_code', 'created_at', 'updated_at'),
     'portal.ClientIntakeAssignment': ('id', 'practice_id', 'client_id', 'template_id', 'assigned_by_id', 'status', 'template_snapshot', 'answers', 'submitted_at', 'reviewed_at', 'reviewed_by_id', 'created_at', 'updated_at'),
     'billing.Invoice': ('id', 'practice_id', 'client_id', 'appointment_id', 'package_id', 'billing_type', 'insurance_payer_id', 'insurance_payer_name', 'service_code', 'insurance_state', 'contracted_amount', 'client_responsibility', 'invoice_number', 'amount', 'status', 'due_date', 'paid_at', 'published_at', 'published_by_id', 'notes', 'created_at', 'updated_at'),
     'billing.Payment': ('id', 'practice_id', 'client_id', 'invoice_id', 'amount', 'method', 'external_payment_id', 'paid_at', 'created_at'),

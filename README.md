@@ -134,6 +134,7 @@ See [Session documentation and signatures](docs/session-list-and-signatures.md).
 - Client forms has a paginated assignment queue, search/status filters, review totals and a [page-based form builder](docs/intake-form-builder.md). Templates support short/long text, single/multiple choice, dropdown and yes/no answers, required questions, page titles/instructions, ordering and a client preview. Assigned forms retain their original snapshot; portal clients complete pages with Previous/Next controls.
 - Clients complete assigned forms in the portal; staff review numbered responses and record review status.
 - Assigned questions are snapshotted. Editing a template affects future assignments, while existing assignments and responses retain their original content.
+- Standard adult English PHQ-9 and GAD-7 measures can be added explicitly to the practice library, assigned through the existing form flow and scored after complete submission. The client Measures tab shows separate dated score charts and response histories. Standard wording is protected in the editor; PHQ-9 item 9 is highlighted independently of the total and requires explicit follow-up review acknowledgement. Results support professional assessment and do not diagnose. See [scored measures](docs/product/scored-measures.md).
 
 ### Billing, subscriptions and access
 

@@ -189,6 +189,7 @@ class IntakePacketTemplate(models.Model):
     questions = models.JSONField(default=list, blank=True)
     active = models.BooleanField(default=True)
     requires_signature = models.BooleanField(default=False)
+    measure_code = models.CharField(max_length=30, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -196,11 +197,16 @@ class IntakePacketTemplate(models.Model):
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(fields=["practice", "name"], name="unique_intake_template_name_per_practice"),
+            models.UniqueConstraint(fields=['practice', 'measure_code'], condition=~models.Q(measure_code=''), name='unique_standard_measure_per_practice'),
         ]
 
     def clean(self):
         if not self.questions:
             raise ValidationError({"questions": "Add at least one intake question."})
+        if self.measure_code:
+            from .measures import DEFINITIONS, questions_for
+            if self.measure_code not in DEFINITIONS or self.questions != questions_for(self.measure_code):
+                raise ValidationError('Standard measure questions cannot be changed.')
 
     @property
     def page_count(self):
@@ -251,12 +257,24 @@ class ClientIntakeAssignment(models.Model):
                 "description": self.template.description,
                 "questions": deepcopy(self.template.questions),
                 "requires_signature": self.template.requires_signature,
+                "measure_code": self.template.measure_code,
             }
         super().save(*args, **kwargs)
 
     @property
     def packet_name(self):
         return self.template_snapshot.get("name", self.template.name)
+
+    @property
+    def measure_score(self):
+        from .measures import score_assignment
+        return score_assignment(self)
+
+    @property
+    def measure_definition(self):
+        from .measures import DEFINITIONS
+        code = self.template_snapshot.get('measure_code')
+        return DEFINITIONS.get(code) if isinstance(code, str) else None
 
     @property
     def packet_description(self):

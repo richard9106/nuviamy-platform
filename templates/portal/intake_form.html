@@ -13,8 +13,8 @@
   <main class="portal-shell">
     {% include 'portal/_header.html' %}<div id="portal-content" tabindex="-1"></div>
     <section class="portal-form-body">
-      <header class="portal-form-hero"><p>Client forms</p><h1>{{ assignment.packet_name }}</h1><p>{{ assignment.packet_description|default:'Please complete the questions below for your practice.' }}</p></header>
-      <form class="appointment-form" method="post" data-intake-pages>
+      <header class="portal-form-hero"><p>Client forms</p><h1>{{ assignment.packet_name }}</h1><p>{% if assignment.measure_definition %}Questions about your last two weeks.{% else %}{{ assignment.packet_description|default:'Please complete the questions below for your practice.' }}{% endif %}</p></header>
+      {% if assignment.measure_definition %}<p class="portal-measure-note">For routine care, not urgent help. Your responses are not monitored continuously. If you need immediate help, contact local emergency services or your practice’s urgent support service.</p><p class="intake-help">{{ assignment.packet_description }}</p>{% endif %}<form class="appointment-form" method="post" data-intake-pages>
         {% csrf_token %}
         {% if form.errors %}<div class="form-error" role="alert"><strong>Please answer the highlighted questions before submitting.</strong>{{ form.non_field_errors }}</div>{% endif %}<p>Questions marked * are required. Your responses will be shared with your care team.</p>
         <p class="portal-draft-note">{% if assignment.answers %}Draft saved {{ assignment.updated_at|date:"M j, g:i A" }}. {% endif %}Use “Save and continue later” before leaving this form.</p><p class="intake-page-progress" data-page-progress role="status" aria-live="polite"></p>

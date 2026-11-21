@@ -306,6 +306,9 @@ class IntakePacketTemplateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.practice = practice
         self.instance.practice = practice
+        if self.instance.measure_code:
+            self.fields = {'active': self.fields['active']}
+            return
         if self.instance.pk and not self.is_bound:
             self.fields['question_lines'].initial = '\n'.join(self.instance.question_labels)
         from .intake_schema import pages_from_questions
@@ -371,7 +374,8 @@ class IntakePacketTemplateForm(forms.ModelForm):
     def save(self, commit=True):
         template = super().save(commit=False)
         template.practice = self.practice
-        template.questions = self.cleaned_data['question_lines']
+        if not template.measure_code:
+            template.questions = self.cleaned_data['question_lines']
         if commit:
             template.full_clean()
             template.save()

@@ -140,6 +140,7 @@
       /^\/billing\/(?:invoices\/(?:new|\d+\/edit)|packages\/(?:new|\d+\/edit)|payments\/new|usage\/new)\/$/,
       /^\/documents\/new\/$/,
       /^\/intake\/templates\/(?:new|\d+\/edit)\/$/,
+      /^\/intake\/measures\/new\/$/,
       /^\/settings\/(?:session-packages|insurance\/payers|insurance\/rates|client-portal)\/(?:new|\d+\/edit)\/$/,
       /^\/settings\/availability\/new\/$/,
     ];

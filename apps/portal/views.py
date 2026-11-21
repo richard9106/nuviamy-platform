@@ -828,7 +828,10 @@ class PracticeIntakeListView(PracticePermissionMixin, PracticeContextMixin, Temp
                 | Q(template_snapshot__name__icontains=query))
         if status:
             assignments = assignments.filter(status=status)
-        page = Paginator(assignments.select_related('client', 'template').defer('answers'), 20).get_page(self.request.GET.get('page'))
+        assignments = assignments.select_related('client', 'template')
+        if not has_practice_permission(self.request.user, 'clinical', 'view'):
+            assignments = assignments.defer('answers')
+        page = Paginator(assignments, 20).get_page(self.request.GET.get('page'))
         context.update(q=query, status=status, page_obj=page, assignments=page.object_list)
         context['templates'] = IntakePacketTemplate.objects.filter(practice=practice)
         context['can_create_intake'] = has_practice_permission(self.request.user, 'intake', 'create')
@@ -905,6 +908,8 @@ class ClientIntakeResponsesView(PracticePermissionMixin, PracticeContextMixin, T
         context = super().get_context_data(**kwargs)
         assignment = get_object_or_404(ClientIntakeAssignment.objects.select_related('client', 'template', 'reviewed_by'),
                                        pk=self.kwargs['pk'], practice=self.get_practice())
+        if assignment.measure_definition and not has_practice_permission(self.request.user, 'clinical', 'view'):
+            raise PermissionDenied
         items = [] if assignment.status == ClientIntakeAssignment.Status.ASSIGNED else assignment.response_items
         can_edit = has_practice_permission(self.request.user, 'intake', 'edit')
         context.update(assignment=assignment, response_items=items, can_edit_intake=can_edit,
@@ -920,6 +925,12 @@ class ClientIntakeReviewView(PracticePermissionMixin, PracticeContextMixin, View
         practice = self.get_practice()
         with transaction.atomic():
             assignment = get_object_or_404(ClientIntakeAssignment.objects.select_for_update(), pk=pk, practice=practice)
+            if assignment.measure_definition and not has_practice_permission(request.user, 'clinical', 'view'):
+                raise PermissionDenied
+            score = assignment.measure_score
+            if score and score['item9_endorsed'] and request.POST.get('item9_reviewed') != 'yes':
+                messages.error(request, 'Review item 9 and confirm your follow-up responsibility before marking this form reviewed.')
+                return redirect('intake:responses', pk=pk)
             if assignment.status == ClientIntakeAssignment.Status.ASSIGNED:
                 messages.error(request, 'This packet has not been submitted yet.')
                 return redirect('intake:list')

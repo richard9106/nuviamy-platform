@@ -3,6 +3,8 @@ Authentication secrets, OAuth tokens and other users' private support are exclud
 """
 
 EXPORT_FIELDS = {
+    'clients.ClientAdministrativeNote': ('id', 'practice_id', 'client_id', 'author_id', 'content', 'created_at'),
+    'clients.ClientFormDelivery': ('id', 'practice_id', 'client_id', 'delivery_status', 'created_at'),
     'clients.Client': ('id', 'practice_id', 'primary_therapist_id', 'public_id', 'first_name', 'last_name', 'profile_photo', 'email', 'phone', 'date_of_birth', 'status', 'billing_type', 'insurance_payer_id', 'insurance_state', 'insurance_copay', 'insurance_provider', 'insurance_member_id', 'emergency_contact_name', 'emergency_contact_phone', 'address_line1', 'address_line2', 'created_at', 'updated_at'),
     'appointments.Appointment': ('id', 'practice_id', 'client_id', 'therapist_id', 'starts_at', 'ends_at', 'status', 'session_kind', 'appointment_type', 'location', 'meeting_url', 'notes', 'sync_enabled', 'external_calendar_provider', 'external_calendar_id', 'external_event_id', 'external_event_url', 'last_synced_at', 'sync_status', 'sync_error', 'reminder_enabled', 'reminder_status', 'reminder_sent_at', 'reminder_error', 'series_id', 'created_at', 'updated_at'),
     'clinical.Diagnosis': ('id', 'practice_id', 'client_id', 'code', 'label', 'diagnosed_at', 'active', 'notes', 'created_at', 'updated_at'),

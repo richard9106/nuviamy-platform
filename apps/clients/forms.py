@@ -3,6 +3,44 @@ from django import forms
 from .models import Client
 
 
+class AdministrativeNoteForm(forms.Form):
+    content = forms.CharField(max_length=4000, strip=True, label='Administrative note',
+        widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Record a call or an administrative update. Clinical notes belong in Clinical.'}))
+
+
+class ClientFormsShareForm(forms.Form):
+    templates = forms.ModelMultipleChoiceField(queryset=None, label='Forms to share', widget=forms.CheckboxSelectMultiple)
+    notify = forms.BooleanField(required=False, initial=True, label='Send a generic email notification')
+    invite_portal = forms.BooleanField(required=False, label='Create portal access and send an account setup invitation')
+
+    def __init__(self, *args, practice, client, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.portal.models import ClientPortalAccess, IntakePacketTemplate
+        self.fields['templates'].queryset = IntakePacketTemplate.objects.filter(practice=practice, active=True).order_by('name')
+        self.client = client
+        self.access = ClientPortalAccess.objects.filter(client=client, practice=practice).select_related('user').first()
+
+    def clean_templates(self):
+        templates = self.cleaned_data['templates']
+        if templates.count() > 30:
+            raise forms.ValidationError('Share up to 30 forms at a time.')
+        return templates
+
+    def clean(self):
+        data = super().clean()
+        if data.get('invite_portal') and self.access:
+            self.add_error('invite_portal', 'Portal access already exists. Manage it separately if it is inactive.')
+        if data.get('notify'):
+            if self.access:
+                if not self.access.is_active or not self.access.user.is_active or not self.access.user.email:
+                    self.add_error('notify', 'The portal account must be active and have an email address.')
+            elif not data.get('invite_portal'):
+                self.add_error('notify', 'Select portal invitation, or assign without an email.')
+        if data.get('invite_portal') and not self.client.email:
+            self.add_error('invite_portal', 'Add the client email address before inviting them.')
+        return data
+
+
 class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
@@ -24,7 +62,9 @@ class ClientForm(forms.ModelForm):
             'address_line2',
         ]
         widgets = {
-            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+            'date_of_birth': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+            'phone': forms.TextInput(attrs={'type': 'tel'}),
+            'emergency_contact_phone': forms.TextInput(attrs={'type': 'tel'}),
         }
 
     def __init__(self, *args, practice=None, **kwargs):

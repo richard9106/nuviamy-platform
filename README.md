@@ -94,9 +94,10 @@ See [Initial consultations](docs/initial-consultation.md).
 
 ### Clients
 
-- Compact directory with search, therapist/contact/insurance/status columns and trailing actions.
-- Client Workspace has Overview, Clinical, Billing and Documents tabs, according to permissions.
-- Overview includes initial consultation progress, upcoming sessions, session history, client information and portal access.
+- Directory search covers name, email and phone, with status filters and 25 clients per page. Creation and profile editing use grouped side panels with visible save actions.
+- Client Workspace has Overview, Clinical, Billing, Documents and Forms tabs, according to permissions.
+- Overview combines encrypted administrative notes, appointment metadata and form assignments in a filterable activity feed. The context rail groups consultation/session details, contact information, portal access and client/insurance balances.
+- Sharing multiple forms uses selection, email options and an explicit final review. Portal invitations are optional; repeated submits do not duplicate assignments or emails. See [client workspace and onboarding](docs/product/client-workspace.md) for delivery, permissions and scope.
 - Clinical groups diagnoses, treatment plans and notes. Diagnosis create/edit dialogs keep the client fixed; treatment plans reuse that client's diagnosis records instead of copying them.
 - Optional client photos, profile editing, appointment scheduling links, packages and document workflows remain practice-scoped.
 

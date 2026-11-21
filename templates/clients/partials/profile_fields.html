@@ -1,0 +1,27 @@
+{{ form.non_field_errors }}
+<input type="hidden" name="open_workspace" value="1">
+<fieldset class="client-field-section"><legend>Client essentials</legend><p class="chart-meta">Start with a name. Add contact details to invite the client later.</p><div class="field-grid two">
+{% include 'clients/partials/profile_field.html' with field=form.first_name %}
+{% include 'clients/partials/profile_field.html' with field=form.last_name %}
+{% include 'clients/partials/profile_field.html' with field=form.email %}
+{% include 'clients/partials/profile_field.html' with field=form.phone %}
+{% include 'clients/partials/profile_field.html' with field=form.date_of_birth %}
+{% include 'clients/partials/profile_field.html' with field=form.primary_therapist %}
+{% include 'clients/partials/profile_field.html' with field=form.status %}
+</div></fieldset>
+<details class="client-field-section" {% if form.errors %}open{% endif %}><summary>Insurance &amp; payment</summary><div class="field-grid two">
+{% include 'clients/partials/profile_field.html' with field=form.billing_type %}
+{% include 'clients/partials/profile_field.html' with field=form.insurance_payer %}
+{% include 'clients/partials/profile_field.html' with field=form.insurance_state %}
+{% include 'clients/partials/profile_field.html' with field=form.insurance_copay %}
+{% include 'clients/partials/profile_field.html' with field=form.insurance_member_id %}
+{% include 'clients/partials/profile_field.html' with field=form.insurance_provider %}
+</div></details>
+<details class="client-field-section" {% if form.errors %}open{% endif %}><summary>Emergency contact, address &amp; photo</summary><div class="field-grid two">
+{% include 'clients/partials/profile_field.html' with field=form.emergency_contact_name %}
+{% include 'clients/partials/profile_field.html' with field=form.emergency_contact_phone %}
+{% include 'clients/partials/profile_field.html' with field=form.address_line1 %}
+{% include 'clients/partials/profile_field.html' with field=form.address_line2 %}
+{% include 'clients/partials/profile_field.html' with field=form.profile_photo %}
+</div></details>
+<p class="chart-meta">Creating or editing a profile does not send an email. Review forms and portal invitations from the client workspace.</p>

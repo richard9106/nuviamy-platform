@@ -79,6 +79,7 @@ MIDDLEWARE = [
     'apps.audit.middleware.AccessAuditMiddleware',
     'apps.accounts.security_middleware.SecuritySessionMiddleware',
     'apps.billing.access.SubscriptionAccessMiddleware',
+    'apps.dashboard.form_drawers.WorkspaceFormDrawerMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 

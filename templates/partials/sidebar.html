@@ -231,3 +231,5 @@
 {% if chat_enabled %}{% include 'partials/chat_drawer.html' %}{% endif %}
 
 {% include 'partials/security_session.html' %}
+
+{% load static %}<link rel="stylesheet" href="{% static 'dashboard.css' %}"><link rel="stylesheet" href="{% static 'workspace-drawers.css' %}"><script src="{% static 'workspace-drawers.js' %}" data-drawer-style="{% static 'workspace-drawers.css' %}" data-base-style="{% static 'dashboard.css' %}" defer></script>

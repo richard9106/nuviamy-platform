@@ -27,4 +27,4 @@ Django's default DENY protection remains. Only enumerated staff editor endpoints
 - Browser review with fictional local records: appointment from client profile, document upload controls and pinned footer, intake template creation with a new question and successful save, existing template editing, and 360px mobile layout (content width 360px).
 - Browser screenshots are local review artifacts under `output/workspace-drawers/`; they are not production assets.
 
-Release status: prepared on `codex/client-portal-onboarding`; not yet deployed. The earlier client workspace release (PR #115) is separate and already deployed.
+Release through the normal PR checks and main deployment workflow, together with the portal onboarding migrations. This extends the earlier client workspace release (PR #115).

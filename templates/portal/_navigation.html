@@ -1,8 +1,7 @@
 <nav class="portal-navigation" aria-label="Client portal">
-  <a href="{% url 'portal:dashboard' %}"{% if request.resolver_match.url_name == 'dashboard' %} aria-current="page"{% endif %}>Overview</a>
-  <a href="{% url 'portal:dashboard' %}#appointments">Appointments</a>
-  <a href="{% url 'portal:dashboard' %}#forms">Forms</a>
-  <a href="{% url 'portal:conversations' %}"{% if request.resolver_match.url_name == 'conversations' or request.resolver_match.url_name == 'conversation_detail' %} aria-current="page"{% endif %}>Messages{% if unread_message_count %} <span class="badge brand">{{ unread_message_count }} unread</span>{% endif %}</a>
-  <a href="{% url 'portal:dashboard' %}#documents">Documents</a>
-  <a href="{% url 'portal:dashboard' %}#payments">Payments</a>
+<a href="{% url 'portal:dashboard' %}" {% if portal_section == 'overview' and request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>Overview</a>
+<a href="{% url 'portal:dashboard' %}?section=appointments" {% if portal_section == 'appointments' %}aria-current="page"{% endif %}>Appointments</a>
+<a href="{% url 'portal:dashboard' %}?section=documents" {% if portal_section == 'documents' or request.resolver_match.url_name == 'intake_complete' or request.resolver_match.url_name == 'intake_responses' %}aria-current="page"{% endif %}>Documents &amp; forms</a>
+<a href="{% url 'portal:dashboard' %}?section=billing" {% if portal_section == 'billing' %}aria-current="page"{% endif %}>Billing &amp; payments</a>
+<a href="{% url 'portal:profile' %}" {% if request.resolver_match.url_name == 'profile' %}aria-current="page"{% endif %}>My information</a>
 </nav>

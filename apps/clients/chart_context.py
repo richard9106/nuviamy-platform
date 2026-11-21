@@ -15,6 +15,7 @@ from .forms import AdministrativeNoteForm, ClientForm
 def add_chart_context(context, request, client, permissions):
     context['client_edit_form'] = ClientForm(instance=client, practice=client.practice, auto_id='workspace-client-%s')
     context['administrative_note_form'] = AdministrativeNoteForm()
+    context['profile_submissions'] = client.profile_submissions.filter(practice=client.practice)[:5]
     if permissions['billing']:
         invoices = Invoice.objects.filter(practice=client.practice, client=client,
             status__in=[Invoice.Status.SENT, Invoice.Status.OVERDUE]).annotate(

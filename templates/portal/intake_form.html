@@ -9,11 +9,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'portal.css' %}"></head>
-<body class="app-page portal-page">
+<body class="app-page portal-page portal-form-page">
   <main class="portal-shell">
     {% include 'portal/_header.html' %}<div id="portal-content" tabindex="-1"></div>
-    <section class="panel form-panel">
-      <div class="panel-head"><div><p class="eyebrow">Client forms</p><h1>{{ assignment.packet_name }}</h1><p>{{ assignment.packet_description|default:'Please complete the questions below for your practice.' }}</p></div></div>
+    <section class="portal-form-body">
+      <header class="portal-form-hero"><p>Client forms</p><h1>{{ assignment.packet_name }}</h1><p>{{ assignment.packet_description|default:'Please complete the questions below for your practice.' }}</p></header>
       <form class="appointment-form" method="post" data-intake-pages>
         {% csrf_token %}
         {% if form.errors %}<div class="form-error" role="alert"><strong>Please answer the highlighted questions before submitting.</strong>{{ form.non_field_errors }}</div>{% endif %}<p>Questions marked * are required. Your responses will be shared with your care team.</p>
@@ -28,7 +28,7 @@
           </div>{% endfor %}
         </section>{% endfor %}
         <div class="intake-page-controls" data-page-controls hidden><button class="btn btn-secondary" type="button" data-page-previous>Previous</button><button class="btn btn-primary" type="button" data-page-next>Next</button></div>
-        <div class="form-actions"><a class="btn btn-secondary" href="{% url 'portal:dashboard' %}">Back to portal</a><button class="btn btn-secondary" type="submit" name="action" value="save_draft" formnovalidate>Save and continue later</button><button class="btn btn-primary" type="submit" data-page-submit>Submit form</button></div>
+        <div class="form-actions"><a class="btn btn-secondary" href="{% url 'portal:dashboard' %}">Back to portal</a><button class="btn btn-secondary" type="submit" name="action" value="save_draft" formnovalidate>Save and continue later</button><button class="btn btn-primary" type="submit" data-page-submit>{% if assignment.requires_signature %}Review &amp; sign{% else %}Submit form{% endif %}</button></div>
       </form>
     </section>
   </main>

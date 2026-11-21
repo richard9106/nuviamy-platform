@@ -16,7 +16,9 @@ class ProtectedRecordsTransactionTestCase(TransactionTestCase):
                   ('accounts_clinicalcontractrequest', 'contract_reject_truncate'),
                   ('accounts_clinicalcontractbundle', 'contract_reject_truncate'),
                   ('accounts_clinicalcontractsignature', 'contract_reject_truncate'),
-                  ('accounts_standardagreementacceptance', 'contract_reject_truncate')]
+                  ('accounts_standardagreementacceptance', 'contract_reject_truncate'),
+                  ('portal_clientintakesignature', 'portal_signature_reject_truncate'),
+                  ('portal_clientintakeassignment', 'portal_form_reject_truncate')]
         with connection.cursor() as cursor:
             for table, trigger in guards:
                 cursor.execute(f'ALTER TABLE {table} DISABLE TRIGGER {trigger}')

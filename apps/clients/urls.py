@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import ClientCreateView, ClientDeleteView, ClientDetailView, ClientListView, ClientUpdateView
 from .workspace import AdministrativeNoteCreateView, ClientFormsShareView
+from apps.portal.profile_views import ProfileSubmissionReviewView
 
 app_name = 'clients'
 
@@ -13,4 +14,5 @@ urlpatterns = [
     path('<int:pk>/delete/', ClientDeleteView.as_view(), name='delete'),
     path('<int:pk>/administrative-notes/new/', AdministrativeNoteCreateView.as_view(), name='administrative_note'),
     path('<int:pk>/share-forms/', ClientFormsShareView.as_view(), name='share_forms'),
+    path('<int:pk>/information/<int:submission_id>/', ProfileSubmissionReviewView.as_view(), name='profile_submission'),
 ]

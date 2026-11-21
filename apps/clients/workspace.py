@@ -26,7 +26,8 @@ from .models import Client, ClientAdministrativeNote, ClientFormDelivery
 
 def templates_digest(templates):
     contents = [{'id': template.pk, 'name': template.name, 'description': template.description,
-                 'questions': template.questions} for template in sorted(templates, key=lambda item: item.pk)]
+                 'questions': template.questions, 'requires_signature': template.requires_signature}
+                for template in sorted(templates, key=lambda item: item.pk)]
     return hashlib.sha256(json.dumps(contents, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 

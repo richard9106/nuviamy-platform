@@ -26,7 +26,7 @@ from apps.clinical.models import Diagnosis, SessionNote, SessionNoteSignature, S
 from apps.dashboard.models import Task
 from apps.documents.models import ClientDocument
 from apps.portal.models import (ClientPortalAccess, ClientPortalRequest, PortalConversation, PortalMessage,
-    PublicBookingRequest, IntakePacketTemplate, ClientIntakeAssignment)
+    PublicBookingRequest, IntakePacketTemplate, ClientIntakeAssignment, ClientIntakeSignature, PortalProfileSubmission)
 
 
 def _rows(queryset, *fields):
@@ -71,6 +71,8 @@ def build_export_data(practice, scope):
             'public_booking_requests': PublicBookingRequest.objects.filter(practice=practice),
             'intake_templates': IntakePacketTemplate.objects.filter(practice=practice),
             'intake_assignments': ClientIntakeAssignment.objects.filter(practice=practice),
+            'intake_signatures': ClientIntakeSignature.objects.filter(assignment__practice=practice, assignment__client__practice=practice),
+            'profile_submissions': PortalProfileSubmission.objects.filter(practice=practice, client__practice=practice),
         })
     if scope in {'all', 'billing'}:
         sections.update({

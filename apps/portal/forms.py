@@ -299,7 +299,7 @@ class IntakePacketTemplateForm(forms.ModelForm):
 
     class Meta:
         model = IntakePacketTemplate
-        fields = ['name', 'description', 'active']
+        fields = ['name', 'description', 'active', 'requires_signature']
         widgets = {'description': forms.Textarea(attrs={'rows': 3})}
 
     def __init__(self, *args, practice=None, **kwargs):
@@ -442,11 +442,15 @@ class ClientIntakeResponseForm(forms.Form):
         for page in pages_from_questions(assignment.packet_questions):
             self.pages.append({**page, 'fields': [self[f"question_{q['index']}"] for q in page['questions']]})
 
-    def save(self):
+    def prepared_answers(self):
         answers = {}
         for index, question in enumerate(self.assignment.packet_questions):
             key = f'question_{index}'
             answers[key] = {'question': intake_question_label(question), 'answer': self.cleaned_data[key]}
+        return answers
+
+    def save(self):
+        answers = self.prepared_answers()
         self.assignment.answers = answers
         if not self.draft:
             self.assignment.status = ClientIntakeAssignment.Status.SUBMITTED

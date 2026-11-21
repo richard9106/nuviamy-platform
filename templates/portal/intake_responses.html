@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'portal.css' %}">
-</head>
+{% include 'partials/signature_assets.html' %}</head>
 <body class="app-page portal-page">
 <main class="portal-shell">{% include 'portal/_header.html' %}<section class="panel" id="portal-content" tabindex="-1">
 <p class="eyebrow">Submitted form</p>
@@ -22,5 +22,5 @@
 </div>{% endfor %}</dl>
 <a class="btn btn-secondary" href="{% url 'portal:dashboard' %}#forms">Back to forms</a>
 </section>
-</main>{% include 'partials/security_session.html' %}</body>
+{% if assignment.electronic_signature %}<section class="panel"><h2>Electronic signature</h2>{% include 'partials/signature_card.html' with signer_name=assignment.electronic_signature.signer_name signer_role='Client (self)' signed_at=assignment.electronic_signature.signed_at %}<p class="chart-meta">{{ assignment.electronic_signature.consent_text }}</p></section>{% endif %}</main>{% include 'partials/security_session.html' %}</body>
 </html>

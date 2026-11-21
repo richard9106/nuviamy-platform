@@ -2,6 +2,7 @@
 <div class="field-grid two">
   <div class="field"><label for="{{ form.name.id_for_label }}">Template name</label>{{ form.name }}{{ form.name.errors }}</div>
   <div class="field checkbox-field intake-checkbox"><label for="{{ form.active.id_for_label }}">{{ form.active }} <span>Available for new assignments</span></label>{{ form.active.errors }}</div>
+  <div class="field full checkbox-field"><label>{{ form.requires_signature }} Require the client’s electronic signature when submitting</label><small>Applies to future assignments. The client reviews the completed form before signing.</small>{{ form.requires_signature.errors }}</div>
   <div class="field full"><label for="{{ form.description.id_for_label }}">Introduction for the client <span class="intake-optional">(optional)</span></label>{{ form.description }}{{ form.description.errors }}</div>
   <div class="field full" data-intake-builder>
     <h2>Pages and questions</h2><p>Create pages, choose answer types, and mark questions as required.</p>

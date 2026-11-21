@@ -33,7 +33,7 @@ def build_reminder_message(appointment):
 
 
 def send_appointment_reminder(appointment):
-    if not appointment.reminder_enabled:
+    if not appointment.reminder_enabled or not appointment.client.email_reminders_allowed:
         appointment.reminder_status = Appointment.ReminderStatus.DISABLED
         appointment.save(update_fields=['reminder_status', 'updated_at'])
         return False
@@ -70,6 +70,7 @@ def due_reminder_appointments(window_hours=24):
     window_end = now + timezone.timedelta(hours=window_hours)
     return Appointment.objects.filter(
         reminder_enabled=True,
+        client__email_reminders_allowed=True,
         reminder_status__in=[Appointment.ReminderStatus.PENDING, Appointment.ReminderStatus.FAILED],
         reminder_sent_at__isnull=True,
         status=Appointment.Status.SCHEDULED,

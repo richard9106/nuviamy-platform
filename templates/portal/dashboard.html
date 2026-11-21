@@ -12,7 +12,7 @@
 <body class="app-page portal-page">
   <main class="portal-shell">
     {% include 'portal/_header.html' %}
-    <header class="portal-welcome" id="portal-content" tabindex="-1"><p class="eyebrow">{{ portal_practice.name }}</p><h1>Welcome, {{ portal_client.first_name }}</h1><p>Your care, all in one place.</p></header>
+    {% if portal_section == 'overview' %}<header class="portal-welcome" id="portal-content" tabindex="-1"><p class="eyebrow">{{ portal_practice.name }}</p><h1>Welcome, {{ portal_client.first_name }}</h1><p>Your care, all in one place.</p></header>
     {% if messages %}<section class="message-list" aria-label="Portal updates">{% for message in messages %}<div class="portal-notice {% if 'error' in message.tags %}form-error{% endif %}" role="{% if 'error' in message.tags %}alert{% else %}status{% endif %}">{{ message }}</div>{% endfor %}</section>{% endif %}
     <section class="portal-priorities" aria-label="Your next steps">
       <article class="panel portal-next-session"><p class="eyebrow">Your next appointment</p>{% if next_appointment %}
@@ -27,13 +27,14 @@
         <a class="portal-task" href="#payments"><span><strong>Review your balance</strong><small>Your outstanding share of open invoices</small></span><strong>${{ open_invoice_total|floatformat:2 }}</strong></a>
       </article>
     </section>
-    <section class="portal-grid">
-<article class="panel" id="appointments">
+    {% else %}<header class="portal-form-hero" id="portal-content"><h1>{% if portal_section == 'appointments' %}Appointments{% elif portal_section == 'documents' %}Documents &amp; forms{% else %}Billing &amp; payments{% endif %}</h1></header>{% endif %}
+    <section class="portal-grid portal-section-{{ portal_section }}">
+{% if portal_section == 'overview' or portal_section == 'appointments' %}<article class="panel" id="appointments">
 <div class="panel-head"><div><h2>Appointments</h2><p>Your upcoming sessions · Times shown in {{ portal_timezone }}</p></div></div>
 <div class="appointment-list">{% for appointment in upcoming_appointments %}{% include 'portal/_appointment_card.html' %}{% empty %}<p class="empty-state">No upcoming appointments. Message your practice to arrange your next session.</p>{% endfor %}</div>
 <details class="portal-history"><summary>Recent appointment history</summary><div class="package-list">{% for appointment in appointment_history %}<div class="package-card"><div class="client-card-head"><strong>{{ appointment.starts_at|date:"M j, Y" }} · {{ appointment.starts_at|time:"g:i A" }}</strong><span class="badge {% if appointment.status == 'completed' %}success{% else %}neutral{% endif %}">{{ appointment.get_status_display }}</span></div><p>{{ appointment.get_appointment_type_display }} with {{ appointment.therapist.user.get_full_name|default:appointment.therapist.user.username }}</p></div>{% empty %}<p>No appointment history yet.</p>{% endfor %}</div></details>
-</article>
-<article class="panel" id="forms">
+</article>{% endif %}
+{% if portal_section == 'overview' or portal_section == 'documents' %}<article class="panel" id="forms">
         <div class="panel-head"><div><h2>Client forms</h2><p>Complete forms assigned by your practice.</p></div></div>
         <div class="package-list">
           {% for intake in pending_intakes %}
@@ -41,36 +42,36 @@
           {% empty %}<p class="empty-state">No client forms pending.</p>{% endfor %}
         </div>
         <details class="portal-history"><summary>Submitted forms</summary><div class="package-list">{% for intake in completed_intakes %}<div class="package-card"><div class="client-card-head"><strong>{{ intake.packet_name }}</strong><span class="badge success">{{ intake.get_status_display }}</span></div><p>Submitted {{ intake.submitted_at|date:"M j, Y" }}</p><a class="inline-link" href="{% url 'portal:intake_responses' intake.pk %}">View responses</a></div>{% empty %}<p>No submitted forms yet.</p>{% endfor %}</div></details>
-      </article>
-<article class="panel" id="documents">
+      </article>{% endif %}
+{% if portal_section == 'overview' or portal_section == 'documents' %}<article class="panel" id="documents">
         <div class="panel-head"><div><h2>Shared documents</h2><p>Documents your practice has made visible to you.</p></div></div>
         <div class="document-grid portal-documents">
           {% for document in visible_documents %}
             <div class="document-card"><strong>{{ document.title }}</strong><p>{{ document.get_document_type_display }} · {{ document.created_at|date:"M j, Y" }}</p><a class="inline-link" href="{% url 'documents:download' document.pk %}">Download</a></div>
           {% empty %}<p class="empty-state">No shared documents yet.</p>{% endfor %}
         </div>
-      </article>
-<article class="panel" id="payments">
+      </article>{% endif %}
+{% if portal_section == 'overview' or portal_section == 'billing' %}<article class="panel" id="payments">
          <div class="panel-head"><div><h2 id="portal-open-invoices-heading">Open invoices</h2><p>Invoices that still need attention.</p></div></div>
          <div class="table-wrap" role="region" aria-labelledby="portal-open-invoices-heading" aria-describedby="portal-open-invoices-scroll-help" tabindex="0"><p class="sr-only" id="portal-open-invoices-scroll-help">Scroll horizontally to view all invoice columns.</p><table><thead><tr><th scope="col">Invoice</th><th scope="col">Status</th><th scope="col">Due</th><th scope="col">Balance</th><th scope="col">Payment</th></tr></thead><tbody>{% for invoice in open_invoices %}<tr><td>{{ invoice.invoice_number }}</td><td><span class="badge brand">{{ invoice.get_status_display }}</span></td><td>{% if invoice.due_date %}{{ invoice.due_date|date:"M j, Y" }}{% else %}Not set{% endif %}</td><td>${{ invoice.client_balance_due }}</td><td>{% if client_payments_ready and invoice.client_balance_due > 0 %}<form method="post" action="{% url 'portal:invoice_pay' invoice.pk %}" data-confirm-message="Pay invoice {{ invoice.invoice_number }} for ${{ invoice.client_balance_due }}?">{% csrf_token %}<button class="inline-button" type="submit">Pay invoice</button></form>{% else %}<span class="empty-state">{% if invoice.client_balance_due <= 0 %}No client payment is due. Insurance may still be outstanding.{% else %}Online payment is not available yet. Please contact {{ portal_practice.name }}.{% endif %}</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="5">No open invoices.</td></tr>{% endfor %}</tbody></table></div>
         <details class="portal-history"><summary>Recently paid invoices</summary><div class="package-list">{% for invoice in paid_invoices %}<div class="package-card"><div class="client-card-head"><strong>{{ invoice.invoice_number }}</strong><span class="badge success">Paid</span></div><p>Invoice total ${{ invoice.amount }}{% if invoice.paid_at %} · Paid {{ invoice.paid_at|date:"M j, Y" }}{% endif %}</p></div>{% empty %}<p>No paid invoices yet.</p>{% endfor %}</div></details>
-      </article>
-<article class="panel">
+      </article>{% endif %}
+{% if portal_section == 'overview' or portal_section == 'billing' %}<article class="panel">
         <div class="panel-head"><div><h2>Package balance</h2><p>Prepaid session balances.</p></div></div>
         <div class="package-list">
           {% for package in service_packages %}
             <div class="package-card"><div class="client-card-head"><strong>{{ package.name }}</strong><span class="badge brand">{{ package.get_status_display }}</span></div><p>{{ package.sessions_remaining }} of {{ package.sessions_purchased }} sessions remaining</p><p>Purchased {{ package.purchased_at|date:"M j, Y" }}{% if package.expires_at %} · Expires {{ package.expires_at|date:"M j, Y" }}{% endif %}</p></div>
           {% empty %}<p class="empty-state">No active packages yet.</p>{% endfor %}
         </div>
-      </article>
-<article class="panel">
+      </article>{% endif %}
+{% if portal_section == 'overview' or portal_section == 'appointments' %}<article class="panel">
         <div class="panel-head"><div><h2>Recent requests</h2><p>Updates on requests sent to your practice.</p></div><button class="btn btn-secondary" type="button" data-modal-target="portal-request-modal">Send a request</button></div>
         <div class="package-list">
           {% for portal_request in portal_requests %}
             <div class="package-card"><div class="client-card-head"><strong>{{ portal_request.subject }}</strong><span class="badge brand">{{ portal_request.get_status_display }}</span></div><p>{{ portal_request.get_category_display }} · {{ portal_request.created_at|date:"M j, Y" }}</p><p>{{ portal_request.message|truncatechars:110 }}</p></div>
           {% empty %}<p class="empty-state">No portal requests yet.</p>{% endfor %}
         </div>
-      </article>
+      </article>{% endif %}
 </section>
     <dialog class="modal-dialog" id="portal-request-modal">
       <div class="modal-card">

@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.appointments.models import Appointment, practice_allows_interval
+from apps.practices.fields import EncryptedTextField
 
 
 class ClientPortalAccess(models.Model):
@@ -187,6 +188,7 @@ class IntakePacketTemplate(models.Model):
     description = models.TextField(blank=True)
     questions = models.JSONField(default=list, blank=True)
     active = models.BooleanField(default=True)
+    requires_signature = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -236,11 +238,19 @@ class ClientIntakeAssignment(models.Model):
         ordering = ["-created_at"]
 
     def save(self, *args, **kwargs):
+        if self.pk and ClientIntakeSignature.objects.filter(assignment_id=self.pk).exists():
+            original = type(self).objects.get(pk=self.pk)
+            for field in ('practice_id', 'client_id', 'template_id', 'template_snapshot', 'answers', 'submitted_at'):
+                if getattr(self, field) != getattr(original, field):
+                    raise ValidationError('Signed form contents cannot be changed.')
+            if self.status not in {self.Status.SUBMITTED, self.Status.REVIEWED}:
+                raise ValidationError('A signed form cannot return to draft.')
         if self._state.adding and not self.template_snapshot:
             self.template_snapshot = {
                 "name": self.template.name,
                 "description": self.template.description,
                 "questions": deepcopy(self.template.questions),
+                "requires_signature": self.template.requires_signature,
             }
         super().save(*args, **kwargs)
 
@@ -255,6 +265,11 @@ class ClientIntakeAssignment(models.Model):
     @property
     def packet_questions(self):
         return self.template_snapshot.get("questions", self.template.questions)
+
+    @property
+    def requires_signature(self):
+        # Historical assignments keep their original unsigned workflow.
+        return self.template_snapshot.get('requires_signature', False)
 
     @property
     def response_items(self):
@@ -293,3 +308,72 @@ class ClientIntakeAssignment(models.Model):
 
     def __str__(self):
         return f"{self.template} for {self.client}"
+
+
+class PortalProfileSubmission(models.Model):
+    practice = models.ForeignKey('practices.Practice', on_delete=models.PROTECT)
+    client = models.ForeignKey('clients.Client', on_delete=models.PROTECT, related_name='profile_submissions')
+    submitted_by = models.ForeignKey('auth.User', on_delete=models.PROTECT)
+    details = EncryptedTextField()
+    submission_key = models.UUIDField(default=uuid.uuid4, unique=True)
+    document_ids = models.JSONField(default=list)
+    status = models.CharField(max_length=20, default='pending', choices=[('pending', 'Pending review'), ('applied', 'Applied'), ('reviewed', 'Reviewed without applying')])
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey('auth.User', on_delete=models.PROTECT, null=True, blank=True, related_name='+')
+
+    @property
+    def submitted_details(self):
+        import json
+        return json.loads(self.details)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class IntakeSignatureQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError('Submitted signatures cannot be changed.')
+
+    def delete(self):
+        raise ValidationError('Submitted signatures cannot be deleted.')
+
+    def bulk_update(self, *args, **kwargs):
+        raise ValidationError('Submitted signatures cannot be changed.')
+
+
+class ClientIntakeSignature(models.Model):
+    assignment = models.OneToOneField(ClientIntakeAssignment, on_delete=models.PROTECT, related_name='electronic_signature')
+    signed_by = models.ForeignKey('auth.User', on_delete=models.PROTECT)
+    signer_name = models.CharField(max_length=200)
+    relationship = models.CharField(max_length=20, default='self')
+    signed_at = models.DateTimeField(default=timezone.now, editable=False)
+    digest = models.CharField(max_length=64)
+    consent_text = models.TextField()
+    objects = IntakeSignatureQuerySet.as_manager()
+
+    def clean(self):
+        if not self.assignment.requires_signature or self.assignment.status == ClientIntakeAssignment.Status.ASSIGNED:
+            raise ValidationError('Review and submit the assigned form before signing.')
+        if self.relationship != 'self' or not ClientPortalAccess.objects.filter(user_id=self.signed_by_id,
+            practice_id=self.assignment.practice_id, client_id=self.assignment.client_id, is_active=True).exists():
+            raise ValidationError('Only the linked client may sign this form.')
+        if self.digest != intake_signature_digest(self.assignment):
+            raise ValidationError('The signature does not match the form content.')
+
+    def save(self, *args, **kwargs):
+        if self.pk or not self._state.adding:
+            raise ValidationError('Submitted signatures cannot be changed.')
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Submitted signatures cannot be deleted.')
+
+
+def intake_signature_digest(assignment):
+    import hashlib
+    import json
+    payload = {'assignment': assignment.pk, 'practice': assignment.practice_id, 'client': assignment.client_id,
+               'template': assignment.template_snapshot, 'answers': assignment.answers}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()

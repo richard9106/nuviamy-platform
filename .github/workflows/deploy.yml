@@ -91,6 +91,8 @@ jobs:
         run: node ops/check_insurance_suggestions.cjs
       - name: Check client session picker
         run: node ops/check_client_session_picker.cjs
+      - name: Check workspace form drawers
+        run: node ops/check_workspace_drawers.cjs
       - name: Check appointment recurrence preview
         run: node ops/check_appointment_recurrence.cjs
       - name: Check appointment calendar interactions

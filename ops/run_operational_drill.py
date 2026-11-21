@@ -111,7 +111,10 @@ def run(image, parent):
         save_env(restored_env,dict(config,POSTGRES_DB=restored))
         from ops.verify_s3_recovery import VALIDATE
         restored_proof = json.loads(app(['python','-c',VALIDATE],restored_env))
-        assert restored_proof['enabled_guards'] == 17
+        from ops.postgres_roles import GUARDS, CONTRACT_TABLES, CONTRACT_TRIGGERS
+        assert set(restored_proof['enabled_guard_names']) == GUARDS
+        assert restored_proof['contract_guards'] == len(CONTRACT_TABLES) * len(CONTRACT_TRIGGERS)
+        assert restored_proof['enabled_guards'] == len(GUARDS) + restored_proof['contract_guards']
         report['restored_database_validation'] = restored_proof
         wrong_env = root/'wrong-field-key.env'
         save_env(wrong_env,dict(config,POSTGRES_DB=restored,FIELD_ENCRYPTION_KEY=Fernet.generate_key().decode()))
@@ -139,8 +142,13 @@ def run(image, parent):
             input=b"DROP TABLE dashboard_supportmessage; DROP TABLE dashboard_supportticket; DELETE FROM django_migrations WHERE app='dashboard' AND name IN ('0003_supportticket_supportmessage', '0004_early_access_support_topic');")
         compatibility_env = root/'older-schema-application.env'
         save_env(compatibility_env,dict(config,POSTGRES_DB=compatibility))
+        # Represent a valid pre-signature backup too. This is another disposable
+        # database, never the validated restoration or a production database.
+        app(['python','manage.py','migrate','portal','0013','--noinput'],compatibility_env)
         older_proof = json.loads(app(['python','-c',VALIDATE],compatibility_env))
         assert 'dashboard.0003_supportticket_supportmessage' in older_proof['migrations_applied_to_isolated_copy']
+        assert 'portal.0015_protect_signed_client_forms' in older_proof['migrations_applied_to_isolated_copy']
+        assert set(older_proof['enabled_guard_names']) == GUARDS
         report['older_schema_recovered_with_isolated_migrations'] = True
         report['completed_at'] = datetime.now(timezone.utc).isoformat()
         report['total_seconds'] = round(time.monotonic()-started,3)

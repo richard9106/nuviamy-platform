@@ -125,6 +125,8 @@ class ClientPortalAccessMixin(LoginRequiredMixin, ForcePasswordChangeRequiredMix
         context['portal_access'] = access
         context['portal_client'] = access.client
         context['portal_practice'] = access.practice
+        section = self.request.GET.get('section', 'overview')
+        context['portal_section'] = section if section in ('overview', 'appointments', 'documents', 'billing') else 'overview'
         return context
 
 
@@ -960,6 +962,19 @@ class ClientIntakeCompleteView(ClientPortalAccessMixin, FormView):
 
     def form_valid(self, form):
         # A stale browser tab must never turn submitted responses back into a draft.
+        attestation = None
+        if form.assignment.requires_signature and not form.draft:
+            from .signatures import SignatureAttestationForm, render_review, valid_review
+            if self.request.POST.get('action') == 'edit_answers':
+                return self.render_to_response(self.get_context_data(form=form))
+            if self.request.POST.get('action') != 'sign':
+                return render_review(self, form)
+            attestation = SignatureAttestationForm(self.request.POST)
+            if not attestation.is_valid():
+                return render_review(self, form, attestation)
+            if not valid_review(self.request, form.assignment, form):
+                attestation.add_error(None, 'The form changed or your review expired. Review it again before signing.')
+                return render_review(self, form, attestation)
         with transaction.atomic():
             access = self.get_portal_access()
             form.assignment = get_object_or_404(
@@ -967,7 +982,17 @@ class ClientIntakeCompleteView(ClientPortalAccessMixin, FormView):
                 pk=self.kwargs['pk'], practice=access.practice, client=access.client,
                 status=ClientIntakeAssignment.Status.ASSIGNED,
             )
+            if attestation:
+                from .signatures import valid_review, render_review
+                if not valid_review(self.request, form.assignment, form):
+                    attestation.add_error(None, 'The assigned form changed. Review it again before signing.')
+                    return render_review(self, form, attestation)
             assignment = form.save()
+            if attestation:
+                from .signatures import create_signature
+                signature = create_signature(self.request, assignment, attestation)
+                log_audit_event(self.request, AuditLog.Action.CREATE, 'portal.ClientIntakeSignature', signature.pk,
+                    practice=assignment.practice, metadata={'client_id':assignment.client_id,'assignment_id':assignment.pk,'digest':signature.digest})
         messages.success(self.request, 'Draft saved. You can continue this form from your portal.'
                          if form.draft else 'Form submitted. Your care team can now review your responses.')
         log_audit_event(

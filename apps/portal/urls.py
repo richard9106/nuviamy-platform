@@ -1,11 +1,13 @@
 from django.urls import path
 
 from .views import AppointmentChangeRequestCreateView, ClientConversationDetailView, ClientConversationListView, ClientInvoicePaymentView, ClientIntakeCompleteView, PortalIntakeResponsesView, ClientPortalDashboardView, ClientPortalRequestCreateView
+from .profile_views import PortalProfileView
 
 app_name = 'portal'
 
 urlpatterns = [
     path('', ClientPortalDashboardView.as_view(), name='dashboard'),
+    path('my-information/', PortalProfileView.as_view(), name='profile'),
     path('invoices/<int:pk>/pay/', ClientInvoicePaymentView.as_view(), name='invoice_pay'),
     path('intake/<int:pk>/responses/', PortalIntakeResponsesView.as_view(), name='intake_responses'),
     path('intake/<int:pk>/', ClientIntakeCompleteView.as_view(), name='intake_complete'),

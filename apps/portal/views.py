@@ -622,6 +622,12 @@ class PracticePortalRequestListView(PracticePermissionMixin, PracticeContextMixi
         self.search = self.request.GET.get('q', '').strip()[:200]
         portal = ClientPortalRequest.objects.filter(practice=practice)
         public = PublicBookingRequest.objects.filter(practice=practice)
+        item = self.request.GET.get('item', '')
+        valid_item = item.isascii() and item.isdigit() and len(item) < 19 and self.source
+        if valid_item:
+            portal = portal.filter(pk=int(item)) if self.source == 'portal' else portal.none()
+            public = public.filter(pk=int(item)) if self.source == 'public' else public.none()
+        self.item = item if valid_item else ''
         if self.search:
             portal = portal.filter(Q(subject__icontains=self.search) | Q(client__first_name__icontains=self.search) | Q(client__last_name__icontains=self.search) | Q(client__email__icontains=self.search))
             public = public.filter(Q(first_name__icontains=self.search) | Q(last_name__icontains=self.search) | Q(email__icontains=self.search))
@@ -642,6 +648,7 @@ class PracticePortalRequestListView(PracticePermissionMixin, PracticeContextMixi
         ).select_related('client', 'appointment')}
         context['request_rows'] = [dict(row, record=(public if row['source'] == 'public' else portal)[row['pk']]) for row in page_rows]
         context['source'] = self.source
+        context['item'] = self.item
         context['q'] = self.search
         context['public_booking_url'] = self.request.build_absolute_uri(reverse_lazy('public_booking', args=[practice.public_booking_slug])) if practice else ''
         return context

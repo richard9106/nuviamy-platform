@@ -138,6 +138,17 @@ def permission_context(request):
                 'url': reverse('clinical_contracts'),
             })
         activities.extend(setup_steps(request))
+        from apps.dashboard.inbox import inbox_summary
+        pending = inbox_summary(request)
+        pending_total = sum(pending.values())
+        context['workspace_pending_count'] = pending_total
+        context['workspace_activity_count'] = pending_total + len(activities)
+        if pending_total:
+            activities.insert(0, {
+                'label': f'{pending_total} items to follow up',
+                'detail': 'Forms, client updates, requests and session documentation.',
+                'url': reverse('pending_inbox'),
+            })
         context['workspace_activities'] = activities
         context['workspace_activities_enabled'] = get_practice_for_user(user) is not None
     return context

@@ -166,7 +166,7 @@ class DashboardTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertContains(response, 'aria-label="Activities: 0 pending"')
         self.assertNotContains(response, 'Review and accept agreements')
-        self.assertContains(response, 'No pending setup activities.')
+        self.assertContains(response, 'No pending activities.')
 
     def test_first_steps_do_not_offer_actions_without_permission(self):
         user, _, _ = self.create_practice_user()

@@ -92,6 +92,8 @@ class ClientDetailView(LoginRequiredMixin, PracticePermissionMixin, PracticeCont
         allowed_tabs = {'overview'} | {tab for tab in ('clinical', 'billing', 'documents') if permissions[tab]}
         if permissions['intake']:
             allowed_tabs.add('forms')
+            if permissions['clinical']:
+                allowed_tabs.add('measures')
         requested_tab = self.request.GET.get('tab', 'overview')
         if self.request.method == 'POST' and self.request.POST.get('return_to_patient') == '1':
             requested_tab = 'clinical'

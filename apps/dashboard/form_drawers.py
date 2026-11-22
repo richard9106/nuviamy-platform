@@ -12,7 +12,7 @@ FORM_DRAWER_VIEWS = {
     'clinical:treatment_plan_create', 'clinical:treatment_plan_edit',
     'billing:invoice_create', 'billing:invoice_edit', 'billing:package_create', 'billing:package_edit',
     'billing:payment_create', 'billing:usage_create',
-    'documents:create', 'intake:template_create', 'intake:template_edit',
+    'documents:create', 'intake:template_create', 'intake:template_edit', 'intake:measure_add',
     'settings:package_template_create', 'settings:package_template_edit',
     'settings:insurance_payer_create', 'settings:insurance_payer_edit',
     'settings:insurance_rate_create', 'settings:insurance_rate_edit',

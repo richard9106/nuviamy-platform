@@ -108,6 +108,15 @@ def build_export_data(practice, scope):
         data['team_members'] = _rows(staff, 'id', 'first_name', 'last_name', 'email', 'is_active')
         data['therapists'] = _records(TherapistProfile.objects.filter(practice=practice))
     data.update({name: _records(queryset.order_by('pk')) for name, queryset in sections.items()})
+    if scope in {'all', 'clinical'}:
+        from apps.portal.measures import score_assignment
+        results = []
+        for assignment in ClientIntakeAssignment.objects.filter(practice=practice, client__practice=practice).exclude(status='assigned').iterator():
+            score = score_assignment(assignment)
+            if score:
+                results.append({'assignment_id': assignment.pk, 'client_id': assignment.client_id,
+                                'submitted_at': assignment.submitted_at, **score})
+        data['measure_results'] = results
     return data
 
 

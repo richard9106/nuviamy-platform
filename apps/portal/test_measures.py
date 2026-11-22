@@ -127,6 +127,13 @@ class MeasureWorkflowTests(TestCase):
         self.assertContains(self.client.get(url+'?_workspace_drawer=1'),'Standard measure')
         self.assertEqual(self.client.get(url+'?_workspace_drawer=1')['X-Frame-Options'],'SAMEORIGIN')
 
+    def test_anonymous_get_and_post_require_login_without_creating_templates(self):
+        self.client.logout()
+        url = reverse('intake:measure_add')
+        for response in [self.client.get(url), self.client.post(url, {'measure':'phq9_en_v1','acknowledge':'on'})]:
+            self.assertRedirects(response, reverse('login')+'?next='+url)
+        self.assertFalse(IntakePacketTemplate.objects.exists())
+
     def test_standard_template_content_cannot_be_edited_but_can_be_deactivated(self):
         template = self.add()
         original = deepcopy(template.questions)

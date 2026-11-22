@@ -35,6 +35,12 @@ dialog.workspace-drawer::backdrop { background: rgb(15 23 42 / .38); backdrop-fi
 .workspace-drawer-frame .workspace-panel-form > .form-actions, .workspace-drawer-frame .workspace-frame-card > .form-actions { flex-shrink: 0; margin: 0; padding: 16px 24px; background: white; border-top: 1px solid #e2e8f0; }
 .workspace-drawer-frame .workspace-panel-fields > p:first-child { margin-top: 0; }
 .workspace-drawer-frame [hidden] { display: none !important; }
+/* Review documents need a continuous scroll area, including signatures and action-only forms. */
+.workspace-review-frame main.app-main { display: block; overflow: auto; padding: 22px !important; box-sizing: border-box; }
+.workspace-review-frame main.app-main > a.btn { display: none; }
+.workspace-review-frame main.app-main > .panel { margin: 0 0 22px; padding: 0; border: 0; box-shadow: none; }
+.workspace-review-frame .intake-response-list { max-height: none; overflow: visible; }
+.workspace-review-frame .intake-review-action { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
 .workspace-drawer .field.checkbox-field, .workspace-drawer-frame .field.checkbox-field { flex-direction: column; align-items: stretch; gap: 6px; }
 .workspace-drawer .checkbox-field label, .workspace-drawer-frame .checkbox-field label { padding-block: 10px; }
 .workspace-drawer .checkbox-field input[type="checkbox"], .workspace-drawer-frame .checkbox-field input[type="checkbox"] { flex: 0 0 16px; }

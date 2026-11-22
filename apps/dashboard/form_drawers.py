@@ -1,4 +1,4 @@
-"""First-party framing only for explicitly enumerated staff editor endpoints."""
+"""First-party framing only for explicitly enumerated staff editor and review endpoints."""
 from django.http import HttpResponse
 from django.utils.html import format_html
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -18,6 +18,9 @@ FORM_DRAWER_VIEWS = {
     'settings:insurance_rate_create', 'settings:insurance_rate_edit',
     'portal_settings:portal_access_create', 'portal_settings:portal_access_edit',
     'practice_settings:working_hour_create',
+    'intake:responses', 'intake:review', 'clients:profile_submission',
+    'pending_inbox_detail', 'portal_requests:status',
+    'portal_requests:booking_approve', 'portal_requests:booking_decline',
 }
 
 
@@ -37,10 +40,12 @@ class WorkspaceFormDrawerMiddleware:
             target = response.get('Location', '')
             if not url_has_allowed_host_and_scheme(target, {request.get_host()}, require_https=request.is_secure()):
                 return response
+            result = getattr(request, '_workspace_drawer_result', 'navigate')
             response = HttpResponse(format_html(
                 '<!doctype html><html><head><meta charset="utf-8"><title>Continue</title></head>'
-                '<body data-workspace-drawer-redirect="{}"><p>Continue to the next step.</p>'
-                '<a href="{}" target="_top">Continue</a></body></html>', target, target))
+                '<body data-workspace-drawer-redirect="{}" data-workspace-drawer-result="{}">'
+                '<p>Continue to the next step.</p>'
+                '<a href="{}" target="_top">Continue</a></body></html>', target, result, target))
             response['Content-Security-Policy'] = "default-src 'none'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'"
         elif response.status_code != 200 or 'text/html' not in response.get('Content-Type', ''):
             return response

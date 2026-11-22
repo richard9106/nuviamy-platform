@@ -24,7 +24,7 @@
         <form class="requests-toolbar" method="get">
           <div class="field"><label for="request-search">Search</label><input id="request-search" type="search" name="q" value="{{ q }}" placeholder="Client, email or subject"></div>
           <div class="field"><label for="request-source">Source</label><select id="request-source" name="source"><option value="">All sources</option><option value="public" {% if source == 'public' %}selected{% endif %}>Public booking</option><option value="portal" {% if source == 'portal' %}selected{% endif %}>Registered clients</option></select></div>
-          <button class="btn btn-secondary" type="submit">Filter</button>{% if q or source %}<a class="inline-link" href="{% url 'portal_requests:list' %}">Clear</a>{% endif %}<span class="requests-result-count">{{ paginator.count }} request{{ paginator.count|pluralize }}</span>
+          <button class="btn btn-secondary" type="submit">Filter</button>{% if q or source or item %}<a class="inline-link" href="{% url 'portal_requests:list' %}">Clear</a>{% endif %}<span class="requests-result-count">{{ paginator.count }} request{{ paginator.count|pluralize }}</span>
         </form>
         <div class="table-wrap requests-table-wrap"><table class="requests-table"><caption class="sr-only">All client requests, newest first</caption><thead><tr><th scope="col">Client</th><th scope="col">Request</th><th scope="col">Source</th><th scope="col" class="request-received">Received</th><th scope="col">Status</th><th scope="col" class="invoice-actions-cell"><span class="sr-only">Actions</span></th></tr></thead><tbody>
         {% for row in request_rows %}{% with record=row.record %}
@@ -44,7 +44,7 @@
               </div>
             </td>
           </tr>
-        {% endwith %}{% empty %}<tr><td colspan="6" class="empty-state">{% if q or source %}No requests match these filters.{% else %}No requests yet.{% endif %}</td></tr>{% endfor %}
+        {% endwith %}{% empty %}<tr><td colspan="6" class="empty-state">{% if q or source or item %}No requests match these filters.{% else %}No requests yet.{% endif %}</td></tr>{% endfor %}
         </tbody></table></div>
         {% if page_obj.has_other_pages %}<nav class="intake-pagination" aria-label="Request pages">{% if page_obj.has_previous %}<a class="btn btn-secondary" href="?source={{ source|urlencode }}&amp;q={{ q|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="btn btn-secondary" href="?source={{ source|urlencode }}&amp;q={{ q|urlencode }}&amp;page={{ page_obj.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
       </section>

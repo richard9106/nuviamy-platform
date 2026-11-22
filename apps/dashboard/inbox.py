@@ -1,9 +1,12 @@
 """Live, read-only work queue. Source workflows remain authoritative."""
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.core.paginator import Paginator
 from django.db.models import CharField, F, Value
 from django.db.models.functions import Coalesce, Concat
 from django.urls import reverse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -99,11 +102,10 @@ def decorate_row(row, user):
     elif kind == 'information':
         url = reverse('clients:profile_submission', args=[row['person_id'], pk])
     elif kind in {'portal', 'booking'}:
-        source = 'public' if kind == 'booking' else 'portal'
-        url = reverse('portal_requests:list') + f'?source={source}&item={pk}'
+        url = reverse('pending_inbox_detail', args=[kind, pk])
     elif kind == 'note':
         url = (reverse('clinical:edit', args=[pk]) if has_practice_permission(user, 'clinical', 'edit')
-               else reverse('clinical:list') + f'?client={row["person_id"]}&status=draft')
+               else reverse('pending_inbox_detail', args=[kind, pk]))
     else:
         url = reverse('clinical:create') + f'?appointment={pk}'
     client_url = (reverse('clients:detail', args=[row['person_id']])
@@ -126,4 +128,31 @@ class PendingInboxView(LoginRequiredMixin, ClientPortalRedirectMixin, TemplateVi
             categories=[dict(key=key, label=label, count=counts[key]) for key, label in LABELS.items()],
             page_obj=page, pending_items=[decorate_row(row, self.request.user) for row in page],
         )
+        return context
+
+
+@method_decorator(never_cache, name='dispatch')
+class PendingInboxDetailView(LoginRequiredMixin, ClientPortalRedirectMixin, TemplateView):
+    """Read a request or a read-only note; mutations use their original endpoints."""
+    template_name = 'dashboard/inbox_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        kind = self.kwargs['kind']
+        practice = get_practice_for_user(self.request.user)
+        if kind in {'portal', 'booking'}:
+            if not has_practice_permission(self.request.user, 'requests', 'view'):
+                raise PermissionDenied
+            model = PublicBookingRequest if kind == 'booking' else ClientPortalRequest
+            record = get_object_or_404(model.objects.select_related('client', 'appointment'),
+                                       practice=practice, pk=self.kwargs['pk'])
+            context['can_act'] = has_practice_permission(self.request.user, 'requests', 'edit')
+        elif kind == 'note':
+            if not has_practice_permission(self.request.user, 'clinical', 'view'):
+                raise PermissionDenied
+            record = get_object_or_404(scope_sessions(SessionNote.objects.all(), self.request.user)
+                .select_related('client', 'therapist__user', 'appointment'), pk=self.kwargs['pk'])
+        else:
+            raise Http404
+        context.update(kind=kind, record=record)
         return context

@@ -103,11 +103,13 @@ class ProfileSubmissionReviewView(ClientChartActionView):
             'documents':ClientDocument.objects.filter(practice=self.practice, client=self.client_record, pk__in=submission.document_ids)})
 
     def post(self, request, pk, submission_id):
+        request._workspace_drawer_result = 'retry'
         with transaction.atomic():
             client = Client.objects.select_for_update().get(pk=pk, practice=self.practice)
             submission = PortalProfileSubmission.objects.select_for_update().get(pk=self.get_submission(submission_id).pk,
                 practice=self.practice,client=client)
             if submission.status != 'pending':
+                request._workspace_drawer_result = 'complete'
                 messages.info(request,'This submission has already been reviewed.')
                 return redirect('clients:detail', pk=pk)
             if request.POST.get('confirm') != 'on' or request.POST.get('action') not in ('apply','reviewed'):
@@ -139,4 +141,5 @@ class ProfileSubmissionReviewView(ClientChartActionView):
             log_audit_event(request,AuditLog.Action.UPDATE,'portal.PortalProfileSubmission',submission.pk,
                 practice=self.practice,metadata={'client_id':pk,'status':submission.status})
         messages.success(request,'Client information review recorded. Existing invoices and login credentials are unchanged.')
+        request._workspace_drawer_result = 'complete'
         return redirect('clients:detail',pk=pk)

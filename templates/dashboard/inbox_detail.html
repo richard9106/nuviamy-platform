@@ -1,0 +1,29 @@
+{% load static %}<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Review follow-up · NuviaMy</title><link rel="stylesheet" href="{% static 'dashboard.css' %}"><link rel="stylesheet" href="{% static 'pending-inbox.css' %}"></head>
+<body class="app-page"><div class="app-shell">{% include 'partials/sidebar.html' %}
+<main class="app-main" data-workspace-review>
+  <a class="btn btn-secondary" href="{% url 'pending_inbox' %}">Back to pending inbox</a>
+  {% include 'partials/workspace_review_messages.html' %}
+  <article class="panel pending-review">
+    <header class="panel-head"><div><p class="eyebrow">{% if kind == 'booking' %}{{ record.first_name }} {{ record.last_name }}{% else %}{{ record.client }}{% endif %}</p><h1>{% if kind == 'booking' %}Appointment request{% elif kind == 'portal' %}{{ record.get_category_display }}{% else %}Session note{% endif %}</h1></div><span class="badge brand">{% if kind == 'note' %}{% if record.is_locked %}Signed{% else %}Unsigned{% endif %}{% else %}{{ record.get_status_display }}{% endif %}</span></header>
+    {% if kind == 'note' %}
+      <p>{{ record.get_note_type_display }} · {{ record.therapist.user.get_full_name|default:record.therapist.user.username }}</p>
+      {% if record.appointment %}<p>Session {{ record.appointment.starts_at|date:'M j, Y, g:i A' }}</p>{% endif %}
+      <h2>Note</h2><div class="pending-review__text">{{ record.content|linebreaksbr }}</div>
+      {% if record.treatment_progress %}<h2>Treatment progress</h2><div class="pending-review__text">{{ record.treatment_progress|linebreaksbr }}</div>{% endif %}
+    {% elif kind == 'booking' %}
+      <dl class="pending-review__details"><div><dt>Requested session</dt><dd>{{ record.requested_starts_at|date:'M j, Y, g:i A' }} – {{ record.requested_ends_at|date:'g:i A' }}</dd></div><div><dt>Format</dt><dd>{{ record.get_appointment_type_display }}</dd></div><div><dt>Email</dt><dd>{{ record.email }}</dd></div>{% if record.phone %}<div><dt>Phone</dt><dd>{{ record.phone }}</dd></div>{% endif %}<div><dt>Received</dt><dd>{{ record.created_at|date:'M j, Y, g:i A' }}</dd></div></dl>
+      <h2>Request details</h2><div class="pending-review__text">{{ record.reason|default:'No additional details provided.'|linebreaksbr }}</div>
+      {% if can_act and record.status == 'pending' %}<div class="pending-review__actions">
+        <form method="post" action="{% url 'portal_requests:booking_approve' record.pk %}" data-confirm-message="Approve this booking request and create the appointment?">{% csrf_token %}<button class="btn btn-primary" type="submit">Approve and create appointment</button></form>
+        <form method="post" action="{% url 'portal_requests:booking_decline' record.pk %}" data-confirm-message="Decline this booking request?">{% csrf_token %}<button class="btn btn-secondary" type="submit">Decline booking</button></form>
+      </div>{% endif %}
+    {% else %}
+      <p>Received {{ record.created_at|date:'M j, Y, g:i A' }}</p>
+      <h2>{{ record.subject }}</h2><div class="pending-review__text">{{ record.message|linebreaksbr }}</div>
+      {% if record.appointment %}<p>Related session: {{ record.appointment.starts_at|date:'M j, Y, g:i A' }}.</p>{% endif %}
+      {% if can_act and record.status != 'resolved' %}<p>Resolving this request records follow-up. It does not cancel or move an appointment.</p><form method="post" action="{% url 'portal_requests:status' record.pk %}" class="pending-review__actions">{% csrf_token %}{% if record.status != 'reviewed' %}<button class="btn btn-secondary" type="submit" name="status" value="reviewed">Mark reviewed</button>{% endif %}<button class="btn btn-primary" type="submit" name="status" value="resolved">Resolve request</button></form>{% endif %}
+    {% endif %}
+    {% if record.client_id and workspace_permissions.clients.view %}<p><a class="inline-link" href="{% url 'clients:detail' record.client_id %}" target="_blank" rel="noopener">Open client record <span class="sr-only">in a new tab</span></a></p>{% endif %}
+  </article>
+</main></div></body></html>

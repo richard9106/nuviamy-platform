@@ -227,6 +227,8 @@ class SessionNoteCreateView(LoginRequiredMixin, PracticePermissionMixin, Session
         )
         if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'redirect': self.get_success_url()})
+        if self.request.GET.get('review') != '1':
+            self.request._workspace_drawer_result = 'complete'
         return response
 
 
@@ -286,6 +288,8 @@ class SessionNoteUpdateView(LoginRequiredMixin, PracticePermissionMixin, Practic
                 'is_locked': self.object.is_locked,
             },
         )
+        if self.request.GET.get('review') != '1':
+            self.request._workspace_drawer_result = 'complete'
         return response
 
 

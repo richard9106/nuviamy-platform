@@ -1,0 +1,1 @@
+{% if messages %}<section aria-label="Review messages">{% for message in messages %}<p class="form-message{% if 'error' in message.tags %} form-error{% endif %}" role="{% if 'error' in message.tags %}alert{% else %}status{% endif %}">{{ message }}</p>{% endfor %}</section>{% endif %}

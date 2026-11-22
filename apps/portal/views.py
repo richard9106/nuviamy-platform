@@ -658,6 +658,7 @@ class PracticePortalRequestStatusView(PracticePermissionMixin, PracticeContextMi
     permission_resource = 'requests'
     permission_action = 'edit'
     def post(self, request, pk):
+        request._workspace_drawer_result = 'retry'
         practice = self.get_practice()
         portal_request = get_object_or_404(ClientPortalRequest, pk=pk, practice=practice)
         status = request.POST.get('status')
@@ -673,6 +674,7 @@ class PracticePortalRequestStatusView(PracticePermissionMixin, PracticeContextMi
                 practice=portal_request.practice,
                 metadata={'client_id': portal_request.client_id, 'status': portal_request.status},
             )
+            request._workspace_drawer_result = 'complete'
         return redirect('portal_requests:list')
 
 
@@ -742,6 +744,7 @@ class PublicBookingRequestApproveView(PracticePermissionMixin, PracticeContextMi
     permission_resource = 'requests'
     permission_action = 'edit'
     def post(self, request, pk):
+        request._workspace_drawer_result = 'retry'
         practice = self.get_practice()
         booking_request = get_object_or_404(PublicBookingRequest, pk=pk, practice=practice, status=PublicBookingRequest.Status.PENDING)
         therapist = practice.therapists.select_related('user').first()
@@ -791,6 +794,7 @@ class PublicBookingRequestApproveView(PracticePermissionMixin, PracticeContextMi
             metadata={'client_id': client.pk, 'public_booking_request_id': booking_request.pk},
         )
         messages.success(request, 'Booking request approved and appointment created.')
+        request._workspace_drawer_result = 'complete'
         return redirect('portal_requests:list')
 
 
@@ -798,6 +802,7 @@ class PublicBookingRequestDeclineView(PracticePermissionMixin, PracticeContextMi
     permission_resource = 'requests'
     permission_action = 'edit'
     def post(self, request, pk):
+        request._workspace_drawer_result = 'retry'
         practice = self.get_practice()
         booking_request = get_object_or_404(PublicBookingRequest, pk=pk, practice=practice, status=PublicBookingRequest.Status.PENDING)
         booking_request.status = PublicBookingRequest.Status.DECLINED
@@ -811,6 +816,7 @@ class PublicBookingRequestDeclineView(PracticePermissionMixin, PracticeContextMi
             metadata={'status': booking_request.status},
         )
         messages.success(request, 'Booking request declined.')
+        request._workspace_drawer_result = 'complete'
         return redirect('portal_requests:list')
 
 
@@ -929,6 +935,7 @@ class ClientIntakeReviewView(PracticePermissionMixin, PracticeContextMixin, View
     permission_action = 'edit'
 
     def post(self, request, pk):
+        request._workspace_drawer_result = 'retry'
         practice = self.get_practice()
         with transaction.atomic():
             assignment = get_object_or_404(ClientIntakeAssignment.objects.select_for_update(), pk=pk, practice=practice)
@@ -949,6 +956,7 @@ class ClientIntakeReviewView(PracticePermissionMixin, PracticeContextMixin, View
                 log_audit_event(request, AuditLog.Action.UPDATE, 'portal.ClientIntakeAssignment', assignment.pk,
                                 practice=practice, metadata={'client_id': assignment.client_id, 'status': assignment.status})
                 messages.success(request, 'Form responses marked as reviewed.')
+        request._workspace_drawer_result = 'complete'
         return redirect('intake:list')
 
 

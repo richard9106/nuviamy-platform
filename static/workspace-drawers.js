@@ -36,7 +36,7 @@
   const utilities = document.createElement('div'); utilities.className = 'workspace-remote-utilities';
   const fullPage = document.createElement('a'); fullPage.textContent = 'Open full page'; fullPage.target = '_blank'; fullPage.rel = 'noopener';
   const close = document.createElement('button'); close.type = 'button'; close.className = 'modal-close'; close.textContent = '×'; close.setAttribute('aria-label','Close editor');
-  const loading = document.createElement('p'); loading.className = 'workspace-loading'; loading.setAttribute('role','status'); loading.textContent = 'Loading form…';
+  const loading = document.createElement('p'); loading.className = 'workspace-loading'; loading.setAttribute('role','status'); loading.textContent = 'Loading…';
   const unsaved = document.createElement('div'); unsaved.className = 'workspace-unsaved'; unsaved.hidden = true; unsaved.setAttribute('role','alert');
   const unsavedText = document.createElement('p'); unsavedText.textContent = 'You have unsaved changes.';
   const keepEditing = document.createElement('button'); keepEditing.type = 'button'; keepEditing.className = 'btn btn-secondary'; keepEditing.textContent = 'Keep editing';
@@ -44,7 +44,7 @@
   unsaved.append(unsavedText,keepEditing,discard);
   const frame = document.createElement('iframe'); frame.title = 'Create or edit record'; frame.referrerPolicy = 'same-origin';
   utilities.append(fullPage,close); header.append(title,utilities); card.append(header,unsaved,loading,frame); remote.append(card); document.body.append(remote);
-  let dirty = false, submitting = false, source = null, opener = null;
+  let dirty = false, submitting = false, source = null, opener = null, returnToInbox = false;
   const safeURL = value => {
     const url = new URL(value,location.href);
     if (url.origin !== location.origin || url.username || url.password) return null;
@@ -65,7 +65,7 @@
   });
   remote.addEventListener('close',() => {
     frame.removeAttribute('src'); frame.style.visibility = 'hidden'; dirty = false; submitting = false;
-    close.disabled = false; opener?.focus(); opener = null; source = null;
+    close.disabled = false; opener?.focus(); opener = null; source = null; returnToInbox = false;
     unsaved.hidden = true;
   });
   window.addEventListener('beforeunload',event => { if (remote.open && dirty && !submitting) event.preventDefault(); });
@@ -82,21 +82,44 @@
     try { doc = frame.contentDocument; } catch (_) { doc = null; }
     if (!doc?.body) { leaveEditor(source.href); return; }
     const redirect = doc.body.dataset.workspaceDrawerRedirect;
-    if (redirect) { leaveEditor(redirect); return; }
+    if (redirect) {
+      const destination = safeURL(redirect);
+      if (!destination) return;
+      if (returnToInbox && doc.body.dataset.workspaceDrawerResult === 'complete') {
+        dirty = false; submitting = false; remote.close();
+        // Reload the existing URL, including its type/page filter. Browser scroll restoration
+        // keeps the list position without storing patient identifiers or drafts in storage.
+        window.location.reload();
+      } else if (returnToInbox && doc.body.dataset.workspaceDrawerResult === 'retry') {
+        const retry = new URL(source.href); retry.searchParams.set('_workspace_drawer','1');
+        frame.src = retry.href;
+      } else { leaveEditor(destination.href); }
+      return;
+    }
     let current;
     try { current = safeURL(frame.contentWindow.location.href); } catch (_) { current = null; }
     if (!current || current.pathname !== source.pathname) { leaveEditor(current?.href || source.href); return; }
     const main = doc.querySelector('main.app-main');
+    const reviewMode = Boolean(main?.hasAttribute?.('data-workspace-review'));
     const forms = [...(main?.querySelectorAll('form') || [])].filter(form => !form.closest('dialog,.action-bar,.profile-menu') &&
       form.querySelector('input:not([type="hidden"]):not([type="submit"]),select,textarea'));
-    if (!main || !forms.length) { leaveEditor(current.href); return; }
+    if (!main || (!forms.length && !reviewMode)) { leaveEditor(current.href); return; }
     doc.documentElement.classList.add('workspace-drawer-frame');
+    if (reviewMode) doc.documentElement.classList.add('workspace-review-frame');
     const heading = main.querySelector('.panel h1,.panel h2,.form-panel h1,.form-panel h2') || main.querySelector('h1');
     if (heading) { title.textContent = heading.textContent.trim(); heading.classList.add('sr-only'); }
-    forms.forEach(form => {
+    if (!reviewMode) forms.forEach(form => {
       const panel = form.closest('.panel,.form-panel,.intake-form-panel');
       if (panel) panel.classList.add('workspace-frame-card');
       wrapForm(form);
+    });
+    if (reviewMode) main.querySelectorAll('form').forEach(form => {
+      // A submit button named "action" shadows form.action (HTML named properties).
+      const action = safeURL(new URL(form.getAttribute('action') || current.href, current.href).href);
+      if (action) {
+        action.searchParams.set('_workspace_drawer','1');
+        form.setAttribute('action',action.href);
+      }
     });
     const addStyle = href => new Promise(resolve => {
       const link = doc.createElement('link'); link.rel = 'stylesheet'; link.href = new URL(href,location.href).href;
@@ -104,7 +127,7 @@
     });
     await Promise.all([addStyle(config.dataset.baseStyle),addStyle(config.dataset.drawerStyle)]);
     if (!remote.open) return;
-    dirty = Boolean(main.querySelector('.errorlist,.form-error:not([hidden])'));
+    dirty = !reviewMode && Boolean(main.querySelector('.errorlist,.form-error:not([hidden])'));
     submitting = false; close.disabled = false;
     for (const eventName of ['input','change']) doc.addEventListener(eventName,() => { dirty = true; },true);
     doc.addEventListener('submit',event => {
@@ -144,10 +167,17 @@
       /^\/settings\/(?:session-packages|insurance\/payers|insurance\/rates|client-portal)\/(?:new|\d+\/edit)\/$/,
       /^\/settings\/availability\/new\/$/,
     ];
-    if (!url || !editorPaths.some(pattern => pattern.test(url.pathname))) return;
+    const reviewPaths = [
+      /^\/intake\/\d+\/responses\/$/,
+      /^\/clients\/\d+\/information\/\d+\/$/,
+      /^\/inbox\/(?:portal|booking|note)\/\d+\/$/,
+    ];
+    if (!url || !(editorPaths.some(pattern => pattern.test(url.pathname)) ||
+        (link.dataset.workspaceReview === '1' && reviewPaths.some(pattern => pattern.test(url.pathname))))) return;
     if (typeof remote.showModal !== 'function') return;
     event.preventDefault(); event.stopImmediatePropagation();
     source = url; opener = link; dirty = false; submitting = false;
+    returnToInbox = location.pathname === '/inbox/' && link.dataset.workspaceReturn === 'refresh';
     title.textContent = link.textContent.trim() || 'Create or edit';
     fullPage.href = url.href; close.disabled = false; loading.hidden = false; frame.style.visibility = 'hidden';
     const embedded = new URL(url.href); embedded.searchParams.set('_workspace_drawer','1');

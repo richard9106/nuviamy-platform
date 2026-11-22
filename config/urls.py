@@ -29,7 +29,7 @@ from apps.billing.urls import settings_patterns
 from apps.dashboard.support_views import (
     SupportTicketListView, SupportTicketDetailView, SupportInboxView, SupportInboxDetailView,
 )
-from apps.dashboard.inbox import PendingInboxView
+from apps.dashboard.inbox import PendingInboxView, PendingInboxDetailView
 from apps.dashboard.founding_views import FoundingTherapistApplicationView
 from apps.dashboard.platform_views import (
     PlatformOverviewView, PlatformPracticesView, PlatformPracticeDetailView,
@@ -84,6 +84,7 @@ urlpatterns = [
     path('staff/support/<uuid:pk>/', SupportInboxDetailView.as_view(), name='staff_support_detail'),
     path('health/', HealthCheckView.as_view(), name='health'),
     path('inbox/', PendingInboxView.as_view(), name='pending_inbox'),
+    path('inbox/<str:kind>/<int:pk>/', PendingInboxDetailView.as_view(), name='pending_inbox_detail'),
     path('tasks/', TaskListView.as_view(), name='tasks_list'),
     path('tasks/create/', TaskCreateView.as_view(), name='tasks_create'),
     path('tasks/<int:pk>/', TaskDetailView.as_view(), name='tasks_detail'),

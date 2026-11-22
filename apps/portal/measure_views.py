@@ -1,6 +1,7 @@
 """Practice-local standard measure library; no automatic emails or diagnoses."""
 from django import forms
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import redirect, render
@@ -18,7 +19,7 @@ class AddMeasureForm(forms.Form):
     acknowledge = forms.BooleanField(label='I will choose an appropriate adult client and review responses using my practice’s follow-up process.')
 
 
-class AddMeasureView(PracticePermissionMixin, View):
+class AddMeasureView(LoginRequiredMixin, PracticePermissionMixin, View):
     permission_resource = 'intake'
     permission_action = 'create'
 

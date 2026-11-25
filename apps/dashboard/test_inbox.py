@@ -149,6 +149,99 @@ class PendingInboxTests(TestCase):
         self.assertContains(first, '?type=forms&amp;page=2')
         self.assertEqual(self.inbox(page='invalid').status_code, 200)
 
+    def test_therapist_filter_combines_sources_and_keeps_navigation_counts_global(self):
+        self.person.primary_therapist = self.therapist
+        self.person.save()
+        response = self.inbox(therapist=self.therapist.pk, type='forms')
+        self.assertEqual(response.context['pending_total'], 5)
+        self.assertEqual(response.context['page_obj'].paginator.count, 1)
+        self.assertEqual(response.context['workspace_pending_count'], 6)
+        self.assertEqual({item['key']: item['count'] for item in response.context['categories']},
+                         {'forms': 1, 'information': 1, 'requests': 1, 'notes': 2})
+        self.assertContains(response, f'href="?therapist={self.therapist.pk}&amp;type=notes"')
+        self.assertContains(response, f'href="{reverse("clients:detail", args=[self.person.pk])}"')
+        self.assertNotContains(response, 'New Visitor')
+        self.assertContains(response, f'value="{self.therapist.pk}" selected')
+
+    def test_session_assignee_takes_precedence_over_client_primary_therapist(self):
+        user = get_user_model().objects.create_user('session-inbox-therapist')
+        therapist = TherapistProfile.objects.create(user=user, practice=self.practice,
+            license_number='INBOX-3', license_state='CA')
+        self.person.primary_therapist = therapist
+        self.person.save()
+        self.request.appointment = self.appointment
+        self.request.save()
+        self.booking.client = self.person
+        self.booking.appointment = self.appointment
+        self.booking.save()
+        actual = self.inbox(therapist=self.therapist.pk)
+        self.assertEqual({row['item_kind'] for row in actual.context['pending_items']},
+                         {'portal', 'booking', 'note', 'missing_note'})
+        primary = self.inbox(therapist=therapist.pk)
+        self.assertEqual({row['item_kind'] for row in primary.context['pending_items']},
+                         {'form', 'information'})
+
+    def test_unassigned_filter_includes_new_bookings_and_clients_without_primary_therapist(self):
+        response = self.inbox(therapist='unassigned')
+        self.assertEqual({row['item_kind'] for row in response.context['pending_items']},
+                         {'form', 'information', 'portal', 'booking'})
+        self.assertEqual(response.context['pending_total'], 4)
+        booking = next(row for row in response.context['pending_items'] if row['item_kind'] == 'booking')
+        self.assertEqual(booking['client_url'], '')
+        self.person.primary_therapist = self.therapist
+        self.person.save()
+        self.assertEqual(self.inbox(therapist='unassigned').context['pending_total'], 1)
+
+    def test_invalid_or_foreign_therapist_filter_never_falls_back_to_all_records(self):
+        other = Practice.objects.create(name='Foreign filter clinic')
+        user = get_user_model().objects.create_user('FOREIGN-THERAPIST')
+        therapist = TherapistProfile.objects.create(user=user, practice=other,
+            license_number='INBOX-FOREIGN', license_state='CA')
+        self.assertNotContains(self.inbox(), 'FOREIGN-THERAPIST')
+        for value in [str(therapist.pk), 'x', '-1', '²', '9' * 100]:
+            with self.subTest(value=value):
+                self.assertEqual(self.inbox(therapist=value).status_code, 404)
+
+    def test_clinician_cannot_select_another_therapist_or_expand_session_access(self):
+        user = get_user_model().objects.create_user('hidden-filter-therapist')
+        therapist = TherapistProfile.objects.create(user=user, practice=self.practice,
+            license_number='INBOX-4', license_state='CA')
+        SessionNote.objects.create(practice=self.practice, client=self.person, therapist=therapist)
+        self.profile.role = 'therapist'
+        self.profile.permissions = {'clinical': {'view': True}}
+        self.profile.save()
+        response = self.inbox(therapist=self.therapist.pk)
+        self.assertEqual(response.context['pending_total'], 1)
+        self.assertEqual(response.context['therapist_choices'],
+                         [{'value': str(self.therapist.pk), 'label': self.user.username}])
+        self.assertNotContains(response, 'hidden-filter-therapist')
+        self.assertEqual(self.inbox(therapist=therapist.pk).status_code, 404)
+
+    def test_therapist_filter_cannot_grant_access_to_additional_sources(self):
+        self.person.primary_therapist = self.therapist
+        self.person.save()
+        self.profile.role = 'therapist'
+        self.profile.permissions = {'requests': {'view': True}}
+        self.profile.save()
+        response = self.inbox(therapist=self.therapist.pk)
+        self.assertEqual(response.context['pending_total'], 1)
+        self.assertEqual([row['item_kind'] for row in response.context['pending_items']], ['portal'])
+        self.assertTrue(all(not row['client_url'] for row in response.context['pending_items']))
+
+    def test_filtered_pagination_and_type_links_preserve_therapist(self):
+        self.person.primary_therapist = self.therapist
+        self.person.save()
+        ClientIntakeAssignment.objects.bulk_create([
+            ClientIntakeAssignment(practice=self.practice, client=self.person,
+                template=self.template, status='submitted') for _ in range(28)
+        ])
+        response = self.inbox(type='forms', therapist=self.therapist.pk, page=2)
+        self.assertEqual(len(response.context['pending_items']), 4)
+        self.assertContains(response, f'?type=forms&amp;therapist={self.therapist.pk}&amp;page=1')
+        self.assertContains(response, f'href="?type=notes&amp;therapist={self.therapist.pk}"')
+        self.assertContains(response, f'href="?therapist={self.therapist.pk}"')
+        self.assertContains(response, 'href="?type=forms"')
+
     def test_authentication_and_patient_isolation(self):
         self.client.logout()
         self.assertEqual(self.inbox().status_code, 302)

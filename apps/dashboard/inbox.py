@@ -15,12 +15,13 @@ from django.views.generic import TemplateView
 from apps.accounts.access import (
     ClientPortalRedirectMixin, get_practice_for_user, has_practice_permission,
 )
-from apps.appointments.access import scope_sessions
+from apps.appointments.access import manages_sessions, scope_sessions
 from apps.appointments.models import Appointment
 from apps.clinical.models import SessionNote
 from apps.portal.models import (
     ClientIntakeAssignment, ClientPortalRequest, PortalProfileSubmission, PublicBookingRequest,
 )
+from apps.practices.models import TherapistProfile
 
 
 LABELS = {
@@ -39,7 +40,7 @@ KINDS = {
 }
 
 
-def pending_sources(user):
+def pending_sources(user, therapist=''):
     practice = get_practice_for_user(user)
     if not practice:
         return []
@@ -64,7 +65,36 @@ def pending_sources(user):
             sources.append(('missing_note', scope_sessions(Appointment.objects.filter(
                 status=Appointment.Status.COMPLETED, ends_at__lte=timezone.now(),
                 session_notes__isnull=True), user), F('ends_at')))
-    return sources
+    if not therapist:
+        return sources
+    filtered = []
+    for kind, queryset, occurred_at in sources:
+        if kind in {'note', 'missing_note'}:
+            assignee = F('therapist_id')
+        elif kind in {'portal', 'booking'}:
+            assignee = Coalesce('appointment__therapist_id', 'client__primary_therapist_id')
+        else:
+            assignee = F('client__primary_therapist_id')
+        queryset = queryset.annotate(_inbox_assignee=assignee)
+        lookup = ({'_inbox_assignee__isnull': True} if therapist == 'unassigned'
+                  else {'_inbox_assignee': therapist})
+        filtered.append((kind, queryset.filter(**lookup), occurred_at))
+    return filtered
+
+
+def therapist_filter(user, value):
+    """Validate against the current practice and role, never broaden an invalid filter."""
+    practice = get_practice_for_user(user)
+    therapists = TherapistProfile.objects.filter(practice=practice) if practice else TherapistProfile.objects.none()
+    if not manages_sessions(user):
+        therapists = therapists.filter(user=user)
+    choices = [
+        {'value': str(therapist.pk), 'label': therapist.user.get_full_name() or therapist.user.username}
+        for therapist in therapists.select_related('user').order_by('user__first_name', 'user__last_name', 'pk')
+    ]
+    if value not in {'', 'unassigned'} and value not in {choice['value'] for choice in choices}:
+        raise Http404
+    return choices
 
 
 def inbox_summary(request):
@@ -76,9 +106,9 @@ def inbox_summary(request):
     return request._pending_inbox_summary
 
 
-def pending_rows(user, category):
+def pending_rows(user, category, therapist=''):
     sources = []
-    for kind, queryset, occurred_at in pending_sources(user):
+    for kind, queryset, occurred_at in pending_sources(user, therapist):
         if category and KINDS[kind][0] != category:
             continue
         prefix = '' if kind == 'booking' else 'client__'
@@ -121,10 +151,19 @@ class PendingInboxView(LoginRequiredMixin, ClientPortalRedirectMixin, TemplateVi
         context = super().get_context_data(**kwargs)
         category = self.request.GET.get('type', '')
         category = category if category in LABELS else ''
-        counts = inbox_summary(self.request)
-        page = Paginator(pending_rows(self.request.user, category), 25).get_page(self.request.GET.get('page'))
+        therapist = self.request.GET.get('therapist', '')
+        choices = therapist_filter(self.request.user, therapist)
+        # Sidebar/Activities retain the overall queue; only this view's counts are filtered.
+        if therapist:
+            counts = {key: 0 for key in LABELS}
+            for kind, queryset, _date in pending_sources(self.request.user, therapist):
+                counts[KINDS[kind][0]] += queryset.count()
+        else:
+            counts = inbox_summary(self.request)
+        page = Paginator(pending_rows(self.request.user, category, therapist), 25).get_page(self.request.GET.get('page'))
         context.update(
             category=category, pending_total=sum(counts.values()),
+            therapist=therapist, therapist_choices=choices,
             categories=[dict(key=key, label=label, count=counts[key]) for key, label in LABELS.items()],
             page_obj=page, pending_items=[decorate_row(row, self.request.user) for row in page],
         )

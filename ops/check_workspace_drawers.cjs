@@ -20,7 +20,7 @@ doc.querySelectorAll = () => [];
 doc.createElement = tag => { const node = new Element(tag); nodes.push(node); return node; };
 const navigations = [];
 const reloads = [];
-const location = {href:'https://example.test/inbox/?type=forms&page=2',origin:'https://example.test',pathname:'/inbox/'};
+const location = {href:'https://example.test/inbox/?type=forms&therapist=7&page=2',origin:'https://example.test',pathname:'/inbox/'};
 const win = {location:{assign:url => navigations.push(url),reload:() => reloads.push(location.href)},addEventListener(){}};
 win.top = win.self = win;
 vm.runInNewContext(fs.readFileSync('static/workspace-drawers.js','utf8'), {
@@ -113,7 +113,7 @@ frame.contentWindow = {location:{href:frame.src}};
   child.body.dataset.workspaceDrawerRedirect = '/intake/';
   await frame.handlers.load();
   assert.equal(remote.open,false);
-  assert.deepEqual(reloads,['https://example.test/inbox/?type=forms&page=2'],'Completion preserves the current filter and page');
+  assert.deepEqual(reloads,['https://example.test/inbox/?type=forms&therapist=7&page=2'],'Completion preserves the current type, therapist and page');
   open('https://example.test/inbox/portal/8/',review);
   child.body.dataset.workspaceDrawerRedirect = '/login/?next=/inbox/';
   child.body.dataset.workspaceDrawerResult = 'navigate';

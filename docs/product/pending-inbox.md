@@ -43,6 +43,28 @@ isolation, permission combinations, therapist scoping, source completion, metada
 privacy, exact request routing and stable pagination. Local validation uses fictional
 records and an isolated PostgreSQL database.
 
+## Therapist and type filters
+
+The therapist selector combines with the existing type cards. Owners/admins may
+select any therapist profile in their own practice, including historical profiles;
+other staff can select only their own profile. The default remains all follow-ups
+already allowed by the source permissions, not a new grant of clinical access.
+Invalid, foreign-practice or unauthorized therapist IDs return 404 rather than
+silently broadening the queue.
+
+Session documentation uses the actual session/note therapist. Requests linked to
+an appointment use that appointment's therapist; requests without an appointment,
+submitted forms and client-information updates use the client's primary therapist.
+Unassigned includes follow-ups without either assignment, including new public
+bookings without a linked client. Such bookings do not receive a fabricated client
+record link. Existing client links still require client-read permission.
+
+Type-card and page counts reflect the selected therapist; the sidebar/Activities
+badge remains the overall permitted queue. Type changes and pagination preserve
+the therapist. Applying or clearing a therapist resets pagination and preserves
+the selected type. Panel completion refreshes the current URL, preserving both
+filters and the page; closing without saving retains the current context.
+
 ## Direct actions and return to the inbox
 
 Every follow-up action opens a same-origin lateral panel when JavaScript/dialogs

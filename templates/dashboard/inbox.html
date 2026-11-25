@@ -12,20 +12,27 @@
     {% include 'partials/workspace_status.html' %}
     <section class="action-bar" aria-label="Workspace actions"><div class="quick-actions"><a class="btn btn-soft" href="{% url 'dashboard' %}">Overview</a>{% if workspace_permissions.tasks.view %}<a class="btn btn-soft" href="{% url 'tasks_list' %}">Team tasks</a>{% endif %}</div>{% include 'partials/trial_toolbar_notice.html' %}<details class="profile-menu"><summary>{{ request.user.first_name|default:request.user.username }}</summary><div class="profile-menu-panel"><a href="{% url 'profile_settings' %}">Profile settings</a><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div></details></section>
     <header class="topbar compact-topbar"><div><p class="eyebrow">Your daily workspace</p><h1>Pending inbox</h1><p>Everything awaiting follow-up, in one place.</p></div><span class="badge brand">{{ pending_total }} pending</span></header>
+    <form method="get" class="pending-inbox__therapist-filter" aria-label="Filter follow-ups by therapist">
+      {% if category %}<input type="hidden" name="type" value="{{ category }}">{% endif %}
+      <div><label for="inbox-therapist">Therapist</label><select id="inbox-therapist" name="therapist" aria-describedby="inbox-therapist-help"><option value="">All permitted follow-ups</option>{% for choice in therapist_choices %}<option value="{{ choice.value }}"{% if therapist == choice.value %} selected{% endif %}>{{ choice.label }}</option>{% endfor %}<option value="unassigned"{% if therapist == 'unassigned' %} selected{% endif %}>Unassigned</option></select></div>
+      <button class="btn btn-secondary" type="submit">Apply filter</button>
+      {% if therapist %}<a class="inline-link" href="{% querystring therapist=None page=None %}">Clear therapist</a>{% endif %}
+      <p id="inbox-therapist-help">Uses the session therapist, or the client's primary therapist for follow-ups without a session. Counts follow your selection.</p>
+    </form>
     <nav class="pending-inbox__filters" aria-label="Pending item types">
-      <a href="{% url 'pending_inbox' %}"{% if not category %} aria-current="page"{% endif %}><span>All pending</span><strong>{{ pending_total }}</strong></a>
-      {% for item in categories %}<a href="?type={{ item.key }}"{% if category == item.key %} aria-current="page"{% endif %}><span>{{ item.label }}</span><strong>{{ item.count }}</strong></a>{% endfor %}
+      <a href="{% querystring type=None page=None %}"{% if not category %} aria-current="page"{% endif %}><span>All pending</span><strong>{{ pending_total }}</strong></a>
+      {% for item in categories %}<a href="{% querystring type=item.key page=None %}"{% if category == item.key %} aria-current="page"{% endif %}><span>{{ item.label }}</span><strong>{{ item.count }}</strong></a>{% endfor %}
     </nav>
     <section class="panel pending-inbox__panel" aria-labelledby="pending-list-heading">
-      <div class="panel-head"><div><h2 id="pending-list-heading">{% if category %}Filtered follow-ups{% else %}All follow-ups{% endif %}</h2><p>Oldest first · Only items available with your permissions.</p></div><span>{{ page_obj.paginator.count }} item{{ page_obj.paginator.count|pluralize }}</span></div>
+      <div class="panel-head"><div><h2 id="pending-list-heading">{% if category or therapist %}Filtered follow-ups{% else %}All follow-ups{% endif %}</h2><p>Oldest first · Only items available with your permissions.</p></div><span>{{ page_obj.paginator.count }} item{{ page_obj.paginator.count|pluralize }}</span></div>
       {% if pending_items %}<ul class="pending-inbox__list">
         {% for item in pending_items %}<li>
           <span class="pending-inbox__marker pending-inbox__marker--{{ item.category }}" aria-hidden="true"></span>
           <div class="pending-inbox__description"><p class="pending-inbox__type">{{ item.title }}</p><h3>{% if item.client_url %}<a href="{{ item.client_url }}">{{ item.person_name }}</a>{% else %}{{ item.person_name }}{% endif %}</h3><p><time datetime="{{ item.occurred_at|date:'c' }}">{{ item.occurred_at|date:'M j, Y, g:i A' }}</time></p></div>
           <a class="btn btn-secondary pending-inbox__action" data-workspace-return="refresh" data-workspace-review="1" href="{{ item.url }}">{{ item.action }}<span class="sr-only"> for {{ item.person_name }}</span><span aria-hidden="true"> →</span></a>
         </li>{% endfor %}
-      </ul>{% else %}<div class="pending-inbox__empty"><span aria-hidden="true">✓</span><h3>Nothing pending here</h3><p>New items will appear when they need follow-up.</p>{% if category %}<a class="btn btn-secondary" href="{% url 'pending_inbox' %}">View all pending</a>{% endif %}</div>{% endif %}
-      {% if page_obj.has_other_pages %}<nav class="pending-inbox__pagination" aria-label="Pending inbox pages">{% if page_obj.has_previous %}<a class="btn btn-secondary" href="?type={{ category }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="btn btn-secondary" href="?type={{ category }}&amp;page={{ page_obj.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+      </ul>{% else %}<div class="pending-inbox__empty"><span aria-hidden="true">✓</span><h3>Nothing pending here</h3><p>New items will appear when they need follow-up.</p>{% if category %}<a class="btn btn-secondary" href="{% querystring type=None page=None %}">View all pending</a>{% endif %}</div>{% endif %}
+      {% if page_obj.has_other_pages %}<nav class="pending-inbox__pagination" aria-label="Pending inbox pages">{% if page_obj.has_previous %}<a class="btn btn-secondary" href="{% querystring page=page_obj.previous_page_number %}">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="btn btn-secondary" href="{% querystring page=page_obj.next_page_number %}">Next</a>{% endif %}</nav>{% endif %}
     </section>
     <p class="pending-inbox__footnote">Items disappear after their original workflow records completion.</p>
   </main>

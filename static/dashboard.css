@@ -738,10 +738,11 @@ th { color: var(--slate-500); font-size: 12px; text-transform: uppercase; letter
 .keyword-cloud { display: flex; flex-wrap: wrap; gap: 10px; }
 .keyword-cloud span { padding: 8px 11px; border-radius: 999px; background: #fff; border: 1px solid rgba(36, 85, 72, .14); color: var(--brand-700); font-size: 13px; font-weight: 900; }
 .marketing-cta { margin-bottom: 54px; padding: 38px; border-radius: 30px; background: var(--brand-50); color: var(--brand-espresso); box-shadow: var(--shadow-2); }
-.marketing-cta .eyebrow { background: rgba(255, 255, 255, .12); color: #fff; }
-.marketing-cta h2 { color: #fff; }
-.marketing-cta p { max-width: 760px; color: rgba(255, 255, 255, .78); }
-.marketing-cta .btn-primary { background: #fff; color: var(--brand-700); }
+.marketing-cta .eyebrow { background: var(--brand-sage-soft); color: var(--brand-forest); }
+.marketing-cta h2 { color: var(--brand-forest); }
+.marketing-cta p { max-width: 760px; color: var(--slate-600); }
+.marketing-cta .btn-primary { background: var(--brand-600); color: #fff; }
+.marketing-cta .btn-primary:hover, .marketing-cta .btn-primary:focus-visible { background: var(--brand-700); color: #fff; }
 .back-to-top { position: fixed; right: 18px; bottom: 18px; z-index: 20; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border-radius: 999px; background: rgba(255, 255, 255, .94); border: 1px solid rgba(36, 85, 72, .2); color: var(--brand-700); font-size: 13px; font-weight: 900; box-shadow: var(--shadow-2); backdrop-filter: blur(10px); }
 .back-to-top:hover { background: var(--brand-600); color: #fff; }
 .pricing-hero { width: min(980px, calc(100% - 32px)); margin: 58px auto 24px; text-align: center; }

@@ -48,3 +48,14 @@
 @media(max-width:480px){.founding-form-card{padding:24px 20px;}.founding-form-card .field-grid{grid-template-columns:1fr;}.founding-copy h1{font-size:34px;}.founding-form-card h2{font-size:24px;}.founding-confirmation{padding:28px 20px;}.founding-confirmation h1{font-size:28px;}}
 
 .website-home .marketing-hero::before { background: none; }
+
+/* Keep the offer readable on narrow screens instead of squeezing copy beside the CTA. */
+@media (max-width: 640px) {
+  .founding-offer-banner { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 18px 20px; }
+  .founding-offer-banner > div { min-width: 0; padding-right: 30px; }
+  .founding-offer-label { display: block; line-height: 1.5; }
+  .founding-offer-banner p { font-size: 13px; line-height: 1.5; }
+  .founding-offer-banner p strong { margin-bottom: 5px; font-size: 16px; line-height: 1.4; }
+  .founding-offer-banner .btn { width: 100%; min-height: 46px; box-sizing: border-box; justify-content: center; white-space: normal; text-align: center; }
+  .founding-offer-dismiss { top: 8px; right: 8px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
+}

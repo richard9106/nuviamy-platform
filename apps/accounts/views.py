@@ -530,3 +530,19 @@ class RedeemFoundingOfferView(LoginRequiredMixin, PostRateLimitMixin, View):
         else:
             messages.error(request,'Enter a valid personal offer code.')
         return redirect('profile_settings')
+
+
+class AppearancePreferencesView(LoginRequiredMixin, View):
+    http_method_names = ['post']
+
+    def post(self, request):
+        profile = getattr(request.user, 'nuvia_profile', None)
+        if not profile or is_client_user(request.user):
+            raise PermissionDenied('Staff workspace required.')
+        theme = request.POST.get('workspace_theme')
+        if theme not in UserProfile.Theme.values:
+            return HttpResponseBadRequest('Choose one of the available workspace themes.')
+        profile.workspace_theme = theme
+        profile.save(update_fields=['workspace_theme', 'updated_at'])
+        messages.success(request, 'Your workspace appearance has been saved.')
+        return redirect(reverse('profile_settings') + '#appearance')

@@ -257,7 +257,7 @@ def build_pdf_export(practice, scope, data):
             for row in rows[:1000]:
                 table_rows.append([Paragraph(escape(str(_cell_value(row.get(header) if isinstance(row, dict) else row))[:500]), styles['BodyText']) for header in headers])
             table = Table(table_rows, repeatRows=1)
-            table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#7052D9')), ('TEXTCOLOR', (0, 0), (-1, 0), colors.white), ('GRID', (0, 0), (-1, -1), 0.25, colors.HexColor('#CBD5E1')), ('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+            table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#245548')), ('TEXTCOLOR', (0, 0), (-1, 0), colors.white), ('GRID', (0, 0), (-1, -1), 0.25, colors.HexColor('#CBD5E1')), ('VALIGN', (0, 0), (-1, -1), 'TOP')]))
             story.extend([table, Spacer(1, 10)])
     document.build(story)
     output.seek(0)
@@ -270,7 +270,7 @@ def build_svg_export(practice, scope, data):
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="900" height="{height}" viewBox="0 0 900 {height}">', '<rect width="100%" height="100%" fill="#F8F9FB"/>', '<text x="40" y="58" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#1F2937">NuviaMy Practice Summary</text>', f'<text x="40" y="88" font-family="Arial, sans-serif" font-size="15" fill="#64748B">{escape(practice.name)} · {escape(scope)} export</text>']
     for index, (label, count) in enumerate(rows):
         y = 130 + index * 34
-        parts.append(f'<text x="50" y="{y}" font-family="Arial, sans-serif" font-size="15" fill="#475569">{escape(label)}</text><text x="820" y="{y}" text-anchor="end" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#7052D9">{count}</text>')
+        parts.append(f'<text x="50" y="{y}" font-family="Arial, sans-serif" font-size="15" fill="#475569">{escape(label)}</text><text x="820" y="{y}" text-anchor="end" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#245548">{count}</text>')
     parts.append('</svg>')
     return HttpResponse(''.join(parts), content_type='image/svg+xml', headers={'Content-Disposition': f'attachment; filename="nuviamy-{practice.pk}-summary.svg"'})
 

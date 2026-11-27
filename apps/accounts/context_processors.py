@@ -13,3 +13,12 @@ def security_context(request):
     pending = pending or (requires_email_verification(request.user) and not email_verified(request))
     remaining = settings.SECURITY_CHALLENGE_TIMEOUT - (now - request.session.get('security_password_at', 0)) if pending else settings.SECURITY_ABSOLUTE_TIMEOUT - (now - request.session.get('security_started_at', 0))
     return {'security_pending': pending, 'security_deadline_seconds': max(0, int(remaining)), 'security_idle_seconds': settings.SECURITY_IDLE_TIMEOUT}
+
+
+def appearance_context(request):
+    profile = getattr(request.user, 'nuvia_profile', None) if request.user.is_authenticated else None
+    from .models import UserProfile
+    theme = getattr(profile, 'workspace_theme', UserProfile.Theme.GARDEN)
+    if theme not in UserProfile.Theme.values:
+        theme = UserProfile.Theme.GARDEN
+    return {'workspace_theme': theme, 'workspace_theme_choices': UserProfile.Theme.choices}

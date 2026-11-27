@@ -22,6 +22,12 @@ class UserProfile(models.Model):
         related_name="user_profiles",
     )
     role = models.CharField(max_length=20, choices=Role.choices)
+    class Theme(models.TextChoices):
+        GARDEN = "garden", "Pink & sage"
+        ROSE = "rose", "Rose & cream"
+        COASTAL = "coastal", "Coastal blue"
+
+    workspace_theme = models.CharField(max_length=16, choices=Theme.choices, default=Theme.GARDEN)
     phone = models.CharField(max_length=20, blank=True)
     session_email_notifications = models.BooleanField(default=False)
     request_email_notifications = models.BooleanField(default=False)

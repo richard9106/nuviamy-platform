@@ -96,6 +96,7 @@ TEMPLATES = [
             'apps.portal.context_processors.portal_request_badge',
             'apps.accounts.access.permission_context',
             'apps.accounts.context_processors.security_context',
+            'apps.accounts.context_processors.appearance_context',
             'apps.accounts.legal.legal_context',
         ]},
     },

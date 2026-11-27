@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow"><title>{% block page_title %}Support requests{% endblock %} · NuviaMy</title>
 <link rel="stylesheet" href="{% static 'dashboard.css' %}"><link rel="stylesheet" href="{% static 'support.css' %}"></head>
-<body class="app-page"><div class="app-shell">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page"><div class="app-shell">
 {% block support_sidebar %}{% include 'partials/sidebar.html' with card_title='Product support' card_text='Follow your requests inside your authenticated workspace.' %}{% endblock %}
 <main class="app-main support-workspace">
 {% include 'partials/workspace_status.html' %}

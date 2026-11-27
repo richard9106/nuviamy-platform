@@ -1,0 +1,65 @@
+/* NuviaMy: pink and evergreen identity. Shared by the website and workspaces. */
+@font-face {
+  font-family: "Manrope";
+  src: url("manrope-variable.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+}
+:root {
+  --brand-50: #fbeff0;
+  --brand-100: #f7e5e5;
+  --brand-600: #245548;
+  --brand-700: #183e35;
+  --brand-cream: #fffafb;
+  --brand-peach: #f7e5e5;
+  --brand-pink: #f7e5e5;
+  --brand-pink-soft: #fbeff0;
+  --brand-forest: #183e35;
+  --brand-sage: #b7c9b0;
+  --brand-sage-soft: #edf2e9;
+  --brand-espresso: #392d29;
+  --slate-25: #fffdfa;
+  --slate-50: #fffafb;
+  --slate-100: #f8edef;
+  --slate-200: #e8dcde;
+  --slate-400: #9b8a80;
+  --slate-500: #76655c;
+  --slate-600: #67564d;
+  --slate-700: #56443b;
+  --slate-800: #483831;
+  --slate-900: #392d29;
+  --border: #e8dcde;
+}
+
+/* Personal workspace themes; public marketing keeps the default identity. */
+[data-workspace-theme="rose"] {
+  --brand-600: #805068;
+  --brand-700: #633b50;
+  --brand-forest: #633b50;
+  --brand-50: #f9eaf0;
+  --brand-100: #efd2df;
+  --brand-pink: #efd2df;
+  --brand-pink-soft: #f9eaf0;
+  --brand-sage: #c5c7b8;
+  --brand-sage-soft: #f1f1e9;
+  --brand-cream: #fffaf7;
+  --slate-50: #fffaf7;
+}
+[data-workspace-theme="coastal"] {
+  --brand-600: #315e77;
+  --brand-700: #24485d;
+  --brand-forest: #24485d;
+  --brand-50: #eaf2f7;
+  --brand-100: #d5e5ef;
+  --brand-pink: #e4e4f1;
+  --brand-pink-soft: #f2f0f8;
+  --brand-sage: #b4ced0;
+  --brand-sage-soft: #eaf3f1;
+  --brand-cream: #f8fbfd;
+  --slate-50: #f8fbfd;
+}
+[data-workspace-theme] .logo-mark svg path:first-child,
+[data-workspace-theme] .brand svg path:first-child { fill: var(--brand-600); }
+[data-workspace-theme] .logo-mark svg path:last-child,
+[data-workspace-theme] .brand svg path:last-child { fill: var(--brand-pink); }

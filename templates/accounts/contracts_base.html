@@ -3,7 +3,7 @@
 <title>{% block title %}Contracts{% endblock %} | NuviaMy</title>
 <link rel="stylesheet" href="{% static 'dashboard.css' %}"><link rel="stylesheet" href="{% static 'contracts.css' %}">
 {% include 'partials/signature_assets.html' %}
-</head><body class="app-page"><div class="app-shell">
+</head><body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page"><div class="app-shell">
 {% include 'partials/sidebar.html' %}
 <main class="app-main contract-page">
 <section class="action-bar"><div class="quick-actions"><a class="btn btn-soft" href="{% url 'profile_settings' %}">Profile settings</a><a class="btn btn-soft" href="{% url 'clinical_contracts' %}">Contracts</a></div></section>

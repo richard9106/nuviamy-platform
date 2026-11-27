@@ -1,5 +1,5 @@
 {% load static %}<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Share client forms | NuviaMy</title><link rel="stylesheet" href="{% static 'dashboard.css' %}"><link rel="stylesheet" href="{% static 'client-workspace.css' %}"><script src="{% static 'client-form-share.js' %}" defer></script></head>
-<body class="app-page"><div class="app-shell">{% include 'partials/sidebar.html' %}<main class="app-main client-share-page">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page"><div class="app-shell">{% include 'partials/sidebar.html' %}<main class="app-main client-share-page">
 <header class="client-share-header"><div><p class="eyebrow">Client onboarding</p><h1>Share forms with {{ client }}</h1></div><a class="btn btn-secondary" href="{% url 'clients:detail' client.pk %}">Back to client</a></header>
 <ol class="client-share-steps" aria-label="Sharing steps"><li data-share-indicator="1" {% if not review %}aria-current="step"{% endif %}>1 · Select forms</li><li data-share-indicator="2">2 · Email</li><li {% if review %}aria-current="step"{% endif %}>3 · Review &amp; send</li></ol>
 

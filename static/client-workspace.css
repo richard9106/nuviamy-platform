@@ -1,5 +1,5 @@
 .client-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.client-note-composer { padding: 18px; border: 1px solid #d2e4e3; background: #f1f9f8; border-radius: 12px; }
+.client-note-composer { padding: 18px; border: 1px solid var(--border); background: var(--brand-50); border-radius: 12px; }
 .client-note-composer h2 { font-size: 15px; margin: 0; }
 .client-note-composer .appointment-form { margin-top: 14px; }
 .client-note-composer textarea { width: 100%; resize: vertical; min-height: 100px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 9px; background: white; color: var(--slate-800); font: inherit; font-size: 14px; line-height: 1.6; }

@@ -3,8 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   {% include "marketing/partials/seo.html" with seo_title="EHR & Clinical Notes Software for Therapists | NuviaMy" seo_description="Explore therapy EHR documentation in NuviaMy: write progress notes, find records by client or session, and keep diagnoses and treatment plans connected." seo_path="/clinical-notes-software-for-therapists/" %}
-  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="{% static 'dashboard.css' %}">
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml"><link rel="stylesheet" href="{% static 'dashboard.css' %}">
 </head>
 <body id="top" class="marketing-page article-page">
   {% include 'marketing/partials/nav.html' %}
@@ -14,16 +13,16 @@
     <section class="clinical-notes-demo" aria-labelledby="clinical-notes-demo-title">
       <h2 id="clinical-notes-demo-title">See how notes work in NuviaMy</h2>
       <p>This 10-second walkthrough uses a fictional practice and example notes.</p>
-      <video class="clinical-notes-demo-media" width="1200" height="820" controls playsinline preload="none" poster="{% static 'marketing/clinical-notes/poster.webp' %}" aria-label="Write and find a clinical note in NuviaMy">
-        <source src="{% static 'marketing/clinical-notes/demo.mp4' %}" type="video/mp4">
+      <video class="clinical-notes-demo-media" width="1266" height="712" controls playsinline preload="none" poster="{% static 'marketing/clinical-notes/create-terracotta.jpg' %}" aria-label="Write and find a clinical note in NuviaMy">
+        <source src="{% static 'marketing/clinical-notes/demo-terracotta.mp4' %}" type="video/mp4">
       </video>
       <div class="clinical-notes-demo-steps">
         <figure>
-          <img class="clinical-notes-demo-media" src="{% static 'marketing/clinical-notes/create.webp' %}" width="978" height="580" loading="lazy" decoding="async" alt="NuviaMy progress note form for a fictional appointment">
+          <img class="clinical-notes-demo-media" src="{% static 'marketing/clinical-notes/create-terracotta.jpg' %}" width="1265" height="712" loading="lazy" decoding="async" alt="NuviaMy progress note form for a fictional appointment">
           <figcaption><strong>Write a progress note.</strong> Open a session and add your note with the client and appointment already selected.</figcaption>
         </figure>
         <figure>
-          <img class="clinical-notes-demo-media" src="{% static 'marketing/clinical-notes/list.webp' %}" width="978" height="580" loading="lazy" decoding="async" alt="NuviaMy notes list with filters and an expanded fictional client record">
+          <img class="clinical-notes-demo-media" src="{% static 'marketing/clinical-notes/list-terracotta.jpg' %}" width="1265" height="712" loading="lazy" decoding="async" alt="NuviaMy notes list with filters and an expanded fictional client record">
           <figcaption><strong>Find it before the next session.</strong> Filter by client, session, note type, or status, then open the note to review it.</figcaption>
         </figure>
       </div>

@@ -174,7 +174,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             total = sum(counts.values())
             result['session_status_total'] = total
             cursor = 0
-            colors = ['#7052D9', '#14B8A6', '#94A3B8', '#F59E0B']
+            colors = ['#245548', '#14B8A6', '#94A3B8', '#F59E0B']
             for (status, label), color in zip(Appointment.Status.choices, colors):
                 count = counts.get(status, 0)
                 if not count:
@@ -188,7 +188,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                           .values('status').annotate(total=Count('pk')).values_list('status', 'total').order_by())
             maximum_count = max(counts.values(), default=0)
             result['invoice_status_total'] = sum(counts.values())
-            colors = ['#94A3B8', '#7052D9', '#14B8A6', '#F36F56', '#CBD5E1']
+            colors = ['#94A3B8', '#245548', '#14B8A6', '#F36F56', '#CBD5E1']
             for (status, label), color in zip(Invoice.Status.choices, colors):
                 count = counts.get(status, 0)
                 result['invoice_status_breakdown'].append({'label': label, 'count': count, 'color': color,

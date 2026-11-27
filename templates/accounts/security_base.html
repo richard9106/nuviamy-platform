@@ -4,7 +4,7 @@
 <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
 <link rel="stylesheet" href="{% static 'dashboard.css' %}"><link rel="stylesheet" href="{% static 'security.css' %}"></head>
 <body class="login-page"><main class="login-shell"><section class="login-brand-panel">
-<a class="brand brand-large" href="/">NuviaMy</a><p class="eyebrow">Account security</p>
+<a class="brand brand-large" href="/"><span class="logo-mark" aria-hidden="true">{% include "partials/brand_symbol.html" %}</span><span>NuviaMy</span></a><p class="eyebrow">Account security</p>
 <h1>{% block brand_heading %}Protect your practice.{% endblock %}</h1><p>{% block brand_copy %}Manage your sign-in and account sessions.{% endblock %}</p>
 {% block brand_logout %}<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Sign out</button></form>{% endblock %}
 </section><section class="login-card security-card {% block card_class %}{% endblock %}">

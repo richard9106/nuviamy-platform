@@ -5,13 +5,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Appointments | NuviaMy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'dashboard.css' %}">
   <link rel="stylesheet" href="{% static 'appointment-editor.css' %}">
 </head>
-<body class="app-page calendar-workspace">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page calendar-workspace">
   <div class="app-shell">
     {% include 'partials/sidebar.html' with card_title='Practice calendar' card_text='Appointments are scoped to your practice and validated before save.' %}
 

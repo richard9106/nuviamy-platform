@@ -1,6 +1,6 @@
 {% load static %}<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Review follow-up · NuviaMy</title><link rel="stylesheet" href="{% static 'dashboard.css' %}"><link rel="stylesheet" href="{% static 'pending-inbox.css' %}"></head>
-<body class="app-page"><div class="app-shell">{% include 'partials/sidebar.html' %}
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page"><div class="app-shell">{% include 'partials/sidebar.html' %}
 <main class="app-main" data-workspace-review>
   <a class="btn btn-secondary" href="{% url 'pending_inbox' %}">Back to pending inbox</a>
   {% include 'partials/workspace_review_messages.html' %}

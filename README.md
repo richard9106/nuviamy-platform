@@ -4,6 +4,8 @@ Repository: [richard9106/nuviamy-platform](https://github.com/richard9106/nuviam
 
 NuviaMy is a Django-based practice management SaaS for solo therapists and multi-provider clinics. It brings clients, appointments, clinical documentation, billing, client forms and requests into one practice-scoped workspace. The intended clinical market is the United States.
 
+The [shared visual identity](docs/product/brand-identity.md) uses an open-door symbol, evergreen actions, blush pink and sage accents, espresso text and self-hosted Manrope across the website, app, portal and account flows. Users can save one of three personal workspace palettes from Profile settings. Status and calendar timing colors retain their functional meanings.
+
 ## Current status
 
 Last documentation review: **October 27, 2026**. The application is commercially deployed on AWS and live subscription billing is enabled. Google approved OAuth verification for project `nuviamy` and `calendar.events.owned` on October 27, 2026; production connections now request that Calendar permission for all practices. Recent releases include signed immutable addenda, email two-step sign-in, native S3 storage, AWS recovery validation and GitHub OIDC/SSM deployment.

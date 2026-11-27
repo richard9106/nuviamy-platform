@@ -2,7 +2,7 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Record payment | NuviaMy</title><link rel="stylesheet" href="/static/dashboard.css"></head>
-<body class="app-page"><div class="app-shell">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page"><div class="app-shell">
 {% include 'partials/sidebar.html' with card_title='Billing workspace' card_text='Manage invoices, payments, and prepaid sessions.' %}
 <main class="app-main">
   {% include 'partials/workspace_status.html' %}

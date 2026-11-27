@@ -7,7 +7,7 @@
 .contract-field > label { display: block; font-weight: 600; margin-bottom: 8px; }
 .contract-field input:not([type=checkbox]), .contract-field textarea, .contract-field select { width: 100%; max-width: 100%; padding: 12px; border: 1px solid #8894a6; border-radius: 8px; font: inherit; }
 .contract-field input[type=checkbox] { width: 20px; height: 20px; vertical-align: middle; margin-right: 8px; }
-.contract-field :focus-visible { outline: 3px solid #6455ba; outline-offset: 3px; }
+.contract-field :focus-visible { outline: 3px solid #245548; outline-offset: 3px; }
 .contract-help { color: #526174; font-size: .9rem; line-height: 1.6; }
 .contract-form .errorlist { color: #a32424; }
 .contract-document { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.75; margin: 0; }

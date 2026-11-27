@@ -1,2 +1,5 @@
 {% extends 'admin/base_site.html' %}
-{% block extrahead %}{{ block.super }}{% include 'partials/security_session.html' %}{% endblock %}
+{% load static %}
+{% block branding %}<div id="site-name"><a class="nuviamy-admin-brand" href="{% url 'admin:index' %}">{% include 'partials/brand_symbol.html' %}<span>NuviaMy administration</span></a></div>{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'branding/admin.css' %}">{% endblock %}
+{% block extrahead %}{{ block.super }}<link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">{% include 'partials/security_session.html' %}{% endblock %}

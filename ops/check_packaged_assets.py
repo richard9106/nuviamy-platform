@@ -11,7 +11,7 @@ from django.contrib.staticfiles.storage import staticfiles_storage
 from django.test import Client
 
 client = Client()
-for asset in ('security-session.js', 'security.css', 'dashboard.css', 'favicon.svg', 'diagnosis-picker.js', 'password-tools.js', 'password-tools.css', 'appointment-editor.css', 'appointment-editor.js', 'appointment-recurrence.js', 'calendar-timing.js', 'telehealth/room.js', 'telehealth/room.css', 'telehealth/chime-sdk.js'):
+for asset in ('security-session.js', 'security.css', 'dashboard.css', 'favicon.svg', 'branding/brand.css', 'branding/door.svg', 'branding/leaves.svg', 'branding/admin.css', 'branding/manrope-variable.ttf', 'marketing/nuviamy-social-terracotta.jpg', 'diagnosis-picker.js', 'password-tools.js', 'password-tools.css', 'appointment-editor.css', 'appointment-editor.js', 'appointment-recurrence.js', 'calendar-timing.js', 'telehealth/room.js', 'telehealth/room.css', 'telehealth/chime-sdk.js'):
     url = staticfiles_storage.url(asset)
     response = client.get(url, secure=True)
     if response.status_code != 200:

@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="{% static 'dashboard.css' %}">
   <link rel="stylesheet" href="{% static 'pending-inbox.css' %}">
 </head>
-<body class="app-page"><div class="app-shell">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page"><div class="app-shell">
   {% include 'partials/sidebar.html' with card_title='Keep follow-ups in view' card_text='Resolve each item in its original workflow. Your inbox updates automatically.' %}
   <main class="app-main pending-inbox">
     {% include 'partials/workspace_status.html' %}

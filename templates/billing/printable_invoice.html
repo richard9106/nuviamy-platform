@@ -5,21 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% if is_superbill %}Superbill{% else %}Invoice{% endif %} {{ invoice.invoice_number }} | NuviaMy</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; color: #172033; background: #f8fafc; }
-    .page { max-width: 820px; margin: 32px auto; padding: 40px; background: white; border: 1px solid #e2e8f0; border-radius: 18px; }
-    .head { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #7052d9; padding-bottom: 22px; margin-bottom: 28px; }
+    body { margin: 0; font-family: Arial, sans-serif; color: #392d29; background: #fff8f1; }
+    .page { max-width: 820px; margin: 32px auto; padding: 40px; background: white; border: 1px solid #e8d8cd; border-radius: 18px; }
+    .head { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #245548; padding-bottom: 22px; margin-bottom: 28px; }
     h1 { margin: 0; font-size: 34px; letter-spacing: -.04em; }
     h2 { margin: 0 0 8px; font-size: 18px; }
     p { margin: 4px 0; line-height: 1.5; }
-    .muted { color: #64748b; }
+    .muted { color: #76655c; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
-    .box { border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; }
+    .box { border: 1px solid #e8d8cd; border-radius: 14px; padding: 16px; }
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-    th { background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    th, td { padding: 12px; border-bottom: 1px solid #e8d8cd; text-align: left; }
+    th { background: #fff8f1; color: #67564d; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
     .total { text-align: right; font-size: 24px; font-weight: 800; margin-top: 20px; }
     .actions { display: flex; justify-content: flex-end; margin: 24px auto; max-width: 820px; }
-    button { border: 0; border-radius: 999px; padding: 12px 18px; background: #7052d9; color: white; font-weight: 800; cursor: pointer; }
+    button { border: 0; border-radius: 999px; padding: 12px 18px; background: #245548; color: white; font-weight: 800; cursor: pointer; }
     @media print { body { background: white; } .page { margin: 0; max-width: none; border: 0; border-radius: 0; } .actions { display: none; } }
   </style>
 </head>

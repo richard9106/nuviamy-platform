@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .invitation_views import AccountInvitationView
-from .views import RedeemFoundingOfferView, NotificationPreferencesView, PracticeDataExportView, PracticeSignupView, ProfileSettingsView, TeamManagementView, TeamMemberActionView
+from .views import AppearancePreferencesView, RedeemFoundingOfferView, NotificationPreferencesView, PracticeDataExportView, PracticeSignupView, ProfileSettingsView, TeamManagementView, TeamMemberActionView
 
 
 from .security_views import (MFASetupView, MFAChallengeView, RecoveryCodesView,
@@ -14,6 +14,7 @@ from .contract_views import ContractsView, ContractReviewView, ContractSignView,
 from .standard_agreement_views import StandardAgreementOfferView, StandardAgreementDownloadView
 
 urlpatterns = [
+    path('appearance/', AppearancePreferencesView.as_view(), name='appearance_preferences'),
     path('offers/redeem/', RedeemFoundingOfferView.as_view(), name='redeem_founding_offer'),
     path('notifications/', NotificationPreferencesView.as_view(), name='notification_preferences'),
     path('agreements/', StandardAgreementOfferView.as_view(), name='standard_agreement_offer'),

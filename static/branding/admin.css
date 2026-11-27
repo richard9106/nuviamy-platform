@@ -1,0 +1,24 @@
+@import url("brand.css");
+:root, html[data-theme="light"] {
+  --primary: #245548;
+  --secondary: #183e35;
+  --accent: #fff8f1;
+  --header-bg: #392d29;
+  --header-color: #fff8f1;
+  --header-branding-color: #fff8f1;
+  --link-fg: #183e35;
+  --link-hover-color: #245548;
+  --breadcrumbs-bg: #183e35;
+  --button-bg: #245548;
+  --button-hover-bg: #183e35;
+  --default-button-bg: #183e35;
+  --default-button-hover-bg: #6d3023;
+  --selected-row: #fff3ea;
+  --font-family-primary: "Manrope", system-ui, sans-serif;
+}
+.nuviamy-admin-brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; }
+.nuviamy-admin-brand svg { flex: none; }
+html[data-theme="dark"] { --link-fg: #f7e5e5; --link-hover-color: #fff8f1; }
+@media (prefers-color-scheme: dark) {
+  html[data-theme="auto"] { --link-fg: #f7e5e5; --link-hover-color: #fff8f1; }
+}

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Monitoring | NuviaMy</title><link rel="stylesheet" href="/static/dashboard.css"></head>
-<body class="app-page">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page">
   <div class="app-shell">
     {% include 'partials/sidebar.html' with card_title='Staff operations' card_text='Operational health checks and aggregate platform metrics.' %}
     <main class="app-main">

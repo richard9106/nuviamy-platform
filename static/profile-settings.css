@@ -65,7 +65,7 @@
 
 .profile-notifications-card .notification-preference { margin: 1rem 0; }
 .profile-notifications-card .notification-preference label { display:flex; align-items:center; gap:.65rem; min-height:44px; cursor:pointer; }
-.profile-notifications-card .notification-preference input { width:1.1rem; height:1.1rem; accent-color:#7059da; flex-shrink:0; }
+.profile-notifications-card .notification-preference input { width:1.1rem; height:1.1rem; accent-color:#245548; flex-shrink:0; }
 .profile-notifications-card .notification-preference p { margin:.15rem 0 .5rem 1.75rem; }
 
 .profile-notifications-card { grid-column:1 / -1; }
@@ -73,3 +73,19 @@
 .profile-notifications-card form > .empty-state, .profile-notifications-card form > button { grid-column:1 / -1; }
 .profile-notifications-card form > button { justify-self:start; }
 @media(max-width:720px) { .profile-notifications-card form { grid-template-columns:1fr; } }
+
+.appearance-settings { margin-bottom: 4px; }
+.appearance-settings .panel-head p { margin: 5px 0 0; color: var(--slate-600); font-size: 14px; }
+.theme-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; padding: 0; border: 0; margin: 18px 0; }
+.theme-option { position: relative; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; background: #fff; }
+.theme-option:has(input:checked) { border-color: var(--brand-600); box-shadow: inset 0 0 0 1px var(--brand-600); background: var(--brand-50); }
+.theme-option:focus-within { outline: 3px solid var(--brand-sage); outline-offset: 3px; }
+.theme-option input { accent-color: var(--brand-600); width: 18px; height: 18px; }
+.theme-option strong { grid-column: 1/-1; font-size: 14px; }
+.theme-swatch { display: flex; gap: 5px; }
+.theme-swatch i { width: 27px; height: 27px; border-radius: 50%; border: 1px solid #00000012; }
+.theme-swatch-garden i:nth-child(1) { background:#245548; }.theme-swatch-garden i:nth-child(2) { background:#f7e5e5; }.theme-swatch-garden i:nth-child(3) { background:#b7c9b0; }
+.theme-swatch-rose i:nth-child(1) { background:#805068; }.theme-swatch-rose i:nth-child(2) { background:#efd2df; }.theme-swatch-rose i:nth-child(3) { background:#f1f1e9; }
+.theme-swatch-coastal i:nth-child(1) { background:#315e77; }.theme-swatch-coastal i:nth-child(2) { background:#d5e5ef; }.theme-swatch-coastal i:nth-child(3) { background:#b4ced0; }
+@media (max-width:640px) { .theme-options { grid-template-columns:1fr; } .theme-option strong { grid-column:auto; } }
+.appearance-settings { scroll-margin-top: 92px; }

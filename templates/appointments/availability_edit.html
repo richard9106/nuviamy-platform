@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Edit availability | NuviaMy</title><link rel="stylesheet" href="/static/dashboard.css"></head>
-<body class="app-page"><div class="app-shell">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page"><div class="app-shell">
   {% include 'partials/sidebar.html' with card_title='Your calendar' card_text='Manage availability without changing existing appointments.' %}
   <main class="app-main">
       {% include 'partials/workspace_status.html' %}

@@ -4,13 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Submitted form | NuviaMy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'portal.css' %}">
 {% include 'partials/signature_assets.html' %}</head>
-<body class="app-page portal-page">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page portal-page">
 <main class="portal-shell">{% include 'portal/_header.html' %}<section class="panel" id="portal-content" tabindex="-1">
 <p class="eyebrow">Submitted form</p>
 <h1>{{ assignment.packet_name }}</h1>

@@ -4,14 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Profile & Subscription | NuviaMy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/dashboard.css">
   {% load static %}<link rel="stylesheet" href="{% static 'subscription-status.css' %}">
   <link rel="stylesheet" href="{% static 'profile-settings.css' %}">
 </head>
-<body class="app-page profile-settings-page">
+<body data-workspace-theme="{{ workspace_theme|default:'garden' }}" class="app-page profile-settings-page">
   <div class="app-shell">
     {% include 'partials/sidebar.html' with card_title='Account settings' card_text='Profile and subscription details live in your user menu.' %}
 
@@ -36,6 +33,23 @@
           <p>Manage your account, practice connections and subscription.</p>
         </div>
       </header>
+
+      <section class="panel appearance-settings" id="appearance" aria-labelledby="appearance-title">
+        <div class="panel-head compact"><div><h2 id="appearance-title">Make it your workspace</h2><p>Choose a color palette. This only changes your own workspace.</p></div></div>
+        <form method="post" action="{% url 'appearance_preferences' %}">
+          {% csrf_token %}
+          <fieldset class="theme-options"><legend class="sr-only">Workspace color theme</legend>
+            {% for value, label in workspace_theme_choices %}
+            <label class="theme-option">
+              <input type="radio" name="workspace_theme" value="{{ value }}" {% if workspace_theme == value %}checked{% endif %} required>
+              <span class="theme-swatch theme-swatch-{{ value }}" aria-hidden="true"><i></i><i></i><i></i></span>
+              <strong>{{ label }}</strong>
+            </label>
+            {% endfor %}
+          </fieldset>
+          <button class="btn btn-primary" type="submit">Save appearance</button>
+        </form>
+      </section>
 
       <div class="profile-settings-layout">
 <article class="panel profile-personal-card">
